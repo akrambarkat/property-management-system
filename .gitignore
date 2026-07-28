@@ -1,4 +1,7 @@
 node_modules
+backend/data/emaarplus.db
+*.db
+web/dist
 /public/build
 /public/hot
 /public/storage
