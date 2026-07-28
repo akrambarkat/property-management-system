@@ -1,5 +1,10 @@
 <template>
   <div class="page-view">
+    <div v-if="errorMsg" class="error-banner" style="background: #FEE2E2; color: #DC2626; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+      <i class="pi pi-exclamation-circle"></i>
+      <span>{{ errorMsg }}</span>
+    </div>
+
     <div class="page-toolbar">
       <div class="toolbar-filters">
         <Select v-model="filters.location_id" :options="locations" optionLabel="name" optionValue="id" placeholder="الموقع" showClear @change="fetchItems" />
@@ -8,33 +13,35 @@
     </div>
 
     <Card>
-      <DataTable :value="items" stripedRows paginator :rows="15">
-        <Column field="name" header="اسم المبنى" sortable></Column>
-        <Column field="location.name" header="الموقع" sortable></Column>
-        <Column field="floors" header="عدد الطوابق" sortable></Column>
-        <Column header="عدد الوحدات">
-          <template #body="slotProps">
-            <Tag :value="slotProps.data.units_count || 0" />
+      <template #content>
+        <DataTable :value="items" stripedRows paginator :rows="15">
+          <Column field="name" header="اسم المبنى" sortable></Column>
+          <Column field="location.name" header="الموقع" sortable></Column>
+          <Column field="floors" header="عدد الطوابق" sortable></Column>
+          <Column header="عدد الوحدات">
+            <template #body="slotProps">
+              <Tag :value="slotProps.data.units_count || 0" />
+            </template>
+          </Column>
+          <Column header="الحالة">
+            <template #body="slotProps">
+              <Tag :value="slotProps.data.is_active ? 'نشط' : 'غير نشط'" :severity="slotProps.data.is_active ? 'success' : 'danger'" />
+            </template>
+          </Column>
+          <Column header="الإجراءات" style="width: 120px">
+            <template #body="slotProps">
+              <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
+              <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
+            </template>
+          </Column>
+          <template #empty>
+            <div class="empty-state">
+              <i class="pi pi-building"></i>
+              <p>لا توجد مباني مسجلة</p>
+            </div>
           </template>
-        </Column>
-        <Column header="الحالة">
-          <template #body="slotProps">
-            <Tag :value="slotProps.data.is_active ? 'نشط' : 'غير نشط'" :severity="slotProps.data.is_active ? 'success' : 'danger'" />
-          </template>
-        </Column>
-        <Column header="الإجراءات" style="width: 120px">
-          <template #body="slotProps">
-            <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
-            <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
-          </template>
-        </Column>
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-building"></i>
-            <p>لا توجد مباني مسجلة</p>
-          </div>
-        </template>
-      </DataTable>
+        </DataTable>
+      </template>
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل مبنى' : 'إضافة مبنى'" modal :style="{ width: '500px' }">
@@ -72,6 +79,7 @@ const items = ref([])
 const locations = ref([])
 const showDialog = ref(false)
 const isEditing = ref(false)
+const errorMsg = ref('')
 
 const filters = reactive({ location_id: null })
 
@@ -87,15 +95,26 @@ const statusOptions = ref([
 onMounted(() => { fetchLocations(); fetchItems() })
 
 async function fetchLocations() {
-  try { const { data } = await api.get('/locations'); locations.value = data.data } catch {}
+  try {
+    const { data } = await api.get('/locations')
+    locations.value = data.data
+  } catch (err) {
+    console.error('fetchLocations error:', err)
+    errorMsg.value = 'خطأ في تحميل المواقع: ' + (err.response?.data?.message || err.message)
+  }
 }
 
 async function fetchItems() {
   try {
+    errorMsg.value = ''
     const params = filters.location_id ? { location_id: filters.location_id } : {}
     const { data } = await api.get('/buildings', { params })
     items.value = data.data
-  } catch { items.value = [] }
+  } catch (err) {
+    console.error('fetchItems error:', err)
+    errorMsg.value = 'خطأ في تحميل المباني: ' + (err.response?.data?.message || err.message)
+    items.value = []
+  }
 }
 
 function editItem(item) { Object.assign(form, item); isEditing.value = true; showDialog.value = true }

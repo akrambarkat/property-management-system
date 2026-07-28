@@ -8,35 +8,37 @@
     </div>
 
     <Card>
-      <DataTable :value="items" stripedRows paginator :rows="15">
-        <Column field="contract_number" header="رقم العقد" sortable></Column>
-        <Column field="tenant.first_name" header="المستأجر" sortable>
-          <template #body="s">{{ s.data.tenant?.first_name }} {{ s.data.tenant?.last_name }}</template>
-        </Column>
-        <Column field="unit.unit_number" header="الوحدة">
-          <template #body="s">{{ s.data.unit?.unit_number }} - {{ s.data.unit?.building?.name }}</template>
-        </Column>
-        <Column field="rent_amount" header="الإيجار" sortable>
-          <template #body="s">{{ formatCurrency(s.data.rent_amount) }}</template>
-        </Column>
-        <Column field="start_date" header="تاريخ البداية" sortable></Column>
-        <Column field="end_date" header="تاريخ النهاية" sortable></Column>
-        <Column field="contract_type" header="النوع">
-          <template #body="s"><Tag :value="s.data.contract_type === 'monthly' ? 'شهري' : 'سنوي'" /></template>
-        </Column>
-        <Column header="الحالة">
-          <template #body="s"><span :class="'status-badge status-' + s.data.status">{{ statusLabels[s.data.status] }}</span></template>
-        </Column>
-        <Column header="الإجراءات" style="width: 120px">
-          <template #body="s">
-            <button class="btn-icon" @click="editItem(s.data)"><i class="pi pi-pencil"></i></button>
-            <button v-if="s.data.status === 'active'" class="btn-icon btn-danger" @click="terminateContract(s.data)" title="إنهاء العقد"><i class="pi pi-times"></i></button>
+      <template #content>
+        <DataTable :value="items" stripedRows paginator :rows="15">
+          <Column field="contract_number" header="رقم العقد" sortable></Column>
+          <Column field="tenant.first_name" header="المستأجر" sortable>
+            <template #body="s">{{ s.data.tenant?.first_name }} {{ s.data.tenant?.last_name }}</template>
+          </Column>
+          <Column field="unit.unit_number" header="الوحدة">
+            <template #body="s">{{ s.data.unit?.unit_number }} - {{ s.data.unit?.building?.name }}</template>
+          </Column>
+          <Column field="rent_amount" header="الإيجار" sortable>
+            <template #body="s">{{ formatCurrency(s.data.rent_amount) }}</template>
+          </Column>
+          <Column field="start_date" header="تاريخ البداية" sortable></Column>
+          <Column field="end_date" header="تاريخ النهاية" sortable></Column>
+          <Column field="contract_type" header="النوع">
+            <template #body="s"><Tag :value="s.data.contract_type === 'monthly' ? 'شهري' : 'سنوي'" /></template>
+          </Column>
+          <Column header="الحالة">
+            <template #body="s"><span :class="'status-badge status-' + s.data.status">{{ statusLabels[s.data.status] }}</span></template>
+          </Column>
+          <Column header="الإجراءات" style="width: 120px">
+            <template #body="s">
+              <button class="btn-icon" @click="editItem(s.data)"><i class="pi pi-pencil"></i></button>
+              <button v-if="s.data.status === 'active'" class="btn-icon btn-danger" @click="terminateContract(s.data)" title="إنهاء العقد"><i class="pi pi-times"></i></button>
+            </template>
+          </Column>
+          <template #empty>
+            <div class="empty-state"><i class="pi pi-file"></i><p>لا توجد عقود</p></div>
           </template>
-        </Column>
-        <template #empty>
-          <div class="empty-state"><i class="pi pi-file"></i><p>لا توجد عقود</p></div>
-        </template>
-      </DataTable>
+        </DataTable>
+      </template>
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل عقد' : 'إضافة عقد'" modal :style="{ width: '650px' }">

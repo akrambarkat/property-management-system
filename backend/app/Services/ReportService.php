@@ -25,10 +25,10 @@ class ReportService
                 ? round((Unit::where('status', 'occupied')->count() / Unit::count()) * 100, 1)
                 : 0,
             'active_contracts' => Contract::where('status', 'active')->count(),
-            'recent_payments' => Payment::with('contract.tenant')
+            'recent_payments' => Payment::with('invoice.contract.tenant')
                 ->latest()->take(5)->get()->map(fn($p) => [
                     'receipt_number' => $p->receipt_number,
-                    'tenant' => ($p->contract?->tenant?->first_name ?? '') . ' ' . ($p->contract?->tenant?->last_name ?? ''),
+                    'tenant' => ($p->invoice?->contract?->tenant?->first_name ?? '') . ' ' . ($p->invoice?->contract?->tenant?->last_name ?? ''),
                     'amount' => $p->amount,
                     'payment_date' => $p->payment_date?->format('Y-m-d'),
                 ]),

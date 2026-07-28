@@ -1,5 +1,10 @@
 <template>
   <div class="page-view">
+    <div v-if="errorMsg" class="error-banner" style="background: #FEE2E2; color: #DC2626; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+      <i class="pi pi-exclamation-circle"></i>
+      <span>{{ errorMsg }}</span>
+    </div>
+
     <div class="page-toolbar">
       <div class="toolbar-filters">
         <Select v-model="filters.status" :options="statusFilter" optionLabel="label" optionValue="value" placeholder="الحالة" showClear @change="fetchItems" />
@@ -9,34 +14,36 @@
     </div>
 
     <Card>
-      <DataTable :value="items" stripedRows paginator :rows="15">
-        <Column field="unit_number" header="رقم الوحدة" sortable></Column>
-        <Column field="building.name" header="المبنى" sortable></Column>
-        <Column field="unit_type" header="النوع" sortable>
-          <template #body="slotProps">
-            <Tag :value="typeLabels[slotProps.data.unit_type]" />
+      <template #content>
+        <DataTable :value="items" stripedRows paginator :rows="15">
+          <Column field="unit_number" header="رقم الوحدة" sortable></Column>
+          <Column field="building.name" header="المبنى" sortable></Column>
+          <Column field="unit_type" header="النوع" sortable>
+            <template #body="slotProps">
+              <Tag :value="typeLabels[slotProps.data.unit_type]" />
+            </template>
+          </Column>
+          <Column field="floor" header="الطابق" sortable></Column>
+          <Column field="area" header="المساحة (م²)" sortable></Column>
+          <Column field="rent_amount" header="الإيجار" sortable>
+            <template #body="slotProps">{{ formatCurrency(slotProps.data.rent_amount) }}</template>
+          </Column>
+          <Column header="الحالة">
+            <template #body="slotProps">
+              <span :class="'status-badge status-' + slotProps.data.status">{{ statusLabels[slotProps.data.status] }}</span>
+            </template>
+          </Column>
+          <Column header="الإجراءات" style="width: 120px">
+            <template #body="slotProps">
+              <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
+              <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
+            </template>
+          </Column>
+          <template #empty>
+            <div class="empty-state"><i class="pi pi-th-large"></i><p>لا توجد وحدات مسجلة</p></div>
           </template>
-        </Column>
-        <Column field="floor" header="الطابق" sortable></Column>
-        <Column field="area" header="المساحة (م²)" sortable></Column>
-        <Column field="rent_amount" header="الإيجار" sortable>
-          <template #body="slotProps">{{ formatCurrency(slotProps.data.rent_amount) }}</template>
-        </Column>
-        <Column header="الحالة">
-          <template #body="slotProps">
-            <span :class="'status-badge status-' + slotProps.data.status">{{ statusLabels[slotProps.data.status] }}</span>
-          </template>
-        </Column>
-        <Column header="الإجراءات" style="width: 120px">
-          <template #body="slotProps">
-            <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
-            <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
-          </template>
-        </Column>
-        <template #empty>
-          <div class="empty-state"><i class="pi pi-th-large"></i><p>لا توجد وحدات مسجلة</p></div>
-        </template>
-      </DataTable>
+        </DataTable>
+      </template>
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل وحدة' : 'إضافة وحدة'" modal :style="{ width: '550px' }">
@@ -94,6 +101,7 @@ const items = ref([])
 const buildings = ref([])
 const showDialog = ref(false)
 const isEditing = ref(false)
+const errorMsg = ref('')
 
 const filters = reactive({ status: null, building_id: null })
 
@@ -127,17 +135,28 @@ function formatCurrency(amount) {
 onMounted(() => { fetchBuildings(); fetchItems() })
 
 async function fetchBuildings() {
-  try { const { data } = await api.get('/buildings'); buildings.value = data.data } catch {}
+  try {
+    const { data } = await api.get('/buildings')
+    buildings.value = data.data
+  } catch (err) {
+    console.error('fetchBuildings error:', err)
+    errorMsg.value = 'خطأ في تحميل المباني: ' + (err.response?.data?.message || err.message)
+  }
 }
 
 async function fetchItems() {
   try {
+    errorMsg.value = ''
     const params = {}
     if (filters.status) params.status = filters.status
     if (filters.building_id) params.building_id = filters.building_id
     const { data } = await api.get('/units', { params })
     items.value = data.data
-  } catch { items.value = [] }
+  } catch (err) {
+    console.error('fetchItems error:', err)
+    errorMsg.value = 'خطأ في تحميل الوحدات: ' + (err.response?.data?.message || err.message)
+    items.value = []
+  }
 }
 
 function editItem(item) { Object.assign(form, item); isEditing.value = true; showDialog.value = true }

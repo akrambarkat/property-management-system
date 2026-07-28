@@ -5,35 +5,37 @@
     </div>
 
     <Card>
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>الاسم</th>
-            <th>العنوان</th>
-            <th>عدد المباني</th>
-            <th>الحالة</th>
-            <th style="width:120px">الإجراءات</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in items" :key="item.id">
-            <td>{{ item.name }}</td>
-            <td>{{ item.address || '-' }}</td>
-            <td><span class="badge">{{ item.buildings_count || 0 }}</span></td>
-            <td><span class="badge" :class="item.is_active ? 'badge-success' : 'badge-danger'">{{ item.is_active ? 'نشط' : 'غير نشط' }}</span></td>
-            <td>
-              <button class="btn-icon" @click="editItem(item)"><i class="pi pi-pencil"></i></button>
-              <button class="btn-icon btn-danger" @click="deleteItem(item)"><i class="pi pi-trash"></i></button>
-            </td>
-          </tr>
-          <tr v-if="items.length === 0">
-            <td colspan="5" class="empty-cell">
-              <i class="pi pi-map-marker"></i>
-              <p>لا توجد مواقع مسجلة</p>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <template #content>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>الاسم</th>
+              <th>العنوان</th>
+              <th>عدد المباني</th>
+              <th>الحالة</th>
+              <th style="width:120px">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in items" :key="item.id">
+              <td>{{ item.name }}</td>
+              <td>{{ item.address || '-' }}</td>
+              <td><span class="badge">{{ item.buildings_count || 0 }}</span></td>
+              <td><span class="badge" :class="item.is_active ? 'badge-success' : 'badge-danger'">{{ item.is_active ? 'نشط' : 'غير نشط' }}</span></td>
+              <td>
+                <button class="btn-icon" @click="editItem(item)"><i class="pi pi-pencil"></i></button>
+                <button class="btn-icon btn-danger" @click="deleteItem(item)"><i class="pi pi-trash"></i></button>
+              </td>
+            </tr>
+            <tr v-if="items.length === 0">
+              <td colspan="5" class="empty-cell">
+                <i class="pi pi-map-marker"></i>
+                <p>لا توجد مواقع مسجلة</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل موقع' : 'إضافة موقع'" modal :style="{ width: '500px' }">

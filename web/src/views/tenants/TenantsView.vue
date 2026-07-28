@@ -11,34 +11,36 @@
     </div>
 
     <Card>
-      <DataTable :value="items" stripedRows paginator :rows="15">
-        <Column field="first_name" header="الاسم" sortable>
-          <template #body="slotProps">{{ slotProps.data.first_name }} {{ slotProps.data.last_name }}</template>
-        </Column>
-        <Column field="id_number" header="رقم الهوية" sortable></Column>
-        <Column field="phone" header="الهاتف"></Column>
-        <Column field="email" header="البريد الإلكتروني"></Column>
-        <Column header="الوحدة الحالية">
-          <template #body="slotProps">
-            <Tag v-if="slotProps.data.current_unit" :value="slotProps.data.current_unit.unit_number" severity="info" />
-            <span v-else class="text-muted">—</span>
+      <template #content>
+        <DataTable :value="items" stripedRows paginator :rows="15">
+          <Column field="first_name" header="الاسم" sortable>
+            <template #body="slotProps">{{ slotProps.data.first_name }} {{ slotProps.data.last_name }}</template>
+          </Column>
+          <Column field="id_number" header="رقم الهوية" sortable></Column>
+          <Column field="phone" header="الهاتف"></Column>
+          <Column field="email" header="البريد الإلكتروني"></Column>
+          <Column header="الوحدة الحالية">
+            <template #body="slotProps">
+              <Tag v-if="slotProps.data.current_unit" :value="slotProps.data.current_unit.unit_number" severity="info" />
+              <span v-else class="text-muted">—</span>
+            </template>
+          </Column>
+          <Column header="الحالة">
+            <template #body="slotProps">
+              <Tag :value="slotProps.data.is_active ? 'نشط' : 'غير نشط'" :severity="slotProps.data.is_active ? 'success' : 'danger'" />
+            </template>
+          </Column>
+          <Column header="الإجراءات" style="width: 120px">
+            <template #body="slotProps">
+              <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
+              <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
+            </template>
+          </Column>
+          <template #empty>
+            <div class="empty-state"><i class="pi pi-users"></i><p>لا يوجد مستأجرين</p></div>
           </template>
-        </Column>
-        <Column header="الحالة">
-          <template #body="slotProps">
-            <Tag :value="slotProps.data.is_active ? 'نشط' : 'غير نشط'" :severity="slotProps.data.is_active ? 'success' : 'danger'" />
-          </template>
-        </Column>
-        <Column header="الإجراءات" style="width: 120px">
-          <template #body="slotProps">
-            <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
-            <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
-          </template>
-        </Column>
-        <template #empty>
-          <div class="empty-state"><i class="pi pi-users"></i><p>لا يوجد مستأجرين</p></div>
-        </template>
-      </DataTable>
+        </DataTable>
+      </template>
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل مستأجر' : 'إضافة مستأجر'" modal :style="{ width: '600px' }">
