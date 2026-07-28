@@ -1,40 +1,43 @@
 <template>
   <div class="page-view">
     <div class="page-toolbar">
-      <Button label="إضافة موقع" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> إضافة موقع</button>
     </div>
 
     <Card>
-      <DataTable :value="items" stripedRows paginator :rows="15" :rowsPerPageOptions="[10,15,25,50]">
-        <Column field="name" header="الاسم" sortable></Column>
-        <Column field="address" header="العنوان" sortable></Column>
-        <Column header="عدد المباني">
-          <template #body="slotProps">
-            <Tag :value="slotProps.data.buildings_count || 0" />
-          </template>
-        </Column>
-        <Column header="الحالة">
-          <template #body="slotProps">
-            <Tag :value="slotProps.data.is_active ? 'نشط' : 'غير نشط'" :severity="slotProps.data.is_active ? 'success' : 'danger'" />
-          </template>
-        </Column>
-        <Column header="الإجراءات" style="width: 120px">
-          <template #body="slotProps">
-            <Button icon="pi pi-pencil" severity="info" text rounded @click="editItem(slotProps.data)" />
-            <Button icon="pi pi-trash" severity="danger" text rounded @click="deleteItem(slotProps.data)" />
-          </template>
-        </Column>
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-map-marker"></i>
-            <p>لا توجد مواقع مسجلة</p>
-          </div>
-        </template>
-      </DataTable>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>الاسم</th>
+            <th>العنوان</th>
+            <th>عدد المباني</th>
+            <th>الحالة</th>
+            <th style="width:120px">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in items" :key="item.id">
+            <td>{{ item.name }}</td>
+            <td>{{ item.address || '-' }}</td>
+            <td><span class="badge">{{ item.buildings_count || 0 }}</span></td>
+            <td><span class="badge" :class="item.is_active ? 'badge-success' : 'badge-danger'">{{ item.is_active ? 'نشط' : 'غير نشط' }}</span></td>
+            <td>
+              <button class="btn-icon" @click="editItem(item)"><i class="pi pi-pencil"></i></button>
+              <button class="btn-icon btn-danger" @click="deleteItem(item)"><i class="pi pi-trash"></i></button>
+            </td>
+          </tr>
+          <tr v-if="items.length === 0">
+            <td colspan="5" class="empty-cell">
+              <i class="pi pi-map-marker"></i>
+              <p>لا توجد مواقع مسجلة</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل موقع' : 'إضافة موقع'" modal :style="{ width: '500px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-field">
           <label>اسم الموقع</label>
           <InputText v-model="form.name" class="w-full" required />
@@ -48,10 +51,10 @@
           <SelectButton v-model="form.is_active" :options="statusOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>
@@ -82,7 +85,10 @@ async function fetchItems() {
   try {
     const { data } = await api.get('/locations')
     items.value = data.data
-  } catch { items.value = [] }
+  } catch (e) {
+    console.error('Locations fetch error:', e)
+    items.value = []
+  }
 }
 
 function editItem(item) {
@@ -103,12 +109,14 @@ function closeDialog() {
 async function saveItem() {
   try {
     if (isEditing.value) {
-      await api.put(`/locations/${form.id}`, form)
+      const { data } = await api.put(`/locations/${form.id}`, form)
+      const idx = items.value.findIndex(i => i.id === form.id)
+      if (idx > -1) items.value[idx] = data.data
     } else {
-      await api.post('/locations', form)
+      const { data } = await api.post('/locations', form)
+      items.value.unshift(data.data)
     }
     closeDialog()
-    await fetchItems()
   } catch (err) {
     console.error(err)
   }

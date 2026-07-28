@@ -8,15 +8,6 @@
     </div>
 
     <div class="header-right">
-      <div class="currency-selector">
-        <i class="pi pi-money-bill"></i>
-        <select v-model="appStore.selectedCurrency" @change="onCurrencyChange">
-          <option v-for="c in appStore.currencies" :key="c.code" :value="c.code">
-            {{ c.symbol }} - {{ c.name }}
-          </option>
-        </select>
-      </div>
-
       <div class="user-info">
         <div class="user-avatar">
           <i class="pi pi-user"></i>
@@ -37,13 +28,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 
 const route = useRoute()
 const router = useRouter()
-const appStore = useAppStore()
 const authStore = useAuthStore()
+const appStore = useAppStore()
 
 const pageTitles = {
   Dashboard: 'لوحة التحكم',
@@ -69,10 +60,6 @@ const roleLabel = computed(() => {
   const labels = { super_admin: 'مدير النظام', employee: 'موظف', guard: 'حارس' }
   return labels[authStore.currentUser?.role] || ''
 })
-
-function onCurrencyChange() {
-  localStorage.setItem('preferred_currency', appStore.selectedCurrency)
-}
 
 function handleLogout() {
   authStore.logout()

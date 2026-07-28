@@ -7,7 +7,7 @@
           <InputText v-model="filters.search" placeholder="بحث بالاسم أو رقم الهوية..." @input="fetchItems" />
         </IconField>
       </div>
-      <Button label="إضافة مستأجر" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> إضافة مستأجر</button>
     </div>
 
     <Card>
@@ -18,6 +18,12 @@
         <Column field="id_number" header="رقم الهوية" sortable></Column>
         <Column field="phone" header="الهاتف"></Column>
         <Column field="email" header="البريد الإلكتروني"></Column>
+        <Column header="الوحدة الحالية">
+          <template #body="slotProps">
+            <Tag v-if="slotProps.data.current_unit" :value="slotProps.data.current_unit.unit_number" severity="info" />
+            <span v-else class="text-muted">—</span>
+          </template>
+        </Column>
         <Column header="الحالة">
           <template #body="slotProps">
             <Tag :value="slotProps.data.is_active ? 'نشط' : 'غير نشط'" :severity="slotProps.data.is_active ? 'success' : 'danger'" />
@@ -25,8 +31,8 @@
         </Column>
         <Column header="الإجراءات" style="width: 120px">
           <template #body="slotProps">
-            <Button icon="pi pi-pencil" severity="info" text rounded @click="editItem(slotProps.data)" />
-            <Button icon="pi pi-trash" severity="danger" text rounded @click="deleteItem(slotProps.data)" />
+            <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
+            <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
           </template>
         </Column>
         <template #empty>
@@ -36,7 +42,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل مستأجر' : 'إضافة مستأجر'" modal :style="{ width: '600px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-row">
           <div class="form-field flex-1">
             <label>الاسم الأول</label>
@@ -66,10 +72,10 @@
           <Textarea v-model="form.address" class="w-full" rows="2" />
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>

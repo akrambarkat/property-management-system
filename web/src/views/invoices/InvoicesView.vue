@@ -6,7 +6,7 @@
         <DatePicker v-model="filters.from" placeholder="من تاريخ" @change="fetchItems" />
         <DatePicker v-model="filters.to" placeholder="إلى تاريخ" @change="fetchItems" />
       </div>
-      <Button label="إضافة فاتورة" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> إضافة فاتورة</button>
     </div>
 
     <Card>
@@ -28,8 +28,8 @@
         </Column>
         <Column header="الإجراءات" style="width: 160px">
           <template #body="s">
-            <Button icon="pi pi-print" severity="info" text rounded @click="printInvoice(s.data)" tooltip="طباعة" />
-            <Button v-if="s.data.status !== 'paid'" icon="pi pi-dollar" severity="success" text rounded @click="payInvoice(s.data)" tooltip="تسديد" />
+            <button class="btn-icon" @click="printInvoice(s.data)" title="طباعة"><i class="pi pi-print"></i></button>
+            <button v-if="s.data.status !== 'paid'" class="btn-icon" @click="payInvoice(s.data)" title="تسديد"><i class="pi pi-dollar"></i></button>
           </template>
         </Column>
         <template #empty>
@@ -39,7 +39,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" header="إضافة فاتورة" modal :style="{ width: '650px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-field">
           <label>العقد</label>
           <Select v-model="form.contract_id" :options="contracts" optionLabel="label" optionValue="id" placeholder="اختر العقد" required class="w-full" />
@@ -79,10 +79,10 @@
           <InputNumber v-model="form.services_amount" class="w-full" :min="0" />
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>

@@ -4,7 +4,7 @@
       <div class="toolbar-filters">
         <Select v-model="filters.utility_type" :options="typeFilter" optionLabel="label" optionValue="value" placeholder="النوع" showClear @change="fetchItems" />
       </div>
-      <Button label="تسجيل قراءة" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> تسجيل قراءة</button>
     </div>
 
     <Card>
@@ -32,7 +32,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" header="تسجيل قراءة عداد" modal :style="{ width: '500px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-field">
           <label>الوحدة</label>
           <Select v-model="form.unit_id" :options="units" optionLabel="label" optionValue="id" placeholder="اختر الوحدة" required class="w-full" />
@@ -58,10 +58,10 @@
           </div>
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>

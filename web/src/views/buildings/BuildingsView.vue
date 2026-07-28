@@ -4,7 +4,7 @@
       <div class="toolbar-filters">
         <Select v-model="filters.location_id" :options="locations" optionLabel="name" optionValue="id" placeholder="الموقع" showClear @change="fetchItems" />
       </div>
-      <Button label="إضافة مبنى" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> إضافة مبنى</button>
     </div>
 
     <Card>
@@ -24,8 +24,8 @@
         </Column>
         <Column header="الإجراءات" style="width: 120px">
           <template #body="slotProps">
-            <Button icon="pi pi-pencil" severity="info" text rounded @click="editItem(slotProps.data)" />
-            <Button icon="pi pi-trash" severity="danger" text rounded @click="deleteItem(slotProps.data)" />
+            <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
+            <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
           </template>
         </Column>
         <template #empty>
@@ -38,7 +38,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل مبنى' : 'إضافة مبنى'" modal :style="{ width: '500px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-field">
           <label>الموقع</label>
           <Select v-model="form.location_id" :options="locations" optionLabel="name" optionValue="id" placeholder="اختر الموقع" required class="w-full" />
@@ -56,10 +56,10 @@
           <SelectButton v-model="form.is_active" :options="statusOptions" optionLabel="label" optionValue="value" />
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>

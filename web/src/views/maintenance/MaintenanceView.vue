@@ -5,7 +5,7 @@
         <Select v-model="filters.status" :options="statusFilter" optionLabel="label" optionValue="value" placeholder="الحالة" showClear @change="fetchItems" />
         <Select v-model="filters.priority" :options="priorityFilter" optionLabel="label" optionValue="value" placeholder="الأولوية" showClear @change="fetchItems" />
       </div>
-      <Button label="إضافة طلب" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> إضافة طلب</button>
     </div>
 
     <Card>
@@ -23,7 +23,7 @@
         <Column field="created_at" header="تاريخ الطلب" sortable></Column>
         <Column header="الإجراءات" style="width: 100px">
           <template #body="s">
-            <Button icon="pi pi-pencil" severity="info" text rounded @click="editItem(s.data)" />
+            <button class="btn-icon" @click="editItem(s.data)"><i class="pi pi-pencil"></i></button>
           </template>
         </Column>
         <template #empty>
@@ -33,7 +33,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" header="طلب صيانة" modal :style="{ width: '550px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-field">
           <label>الوحدة</label>
           <Select v-model="form.unit_id" :options="units" optionLabel="label" optionValue="id" placeholder="اختر الوحدة" required class="w-full" />
@@ -53,10 +53,10 @@
           </div>
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <template>
   <div class="page-view">
     <div class="page-toolbar">
-      <Button label="تسجيل دفعة" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> تسجيل دفعة</button>
     </div>
 
     <Card>
@@ -20,7 +20,7 @@
         </Column>
         <Column header="الإجراءات" style="width: 100px">
           <template #body="s">
-            <Button icon="pi pi-print" severity="info" text rounded @click="printReceipt(s.data)" tooltip="إيصال" />
+            <button class="btn-icon" @click="printReceipt(s.data)" title="إيصال"><i class="pi pi-print"></i></button>
           </template>
         </Column>
         <template #empty>
@@ -30,7 +30,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" header="تسجيل دفعة جديدة" modal :style="{ width: '500px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-field">
           <label>الفاتورة</label>
           <Select v-model="form.invoice_id" :options="unpaidInvoices" optionLabel="label" optionValue="id" placeholder="اختر الفاتورة" required class="w-full" />
@@ -54,10 +54,10 @@
           <InputText v-model="form.reference_number" class="w-full" />
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="تسجيل الدفعة" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">تسجيل الدفعة</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>

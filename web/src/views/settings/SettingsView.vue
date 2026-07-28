@@ -8,7 +8,11 @@
             <label>اسم التطبيق</label>
             <InputText v-model="settings.app_name" class="w-full" />
           </div>
-          <Button label="حفظ الإعدادات" @click="saveSettings" />
+          <div class="form-field">
+            <label>العملة المفضلة للعرض</label>
+            <Select v-model="preferredCurrency" :options="currencies" optionLabel="name" optionValue="code" class="w-full" @change="updatePreferredCurrency" />
+          </div>
+          <button class="btn-primary" @click="saveSettings"><i class="pi pi-save"></i> حفظ الإعدادات</button>
         </div>
       </template>
     </Card>
@@ -48,7 +52,7 @@
               <InputNumber v-model="settings.water_unit_price" class="w-full" :min="0" />
             </div>
           </div>
-          <Button label="حفظ" @click="saveSettings" />
+          <button class="btn-primary" @click="saveSettings">حفظ</button>
         </div>
       </template>
     </Card>
@@ -62,6 +66,7 @@ import api from '@/services/api'
 const settings = ref({ app_name: 'EMAARPlus', electricity_unit_price: 0.50, water_unit_price: 3.00 })
 const currencies = ref([])
 const defaultCurrency = ref('ILS')
+const preferredCurrency = ref(localStorage.getItem('preferred_currency') || 'ILS')
 
 onMounted(() => { fetchSettings(); fetchCurrencies() })
 
@@ -88,6 +93,11 @@ async function updateCurrency(currency) {
 
 async function setDefault(currency) {
   try { await api.patch(`/currencies/${currency.id}/default`); await fetchCurrencies() } catch { /* */ }
+}
+
+function updatePreferredCurrency() {
+  localStorage.setItem('preferred_currency', preferredCurrency.value)
+  window.location.reload()
 }
 </script>
 

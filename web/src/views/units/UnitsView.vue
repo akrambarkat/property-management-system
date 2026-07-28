@@ -5,7 +5,7 @@
         <Select v-model="filters.status" :options="statusFilter" optionLabel="label" optionValue="value" placeholder="الحالة" showClear @change="fetchItems" />
         <Select v-model="filters.building_id" :options="buildings" optionLabel="name" optionValue="id" placeholder="المبنى" showClear @change="fetchItems" />
       </div>
-      <Button label="إضافة وحدة" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> إضافة وحدة</button>
     </div>
 
     <Card>
@@ -29,8 +29,8 @@
         </Column>
         <Column header="الإجراءات" style="width: 120px">
           <template #body="slotProps">
-            <Button icon="pi pi-pencil" severity="info" text rounded @click="editItem(slotProps.data)" />
-            <Button icon="pi pi-trash" severity="danger" text rounded @click="deleteItem(slotProps.data)" />
+            <button class="btn-icon" @click="editItem(slotProps.data)"><i class="pi pi-pencil"></i></button>
+            <button class="btn-icon btn-danger" @click="deleteItem(slotProps.data)"><i class="pi pi-trash"></i></button>
           </template>
         </Column>
         <template #empty>
@@ -40,7 +40,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل وحدة' : 'إضافة وحدة'" modal :style="{ width: '550px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-row">
           <div class="form-field flex-1">
             <label>المبنى</label>
@@ -76,10 +76,10 @@
           <Select v-model="form.status" :options="statusOptions" optionLabel="label" optionValue="value" class="w-full" />
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>
@@ -154,11 +154,15 @@ async function saveItem() {
     if (isEditing.value) await api.put(`/units/${form.id}`, form)
     else await api.post('/units', form)
     closeDialog(); await fetchItems()
-  } catch { /* */ }
+  } catch (e) {
+    console.error('saveItem error:', e.response?.data || e.message)
+    alert(e.response?.data?.message || e.response?.data || 'حدث خطأ في الحفظ')
+  }
 }
 
 async function deleteItem(item) {
   if (!confirm('هل أنت متأكد من حذف هذه الوحدة؟')) return
-  try { await api.delete(`/units/${item.id}`); await fetchItems() } catch { /* */ }
+  try { await api.delete(`/units/${item.id}`); await fetchItems() }
+  catch (e) { console.error('deleteItem error:', e); alert('حدث خطأ في الحذف') }
 }
 </script>

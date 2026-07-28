@@ -4,7 +4,7 @@
       <div class="toolbar-filters">
         <Select v-model="filters.status" :options="statusFilter" optionLabel="label" optionValue="value" placeholder="الحالة" showClear @change="fetchItems" />
       </div>
-      <Button label="إضافة عقد" icon="pi pi-plus" @click="showDialog = true" />
+      <button class="btn-primary" @click="showDialog = true"><i class="pi pi-plus"></i> إضافة عقد</button>
     </div>
 
     <Card>
@@ -29,8 +29,8 @@
         </Column>
         <Column header="الإجراءات" style="width: 120px">
           <template #body="s">
-            <Button icon="pi pi-pencil" severity="info" text rounded @click="editItem(s.data)" />
-            <Button v-if="s.data.status === 'active'" icon="pi pi-times" severity="danger" text rounded @click="terminateContract(s.data)" tooltip="إنهاء العقد" />
+            <button class="btn-icon" @click="editItem(s.data)"><i class="pi pi-pencil"></i></button>
+            <button v-if="s.data.status === 'active'" class="btn-icon btn-danger" @click="terminateContract(s.data)" title="إنهاء العقد"><i class="pi pi-times"></i></button>
           </template>
         </Column>
         <template #empty>
@@ -40,7 +40,7 @@
     </Card>
 
     <Dialog v-model:visible="showDialog" :header="isEditing ? 'تعديل عقد' : 'إضافة عقد'" modal :style="{ width: '650px' }">
-      <form @submit.prevent="saveItem">
+      <div class="dialog-body">
         <div class="form-row">
           <div class="form-field flex-1">
             <label>الوحدة</label>
@@ -72,10 +72,10 @@
           </div>
         </div>
         <div class="form-actions">
-          <Button label="إلغاء" severity="secondary" @click="closeDialog" />
-          <Button label="حفظ" type="submit" />
+          <button class="btn-secondary" @click="closeDialog">إلغاء</button>
+          <button class="btn-primary" @click="saveItem">حفظ</button>
         </div>
-      </form>
+      </div>
     </Dialog>
   </div>
 </template>

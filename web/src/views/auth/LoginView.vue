@@ -11,14 +11,14 @@
 
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="field">
-          <label for="email">البريد الإلكتروني</label>
+          <label for="phone">رقم الهاتف</label>
           <div class="input-wrapper">
-            <i class="pi pi-envelope"></i>
+            <i class="pi pi-phone"></i>
             <input
-              id="email"
-              v-model="form.email"
-              type="email"
-              placeholder="admin@emaarplus.com"
+              id="phone"
+              v-model="form.phone"
+              type="tel"
+              placeholder="0599000000"
               required
               dir="ltr"
             />
@@ -28,7 +28,6 @@
         <div class="field">
           <label for="password">كلمة المرور</label>
           <div class="input-wrapper">
-            <i class="pi pi-lock"></i>
             <input
               id="password"
               v-model="form.password"
@@ -37,7 +36,7 @@
               required
             />
             <button type="button" class="toggle-password" @click="showPassword = !showPassword">
-              <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+              <i :class="showPassword ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
             </button>
           </div>
         </div>
@@ -45,15 +44,6 @@
         <button type="submit" class="login-btn" :disabled="loading">
           <i v-if="loading" class="pi pi-spin pi-spinner"></i>
           <span v-else>تسجيل الدخول</span>
-        </button>
-
-        <div class="divider">
-          <span>أو</span>
-        </div>
-
-        <button type="button" class="demo-btn" @click="demoLogin" :disabled="loading">
-          <i class="pi pi-eye"></i>
-          تجربة سريعة (بدون API)
         </button>
 
         <p v-if="error" class="error-msg">
@@ -70,13 +60,11 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/services/api'
-import { demoUser } from '@/services/mock'
-import { setMockMode } from '@/services/mockProxy'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const form = reactive({ email: '', password: '' })
+const form = reactive({ phone: '', password: '' })
 const showPassword = ref(false)
 const loading = ref(false)
 const error = ref('')
@@ -86,7 +74,7 @@ async function handleLogin() {
   error.value = ''
 
   try {
-    const { data } = await api.post('/auth/login', form)
+    const { data } = await api.post('/login', form)
     authStore.setAuth(data.data.token, data.data.user)
     router.push({ name: 'Dashboard' })
   } catch (err) {
@@ -96,11 +84,6 @@ async function handleLogin() {
   }
 }
 
-function demoLogin() {
-  setMockMode(true)
-  authStore.setAuth(demoUser.token, demoUser.user)
-  router.push({ name: 'Dashboard' })
-}
 </script>
 
 <style scoped>

@@ -68,7 +68,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import api from '@/services/api'
 import { formatCurrency } from '@/utils/currency'
 import { useAppStore } from '@/stores/app'
 
@@ -78,25 +79,24 @@ function format(amount) {
   return formatCurrency(amount, appStore.selectedCurrency)
 }
 
-const stats = ref([
-  { label: 'إجمالي الوحدات', value: '200', icon: 'pi pi-th-large', bgColor: '#DBEAFE', color: '#1B2A4A', trend: null },
-  { label: 'الوحدات المشغولة', value: '156', icon: 'pi pi-check-circle', bgColor: '#D1FAE5', color: '#065F46', trend: 8 },
-  { label: 'الإيراد الشهري', value: '45,000 ₪', icon: 'pi pi-money-bill', bgColor: '#FEF3C7', color: '#92400E', trend: 12 },
-  { label: 'المتأخرات', value: '8,500 ₪', icon: 'pi pi-exclamation-triangle', bgColor: '#FEE2E2', color: '#991B1B', trend: -5 }
-])
+const stats = ref([])
+const recentPayments = ref([])
+const overdueInvoices = ref([])
 
-const recentPayments = ref([
-  { receipt_number: 'REC-001', tenant: 'أحمد محمود', amount: 1500, payment_date: '2026-07-28' },
-  { receipt_number: 'REC-002', tenant: 'محمود علي', amount: 2000, payment_date: '2026-07-27' },
-  { receipt_number: 'REC-003', tenant: 'سامر حسن', amount: 1800, payment_date: '2026-07-26' }
-])
-
-const overdueInvoices = ref([
-  { invoice_number: 'INV-045', tenant: 'خالد عمر', total_amount: 2500, due_date: '2026-07-01' },
-  { invoice_number: 'INV-032', tenant: 'نادر سليم', total_amount: 3000, due_date: '2026-06-15' }
-])
-
-
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/reports/dashboard')
+    const d = data.data
+    stats.value = [
+      { label: 'إجمالي الوحدات', value: d.total_units, icon: 'pi pi-th-large', bgColor: '#DBEAFE', color: '#1B2A4A', trend: null },
+      { label: 'الوحدات المشغولة', value: d.occupied_units, icon: 'pi pi-check-circle', bgColor: '#D1FAE5', color: '#065F46', trend: d.occupancy_rate },
+      { label: 'الإيراد الشهري', value: formatCurrency(d.monthly_income, appStore.selectedCurrency), icon: 'pi pi-money-bill', bgColor: '#FEF3C7', color: '#92400E', trend: null },
+      { label: 'المتأخرات', value: formatCurrency(d.overdue_amount, appStore.selectedCurrency), icon: 'pi pi-exclamation-triangle', bgColor: '#FEE2E2', color: '#991B1B', trend: null }
+    ]
+    recentPayments.value = d.recent_payments || []
+    overdueInvoices.value = d.overdue_invoices || []
+  } catch {}
+})
 </script>
 
 <style scoped>

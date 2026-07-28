@@ -7,8 +7,8 @@
         <DatePicker v-model="filters.to" placeholder="إلى تاريخ" @change="fetchReport" />
       </div>
       <div class="toolbar-actions">
-        <Button label="PDF" icon="pi pi-file-pdf" severity="danger" @click="exportPDF" />
-        <Button label="Excel" icon="pi pi-file-excel" severity="success" @click="exportExcel" />
+        <button class="btn-primary" @click="exportPDF"><i class="pi pi-file-pdf"></i> PDF</button>
+        <button class="btn-primary" @click="exportExcel"><i class="pi pi-file-excel"></i> Excel</button>
       </div>
     </div>
 
