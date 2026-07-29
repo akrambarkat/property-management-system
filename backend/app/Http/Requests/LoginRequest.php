@@ -6,12 +6,16 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
 {
-    public function authorize(): bool { return true; }
+    public function authorize(): bool
+    {
+        return true;
+    }
 
     public function rules(): array
     {
         return [
-            'phone' => 'required|string|exists:users,phone',
+            'identifier' => 'required_without:phone|string',
+            'phone' => 'required_without:identifier|string',
             'password' => 'required|string',
         ];
     }
@@ -19,8 +23,8 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'phone.required' => 'رقم الهاتف مطلوب',
-            'phone.exists' => 'رقم الهاتف غير موجود',
+            'identifier.required_without' => 'رقم الهاتف أو البريد الإلكتروني مطلوب',
+            'phone.required_without' => 'رقم الهاتف أو البريد الإلكتروني مطلوب',
             'password.required' => 'كلمة المرور مطلوبة',
         ];
     }

@@ -13,13 +13,22 @@ class ReportService
 {
     public function getDashboardStats(): array
     {
+        $monthlyIncome = Invoice::whereMonth('issue_date', now()->month)
+            ->whereYear('issue_date', now()->year)->sum('paid_amount');
+            
+        $monthlyExpenses = Expense::whereMonth('expense_date', now()->month)
+            ->whereYear('expense_date', now()->year)->sum('amount');
+
         return [
+            'total_locations' => \App\Models\Location::count(),
+            'total_buildings' => \App\Models\Building::count(),
             'total_units' => Unit::count(),
             'occupied_units' => Unit::where('status', 'occupied')->count(),
             'available_units' => Unit::where('status', 'available')->count(),
             'maintenance_units' => Unit::where('status', 'maintenance')->count(),
-            'monthly_income' => Invoice::whereMonth('issue_date', now()->month)
-                ->whereYear('issue_date', now()->year)->sum('paid_amount'),
+            'monthly_income' => $monthlyIncome,
+            'monthly_expenses' => $monthlyExpenses,
+            'net_profit' => $monthlyIncome - $monthlyExpenses,
             'overdue_amount' => Invoice::whereIn('status', ['unpaid', 'overdue'])->sum('total_amount'),
             'occupancy_rate' => Unit::count() > 0
                 ? round((Unit::where('status', 'occupied')->count() / Unit::count()) * 100, 1)

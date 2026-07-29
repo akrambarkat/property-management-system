@@ -75,6 +75,11 @@ const routes = [
         component: () => import('@/views/reports/ReportsView.vue')
       },
       {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('@/views/notifications/NotificationsView.vue')
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('@/views/users/UsersView.vue')
@@ -85,6 +90,13 @@ const routes = [
         component: () => import('@/views/settings/SettingsView.vue')
       }
     ]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: () => {
+      const authStore = useAuthStore()
+      return authStore.isAuthenticated ? { name: 'Dashboard' } : { name: 'Login' }
+    }
   }
 ]
 
@@ -99,7 +111,7 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.matched.some(record => record.meta.requiresAuth) && !authStore.isAuthenticated) {
     next({ name: 'Login' })
   } else if (to.name === 'Login' && authStore.isAuthenticated) {
     next({ name: 'Dashboard' })

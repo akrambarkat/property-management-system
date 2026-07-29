@@ -12,19 +12,29 @@ class AuthController extends Controller
 {
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('phone', $request->phone)->first();
+        $identifier = $request->input('identifier', $request->input('phone'));
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        $userQuery = User::query();
+
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $userQuery->where('email', $identifier);
+        } else {
+            $userQuery->where('phone', $identifier);
+        }
+
+        $user = $userQuery->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'success' => false,
-                'message' => 'رقم الهاتف أو كلمة المرور غير صحيحة'
+                'message' => 'رقم الهاتف أو البريد الإلكتروني أو كلمة المرور غير صحيحة',
             ], 401);
         }
 
-        if (!$user->is_active) {
+        if (! $user->is_active) {
             return response()->json([
                 'success' => false,
-                'message' => 'هذا الحساب غير مفعل'
+                'message' => 'هذا الحساب غير مفعّل',
             ], 403);
         }
 
@@ -35,17 +45,26 @@ class AuthController extends Controller
             'message' => 'تم تسجيل الدخول بنجاح',
             'data' => [
                 'token' => $token,
-                'user' => $user->only(['id', 'name', 'email', 'phone', 'role', 'preferred_currency', 'is_active']),
-            ]
+                'user' => $user->only([
+                    'id',
+                    'name',
+                    'email',
+                    'phone',
+                    'role',
+                    'preferred_currency',
+                    'is_active',
+                ]),
+            ],
         ]);
     }
 
     public function logout(): JsonResponse
     {
         auth()->user()->tokens()->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'تم تسجيل الخروج بنجاح'
+            'message' => 'تم تسجيل الخروج بنجاح',
         ]);
     }
 
@@ -53,7 +72,15 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'data' => auth()->user()->only(['id', 'name', 'email', 'phone', 'role', 'preferred_currency', 'is_active'])
+            'data' => auth()->user()->only([
+                'id',
+                'name',
+                'email',
+                'phone',
+                'role',
+                'preferred_currency',
+                'is_active',
+            ]),
         ]);
     }
 }
