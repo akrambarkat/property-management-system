@@ -1,29 +1,20 @@
 <template>
   <div class="page-view">
-    <!-- Feedback Messages -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with Horizontal SaaS Filters & Actions -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="بحث بالاسم أو البريد الإلكتروني..." class="search-input-field" />
-        </div>
+    <!-- Header Banner / Feedback -->
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="بحث باسم المستخدم، البريد، أو الدور..."
+      emptyTitle="لا يوجد مستخدمين مسجلين"
+      emptySubtitle="لم يتم العثور على أي مستخدمين يطابقون خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #filters>
         <Select
           v-model="filters.role"
-          :options="roleFilterOptions"
+          :options="roleOptions"
           optionLabel="label"
           optionValue="value"
           placeholder="جميع الأدوار"
@@ -31,31 +22,16 @@
           @change="fetchItems"
           class="filter-select"
         />
-      </div>
+      </template>
 
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
           <i class="pi pi-user-plus"></i> إضافة مستخدم جديد
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="name" header="اسم المستخدم" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('name')" field="name" header="اسم المستخدم" sortable>
           <template #body="slotProps">
             <div class="user-cell">
               <div class="user-avatar-circle">
@@ -63,101 +39,166 @@
               </div>
               <div class="cell-text">
                 <span class="font-bold">{{ slotProps.data.name }}</span>
-                <span class="sub-text">هاتف: {{ slotProps.data.phone || '—' }}</span>
+                <span class="sub-text">{{ slotProps.data.email }}</span>
               </div>
             </div>
           </template>
         </Column>
 
-        <Column field="email" header="البريد الإلكتروني" sortable>
+        <Column v-if="!hiddenColumns.includes('phone')" field="phone" header="رقم الهاتف">
           <template #body="slotProps">
-            <span class="email-text"><i class="pi pi-envelope text-muted"></i> {{ slotProps.data.email }}</span>
+            <span class="phone-text" v-if="slotProps.data.phone">
+              <i class="pi pi-phone text-muted"></i>
+              {{ slotProps.data.phone }}
+            </span>
+            <span v-else class="text-muted">—</span>
           </template>
         </Column>
 
-        <Column field="role" header="صلاحية الدور" sortable>
+        <Column v-if="!hiddenColumns.includes('role')" field="role" header="الدور / الصلاحية" sortable>
           <template #body="slotProps">
-            <Tag :value="roleLabels[slotProps.data.role]" :severity="roleSeverity[slotProps.data.role]" />
-          </template>
-        </Column>
-
-        <Column header="حالة الحساب">
-          <template #body="slotProps">
-            <span
-              class="status-badge"
-              :class="slotProps.data.is_active ? 'status-available' : 'status-expired'"
-            >
-              {{ slotProps.data.is_active ? 'نشط' : 'معطل' }}
+            <span class="role-badge" :class="'role-' + slotProps.data.role">
+              {{ roleLabels[slotProps.data.role] || slotProps.data.role }}
             </span>
           </template>
         </Column>
 
-        <Column header="الإجراءات" style="width: 120px; text-align: center;">
+        <Column v-if="!hiddenColumns.includes('is_active')" field="is_active" header="الحالة" sortable>
           <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="editItem(slotProps.data)" title="تعديل">
-                <i class="pi pi-pencil"></i>
-              </button>
-              <button
-                class="btn-icon"
-                @click="toggleStatus(slotProps.data)"
-                :title="slotProps.data.is_active ? 'تعطيل الحساب' : 'تفعيل الحساب'"
-              >
-                <i :class="slotProps.data.is_active ? 'pi pi-ban text-danger' : 'pi pi-check text-success'"></i>
-              </button>
-            </div>
+            <span
+              class="status-badge"
+              :class="slotProps.data.is_active ? 'status-active' : 'status-expired'"
+            >
+              {{ slotProps.data.is_active ? 'نشط' : 'مُعطل' }}
+            </span>
           </template>
         </Column>
 
-        <!-- Empty State -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-users"></i>
-            <p>لا يوجد مستخدمين مسجلين يطابقون البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+        <!-- Actions -->
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+          <template #body="slotProps">
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
+          </template>
+        </Column>
+      </template>
+    </EnterpriseTable>
 
     <!-- Create / Edit Dialog -->
     <Dialog
       v-model:visible="showDialog"
       :header="isEditing ? 'تعديل بيانات المستخدم' : 'إضافة مستخدم جديد'"
       modal
-      :style="{ width: '560px' }"
+      :style="{ width: '580px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>الاسم الكامل <span class="required">*</span></label>
-            <InputText v-model="form.name" placeholder="أدخل اسم المستخدم" class="w-full" />
+        <!-- Section 1: Account Info -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-user"></i>
+            <span>البيانات الأساسية</span>
           </div>
-          <div class="form-field flex-1">
-            <label>البريد الإلكتروني <span class="required">*</span></label>
-            <InputText v-model="form.email" type="email" placeholder="example@domain.com" class="w-full" />
+
+          <div class="form-grid-2">
+            <FormField
+              label="الاسم الكامل"
+              required
+              forId="user-name"
+              :errorMessage="errors.name"
+            >
+              <InputText
+                id="user-name"
+                v-model="form.name"
+                placeholder="أدخل اسم المستخدم"
+                class="w-full"
+                @input="clearFieldError('name')"
+              />
+            </FormField>
+
+            <FormField
+              label="البريد الإلكتروني"
+              required
+              forId="user-email"
+              :errorMessage="errors.email"
+            >
+              <InputText
+                id="user-email"
+                v-model="form.email"
+                type="email"
+                placeholder="example@domain.com"
+                class="w-full"
+                @input="clearFieldError('email')"
+              />
+            </FormField>
+          </div>
+
+          <div class="form-grid-2">
+            <FormField
+              :label="isEditing ? 'كلمة المرور (اختياري)' : 'كلمة المرور'"
+              :required="!isEditing"
+              forId="user-pass"
+              :errorMessage="errors.password"
+              :helpText="isEditing ? 'اتركه فارغاً للحفاظ على كلمة المرور الحالية' : '8 أحرف على الأقل'"
+            >
+              <InputText
+                id="user-pass"
+                v-model="form.password"
+                type="password"
+                class="w-full"
+                :placeholder="isEditing ? '••••••••' : 'أدخل كلمة المرور'"
+                @input="clearFieldError('password')"
+              />
+            </FormField>
+
+            <FormField
+              label="رقم الهاتف"
+              forId="user-phone"
+            >
+              <InputText
+                id="user-phone"
+                v-model="form.phone"
+                placeholder="059xxxxxxx"
+                class="w-full"
+              />
+            </FormField>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>كلمة المرور {{ isEditing ? '(اختياري)' : '*' }}</label>
-            <InputText v-model="form.password" type="password" class="w-full" :placeholder="isEditing ? 'اتركه فارغاً للحفاظ على القديمة' : 'أدخل كلمة المرور'" />
+        <!-- Section 2: Roles & Status -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-shield"></i>
+            <span>الصلاحيات وحالة الحساب</span>
           </div>
-          <div class="form-field flex-1">
-            <label>رقم الهاتف</label>
-            <InputText v-model="form.phone" placeholder="059xxxxxxx" class="w-full" />
-          </div>
-        </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>صلاحية الدور</label>
-            <Select v-model="form.role" :options="roleOptions" optionLabel="label" optionValue="value" class="w-full" />
-          </div>
-          <div class="form-field flex-1">
-            <label>حالة الحساب</label>
-            <SelectButton v-model="form.is_active" :options="statusOptions" optionLabel="label" optionValue="value" />
+          <div class="form-grid-2">
+            <FormField
+              label="صلاحية الدور"
+              forId="user-role"
+            >
+              <Select
+                id="user-role"
+                v-model="form.role"
+                :options="roleOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+              />
+            </FormField>
+
+            <FormField
+              label="حالة الحساب"
+              forId="user-status"
+            >
+              <SelectButton
+                id="user-status"
+                v-model="form.is_active"
+                :options="statusOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </FormField>
           </div>
         </div>
 
@@ -170,192 +211,208 @@
         </div>
       </div>
     </Dialog>
+
+    <!-- Delete Confirmation Modal -->
+    <ConfirmModal
+      v-model:visible="showDeleteModal"
+      title="تأكيد الحذف"
+      :message="`هل أنت متأكد من حذف المستخدم <strong>${ itemToDelete?.name }</strong>؟`"
+      variant="danger"
+      confirmText="تأكيد الحذف"
+      @confirm="deleteItemConfirmed"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import api from '@/services/api'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const dt = ref(null)
 const items = ref([])
 const loading = ref(false)
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
+
+const showDeleteModal = ref(false)
+const itemToDelete = ref(null)
 
 const filters = reactive({ role: null })
 
-const form = reactive({ id: null, name: '', email: '', password: '', phone: '', role: 'employee', is_active: true })
-
-const roleLabels = { super_admin: 'مدير النظام', employee: 'موظف', guard: 'حارس' }
-const roleSeverity = { super_admin: 'danger', employee: 'info', guard: 'warn' }
-const roleOptions = ref(Object.entries(roleLabels).map(([value, label]) => ({ value, label })))
-const roleFilterOptions = ref(Object.entries(roleLabels).map(([value, label]) => ({ value, label })))
-const statusOptions = ref([{ label: 'نشط', value: true }, { label: 'معطل', value: false }])
-
-const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) return items.value
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.name?.toLowerCase().includes(q) ||
-    item.email?.toLowerCase().includes(q) ||
-    item.phone?.toLowerCase().includes(q)
-  )
+const form = reactive({
+  id: null, name: '', email: '', password: '', phone: '', role: 'employee', is_active: true
 })
+
+const errors = reactive({
+  name: '', email: '', password: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+const tableColumns = [
+  { field: 'name', header: 'اسم المستخدم' },
+  { field: 'phone', header: 'رقم الهاتف' },
+  { field: 'role', header: 'الدور / الصلاحية' },
+  { field: 'is_active', header: 'الحالة' }
+]
+
+const roleLabels = { super_admin: 'مدير النظام', employee: 'موظف إدارة', guard: 'حارس مبنى' }
+const roleOptions = ref([
+  { label: 'مدير النظام', value: 'super_admin' },
+  { label: 'موظف إدارة', value: 'employee' },
+  { label: 'حارس مبنى', value: 'guard' }
+])
+
+const statusOptions = ref([
+  { label: 'نشط', value: true },
+  { label: 'مُعطل', value: false }
+])
+
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.name || !form.name.trim()) {
+    errors.name = 'يرجى إدخال اسم المستخدم الكامل'
+    isValid = false
+  }
+
+  if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    errors.email = 'يرجى إدخال بريد إلكتروني صحيح'
+    isValid = false
+  }
+
+  if (!isEditing.value && (!form.password || form.password.length < 6)) {
+    errors.password = 'كلمة المرور يجب ألا تقل عن 6 أحرف'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'تعديل البيانات',
+      icon: 'pi pi-pencil',
+      command: () => editItem(row)
+    },
+    {
+      label: 'حذف المستخدم',
+      icon: 'pi pi-trash',
+      danger: true,
+      command: () => confirmDelete(row)
+    }
+  ]
+}
 
 onMounted(() => fetchItems())
 
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
-    const { data } = await api.get('/users')
+    const params = filters.role ? { role: filters.role } : {}
+    const { data } = await api.get('/users', { params })
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل قائمة المستخدمين: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل قائمة المستخدمين: ' + (err.response?.data?.message || err.message))
     items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
 function editItem(item) {
-  Object.assign(form, item)
-  form.password = ''
+  resetForm()
+  Object.assign(form, { ...item, password: '' })
   isEditing.value = true
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function resetForm() {
   isEditing.value = false
   Object.assign(form, { id: null, name: '', email: '', password: '', phone: '', role: 'employee', is_active: true })
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.name || !form.email) {
-    errorMsg.value = 'يرجى تعبئة الاسم والبريد الإلكتروني'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
-    const payload = { ...form }
-    if (!payload.password) delete payload.password
     if (isEditing.value) {
-      await api.put(`/users/${form.id}`, payload)
-      showToast('تم تعديل بيانات المستخدم بنجاح')
+      const payload = { ...form }
+      if (!payload.password) delete payload.password
+      const { data } = await api.put(`/users/${form.id}`, payload)
+      const idx = items.value.findIndex(i => i.id === form.id)
+      if (idx > -1) items.value[idx] = data.data
+      toast.success('تم تعديل بيانات المستخدم بنجاح')
     } else {
-      await api.post('/users', payload)
-      showToast('تم إضافة المستخدم بنجاح')
+      const { data } = await api.post('/users', form)
+      items.value.unshift(data.data)
+      toast.success('تم إضافة المستخدم بنجاح')
     }
-    closeDialog()
-    await fetchItems()
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر حفظ المستخدم'
+    toast.error(err.response?.data?.message || 'تعذر حفظ بيانات المستخدم')
   } finally {
     saving.value = false
   }
 }
 
-async function toggleStatus(user) {
-  try {
-    await api.patch(`/users/${user.id}/toggle-status`)
-    showToast(`تم ${user.is_active ? 'تعطيل' : 'تفعيل'} الحساب بنجاح`)
-    await fetchItems()
-  } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'خطأ أثناء تغيير حالة الحساب'
-  }
+function confirmDelete(item) {
+  itemToDelete.value = item
+  showDeleteModal.value = true
 }
 
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
+async function deleteItemConfirmed() {
+  if (!itemToDelete.value) return
+  try {
+    await api.delete(`/users/${itemToDelete.value.id}`)
+    toast.success('تم حذف المستخدم بنجاح')
+    showDeleteModal.value = false
+    itemToDelete.value = null
+    await fetchItems()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'خطأ أثناء عملية الحذف')
+  }
 }
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 260px !important;
-}
-
-.filter-select {
-  width: 170px !important;
-}
-
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
 .user-cell {
   display: flex;
   align-items: center;
@@ -386,34 +443,47 @@ function exportCSV() {
   color: var(--text-secondary);
 }
 
-.email-text {
+.phone-text {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: var(--text-secondary);
 }
 
-.form-row {
-  display: flex;
-  gap: 14px;
+.role-badge {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+.role-super_admin { background: #EEF2FF; color: #4F46E5; }
+.role-employee { background: #F1F5F9; color: #475569; }
+.role-guard { background: #FEF3C7; color: #D97706; }
+
+.filter-select {
+  width: 170px !important;
 }
 
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
+.text-center {
+  text-align: center;
 }
-
-.required {
-  color: var(--danger);
+.warning-icon {
+  font-size: 2.5rem;
+  color: var(--warning);
+  margin-bottom: 12px;
 }
-
-.text-danger {
-  color: var(--danger) !important;
+.delete-msg {
+  font-size: 14.5px;
+  color: var(--text-primary);
 }
-.text-success {
-  color: var(--success) !important;
+.center-actions {
+  justify-content: center !important;
+  margin-top: 16px !important;
+}
+.btn-danger-action {
+  background: var(--danger) !important;
+}
+.btn-danger-action:hover {
+  background: #DC2626 !important;
 }
 </style>

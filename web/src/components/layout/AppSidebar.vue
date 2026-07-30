@@ -162,6 +162,7 @@ const rawMenuGroups = computed(() => {
       title: 'الخدمات والتشغيل',
       items: [
         { to: '/maintenance', label: 'الصيانة', icon: 'pi pi-wrench' },
+        { to: '/analytics', label: 'التحليلات المالية', icon: 'pi pi-chart-line' },
         { to: '/reports', label: 'التقارير', icon: 'pi pi-chart-bar' },
         { to: '/notifications', label: 'الإشعارات', icon: 'pi pi-bell', badge: '3', badgeClass: 'badge-warning' }
       ]
@@ -213,13 +214,14 @@ function handleLogout() {
   top: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--bg-sidebar);
-  color: #F8FAFC;
+  background: var(--bg-sidebar, #FFFFFF);
+  color: var(--text-primary, #0F172A);
   display: flex;
   flex-direction: column;
   z-index: 1000;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+  border-left: 1px solid var(--border, #E2E8F0);
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.04);
 }
 
 .sidebar.collapsed {
@@ -229,7 +231,7 @@ function handleLogout() {
 /* Header & Logo */
 .sidebar-header {
   padding: 20px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border, #E2E8F0);
 }
 .brand {
   display: flex;
@@ -239,14 +241,14 @@ function handleLogout() {
 .logo-icon {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, var(--accent) 0%, #1D4ED8 100%);
+  background: linear-gradient(135deg, var(--accent, #4F46E5) 0%, #3730A3 100%);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
   color: #FFFFFF;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
   flex-shrink: 0;
 }
 .brand-text {
@@ -256,21 +258,22 @@ function handleLogout() {
 }
 .brand-name {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.5px;
-  color: #FFFFFF;
+  color: var(--text-primary, #0F172A);
 }
 .brand-plus {
-  color: var(--secondary);
+  color: var(--accent, #4F46E5);
 }
 .brand-sub {
   font-size: 11px;
-  color: #94A3B8;
+  color: var(--text-secondary, #64748B);
+  font-weight: 500;
 }
 
 /* Search Box */
 .sidebar-search {
-  padding: 12px 16px 4px 16px;
+  padding: 14px 16px 6px 16px;
 }
 .search-box {
   position: relative;
@@ -280,24 +283,25 @@ function handleLogout() {
 .search-icon {
   position: absolute;
   right: 12px;
-  color: #64748B;
+  color: #94A3B8;
   font-size: 0.85rem;
 }
 .search-input {
   width: 100%;
   padding: 8px 34px 8px 24px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-sm);
-  color: #FFFFFF;
+  background: #F8FAFC;
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text-primary, #0F172A);
   font-family: var(--font-family);
   font-size: 13px;
   outline: none;
   transition: all 0.2s ease;
 }
 .search-input:focus {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--accent);
+  background: #FFFFFF;
+  border-color: var(--accent, #4F46E5);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 .clear-btn {
   position: absolute;
@@ -314,14 +318,14 @@ function handleLogout() {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .menu-group-title {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #64748B;
+  color: #94A3B8;
   margin: 14px 8px 6px 8px;
   letter-spacing: 0.5px;
 }
@@ -331,24 +335,25 @@ function handleLogout() {
   align-items: center;
   gap: 12px;
   padding: 9px 12px;
-  border-radius: var(--radius-sm);
-  color: #94A3B8;
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text-secondary, #475569);
   transition: all 0.15s ease;
   cursor: pointer;
   white-space: nowrap;
   position: relative;
+  font-weight: 500;
 }
 
 .menu-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #F8FAFC;
+  background: #F1F5F9;
+  color: var(--text-primary, #0F172A);
 }
 
 .menu-item.active {
-  background: var(--accent);
-  color: #FFFFFF;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  background: #EEF2FF;
+  color: var(--accent, #4F46E5);
+  font-weight: 700;
+  border-right: 3px solid var(--accent, #4F46E5);
 }
 
 .item-icon-wrapper {
@@ -376,7 +381,7 @@ function handleLogout() {
 
 .no-results {
   font-size: 13px;
-  color: #64748B;
+  color: #94A3B8;
   text-align: center;
   padding: 20px 0;
 }
@@ -384,28 +389,29 @@ function handleLogout() {
 /* Footer & User Profile */
 .sidebar-footer {
   padding: 12px 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border, #E2E8F0);
   display: flex;
   flex-direction: column;
   gap: 8px;
   position: relative;
+  background: #F8FAFC;
 }
 
 .user-profile-card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  background: #FFFFFF;
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: var(--radius-sm, 8px);
   position: relative;
 }
 
 .user-avatar {
   width: 34px;
   height: 34px;
-  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  background: linear-gradient(135deg, var(--accent, #4F46E5) 0%, #3730A3 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -413,7 +419,6 @@ function handleLogout() {
   font-weight: 700;
   font-size: 14px;
   color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .user-info {
@@ -425,8 +430,8 @@ function handleLogout() {
 
 .user-name {
   font-size: 13px;
-  font-weight: 600;
-  color: #F8FAFC;
+  font-weight: 700;
+  color: var(--text-primary, #0F172A);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -434,7 +439,7 @@ function handleLogout() {
 
 .user-role {
   font-size: 11px;
-  color: #94A3B8;
+  color: var(--text-secondary, #64748B);
 }
 
 .user-menu-btn {
@@ -446,8 +451,8 @@ function handleLogout() {
   border-radius: 4px;
 }
 .user-menu-btn:hover {
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary, #0F172A);
+  background: #F1F5F9;
 }
 
 .user-dropdown-menu {
@@ -456,10 +461,10 @@ function handleLogout() {
   right: 14px;
   left: 14px;
   margin-bottom: 8px;
-  background: #1E293B;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  background: #FFFFFF;
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: var(--radius-sm, 8px);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
   padding: 6px;
   z-index: 1010;
   display: flex;
@@ -472,7 +477,7 @@ function handleLogout() {
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
-  color: #CBD5E1;
+  color: var(--text-primary, #0F172A);
   font-size: 13px;
   border-radius: 6px;
   background: none;
@@ -480,32 +485,33 @@ function handleLogout() {
   width: 100%;
   text-align: right;
   cursor: pointer;
+  font-weight: 500;
 }
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #FFFFFF;
+  background: #F1F5F9;
+  color: var(--accent, #4F46E5);
 }
 .dropdown-item.logout {
-  color: #FCA5A5;
+  color: #EF4444;
 }
 .dropdown-item.logout:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #EF4444;
+  background: #FEF2F2;
+  color: #DC2626;
 }
 
 .dropdown-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border, #E2E8F0);
   margin: 4px 0;
 }
 
 .collapse-btn {
   width: 100%;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
-  color: #94A3B8;
+  background: #FFFFFF;
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text-secondary, #64748B);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -513,8 +519,8 @@ function handleLogout() {
   justify-content: center;
 }
 .collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #FFFFFF;
+  background: #F1F5F9;
+  color: var(--text-primary, #0F172A);
 }
 .collapse-btn i {
   transition: transform 0.25s ease;

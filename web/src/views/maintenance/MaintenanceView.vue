@@ -1,29 +1,20 @@
 <template>
   <div class="page-view">
-    <!-- Feedback Messages -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with Horizontal SaaS Filters & Actions -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="بحث بالوصف أو رقم الوحدة..." class="search-input-field" />
-        </div>
+    <!-- Header Banner / Feedback -->
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="بحث بوصف الصيانة، رقم الوحدة، أو الأولوية..."
+      emptyTitle="لا توجد بلاغات صيانة مسجلة"
+      emptySubtitle="لم يتم العثور على أي طلبات صيانة تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #filters>
         <Select
           v-model="filters.status"
-          :options="statusFilter"
+          :options="statusFilterOptions"
           optionLabel="label"
           optionValue="value"
           placeholder="جميع الحالات"
@@ -33,7 +24,7 @@
         />
         <Select
           v-model="filters.priority"
-          :options="priorityFilter"
+          :options="priorityFilterOptions"
           optionLabel="label"
           optionValue="value"
           placeholder="جميع الأولويات"
@@ -41,35 +32,20 @@
           @change="fetchItems"
           class="filter-select"
         />
-      </div>
+      </template>
 
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
-          <i class="pi pi-plus"></i> إضافة طلب صيانة
+          <i class="pi pi-plus"></i> بلاغ صيانة جديد
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="unit.unit_number" header="الوحدة العقارية" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('unit.unit_number')" field="unit.unit_number" header="الوحدة والمبنى" sortable>
           <template #body="slotProps">
-            <div class="maint-cell">
+            <div class="unit-cell">
               <div class="icon-avatar">
-                <i class="pi pi-wrench text-purple"></i>
+                <i class="pi pi-wrench text-blue"></i>
               </div>
               <div class="cell-text">
                 <span class="font-bold">وحدة #{{ slotProps.data.unit?.unit_number || '—' }}</span>
@@ -79,19 +55,21 @@
           </template>
         </Column>
 
-        <Column field="description" header="تفاصيل العطل / الطلب">
+        <Column v-if="!hiddenColumns.includes('description')" field="description" header="وصف المشكلة">
           <template #body="slotProps">
-            <span class="desc-text">{{ slotProps.data.description }}</span>
+            <span class="desc-text">{{ slotProps.data.description || '—' }}</span>
           </template>
         </Column>
 
-        <Column field="priority" header="مستوى الأولوية" sortable>
+        <Column v-if="!hiddenColumns.includes('priority')" field="priority" header="الأولوية">
           <template #body="slotProps">
-            <Tag :value="priorityLabels[slotProps.data.priority]" :severity="prioritySeverity[slotProps.data.priority]" />
+            <span :class="'priority-pill priority-' + slotProps.data.priority">
+              {{ priorityLabels[slotProps.data.priority] || slotProps.data.priority }}
+            </span>
           </template>
         </Column>
 
-        <Column field="status" header="الحالة التشغيلية">
+        <Column v-if="!hiddenColumns.includes('status')" field="status" header="الحالة التشغيلية">
           <template #body="slotProps">
             <span :class="'status-badge status-' + slotProps.data.status">
               {{ maintStatusLabels[slotProps.data.status] || slotProps.data.status }}
@@ -99,59 +77,110 @@
           </template>
         </Column>
 
-        <Column field="created_at" header="تاريخ الطلب" sortable>
+        <Column v-if="!hiddenColumns.includes('created_at')" field="created_at" header="تاريخ الطلب" sortable>
           <template #body="slotProps">
             <span class="date-text">{{ slotProps.data.created_at?.split('T')[0] || '—' }}</span>
           </template>
         </Column>
 
-        <Column header="الإجراءات" style="width: 100px; text-align: center;">
+        <!-- Actions -->
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
           <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="editItem(slotProps.data)" title="تعديل">
-                <i class="pi pi-pencil"></i>
-              </button>
-            </div>
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
         </Column>
-
-        <!-- Empty State -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-wrench"></i>
-            <p>لا توجد طلبات صيانة مسجلة تطابق البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+      </template>
+    </EnterpriseTable>
 
     <!-- Create / Edit Dialog -->
     <Dialog
       v-model:visible="showDialog"
       :header="isEditing ? 'تعديل طلب الصيانة' : 'إضافة طلب صيانة جديد'"
       modal
-      :style="{ width: '550px' }"
+      :style="{ width: '560px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-field">
-          <label>الوحدة العقارية <span class="required">*</span></label>
-          <Select v-model="form.unit_id" :options="units" optionLabel="label" optionValue="id" placeholder="اختر الوحدة المستهدفة" class="w-full" />
-        </div>
-
-        <div class="form-field">
-          <label>وصف المشكلة / العطل <span class="required">*</span></label>
-          <Textarea v-model="form.description" class="w-full" rows="3" placeholder="أدخل تفاصيل العطل أو أعمال الصيانة المطلوبة..." />
-        </div>
-
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>درجة الأولوية</label>
-            <Select v-model="form.priority" :options="priorityOptions" optionLabel="label" optionValue="value" class="w-full" />
+        <!-- Section 1: Location & Problem Description -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-home"></i>
+            <span>موقع الصيانة والمشكلة</span>
           </div>
-          <div class="form-field flex-1">
-            <label>حالة الطلب</label>
-            <Select v-model="form.status" :options="statusOptions" optionLabel="label" optionValue="value" class="w-full" />
+
+          <FormField
+            label="الوحدة العقارية"
+            required
+            forId="maint-unit"
+            :errorMessage="errors.unit_id"
+            helpText="اختر الوحدة المتأثرة بالمشكلة"
+          >
+            <Select
+              id="maint-unit"
+              v-model="form.unit_id"
+              :options="units"
+              optionLabel="label"
+              optionValue="id"
+              placeholder="اختر الوحدة المستهدفة"
+              class="w-full"
+              @change="clearFieldError('unit_id')"
+            />
+          </FormField>
+
+          <FormField
+            label="وصف المشكلة / العطل"
+            required
+            forId="maint-desc"
+            :errorMessage="errors.description"
+            helpText="اشرح المشكلة بالتفصيل لتوجيه الفني المناسب"
+          >
+            <Textarea
+              id="maint-desc"
+              v-model="form.description"
+              class="w-full"
+              rows="3"
+              placeholder="أدخل تفاصيل العطل أو أعمال الصيانة المطلوبة..."
+              @input="clearFieldError('description')"
+            />
+          </FormField>
+        </div>
+
+        <!-- Section 2: Status & Priority -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-sliders-h"></i>
+            <span>درجة الأولوية وحالة المتابعة</span>
+          </div>
+
+          <div class="form-grid-2">
+            <FormField
+              label="درجة الأولوية"
+              forId="maint-priority"
+            >
+              <Select
+                id="maint-priority"
+                v-model="form.priority"
+                :options="priorityOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+              />
+            </FormField>
+
+            <FormField
+              label="حالة الطلب"
+              forId="maint-status"
+            >
+              <Select
+                id="maint-status"
+                v-model="form.status"
+                :options="statusOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+              />
+            </FormField>
           </div>
         </div>
 
@@ -168,42 +197,103 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import api from '@/services/api'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const dt = ref(null)
 const items = ref([])
 const units = ref([])
 const loading = ref(false)
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
 
 const filters = reactive({ status: null, priority: null })
 
 const form = reactive({ id: null, unit_id: null, description: '', priority: 'medium', status: 'pending' })
 
-const priorityLabels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', urgent: 'عاجلة' }
-const prioritySeverity = { low: 'info', medium: 'warn', high: 'danger', urgent: 'danger' }
-const maintStatusLabels = { pending: 'قيد الانتظار', in_progress: 'قيد التنفيذ', completed: 'مكتملة', cancelled: 'ملغية' }
-
-const statusFilter = ref(Object.entries(maintStatusLabels).map(([value, label]) => ({ value, label })))
-const statusOptions = ref(Object.entries(maintStatusLabels).map(([value, label]) => ({ value, label })))
-const priorityFilter = ref(Object.entries(priorityLabels).map(([value, label]) => ({ value, label })))
-const priorityOptions = ref(Object.entries(priorityLabels).map(([value, label]) => ({ value, label })))
-
-const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) return items.value
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.description?.toLowerCase().includes(q) ||
-    item.unit?.unit_number?.toString().toLowerCase().includes(q) ||
-    item.unit?.building?.name?.toLowerCase().includes(q)
-  )
+const errors = reactive({
+  unit_id: '', description: ''
 })
+
+const initialFormState = JSON.stringify(form)
+
+const tableColumns = [
+  { field: 'unit.unit_number', header: 'الوحدة والمبنى' },
+  { field: 'description', header: 'وصف المشكلة' },
+  { field: 'priority', header: 'الأولوية' },
+  { field: 'status', header: 'الحالة التشغيلية' },
+  { field: 'created_at', header: 'تاريخ الطلب' }
+]
+
+const priorityLabels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية (طوارئ)' }
+const maintStatusLabels = { pending: 'قيد الانتظار', in_progress: 'قيد التنفيذ', completed: 'مكتملة', cancelled: 'ملغاة' }
+
+const priorityOptions = ref([
+  { label: 'منخفضة', value: 'low' },
+  { label: 'متوسطة', value: 'medium' },
+  { label: 'عالية (طوارئ)', value: 'high' }
+])
+
+const priorityFilterOptions = ref([
+  { label: 'منخفضة', value: 'low' },
+  { label: 'متوسطة', value: 'medium' },
+  { label: 'عالية (طوارئ)', value: 'high' }
+])
+
+const statusOptions = ref([
+  { label: 'قيد الانتظار', value: 'pending' },
+  { label: 'قيد التنفيذ', value: 'in_progress' },
+  { label: 'مكتملة', value: 'completed' },
+  { label: 'ملغاة', value: 'cancelled' }
+])
+
+const statusFilterOptions = ref([
+  { label: 'قيد الانتظار', value: 'pending' },
+  { label: 'قيد التنفيذ', value: 'in_progress' },
+  { label: 'مكتملة', value: 'completed' },
+  { label: 'ملغاة', value: 'cancelled' }
+])
+
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.unit_id) {
+    errors.unit_id = 'يرجى اختيار الوحدة العقارية المتأثرة'
+    isValid = false
+  }
+
+  if (!form.description || !form.description.trim()) {
+    errors.description = 'يرجى كتابة وصف توضيحي للمشكلة'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'تعديل الطلب',
+      icon: 'pi pi-pencil',
+      command: () => editItem(row)
+    }
+  ]
+}
 
 onMounted(() => { fetchUnits(); fetchItems() })
 
@@ -217,141 +307,78 @@ async function fetchUnits() {
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
     const params = {}
     if (filters.status) params.status = filters.status
     if (filters.priority) params.priority = filters.priority
-    const { data } = await api.get('/maintenance', { params })
+
+    const { data } = await api.get('/maintenance-requests', { params })
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل طلبات الصيانة: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل طلبات الصيانة: ' + (err.response?.data?.message || err.message))
     items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
 function editItem(item) {
+  resetForm()
   Object.assign(form, item)
   isEditing.value = true
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function resetForm() {
   isEditing.value = false
   Object.assign(form, { id: null, unit_id: null, description: '', priority: 'medium', status: 'pending' })
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.unit_id || !form.description) {
-    errorMsg.value = 'يرجى اختيار الوحدة وإدخال الوصف'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
     if (isEditing.value) {
-      await api.put(`/maintenance/${form.id}`, form)
-      showToast('تم تعديل طلب الصيانة بنجاح')
+      const { data } = await api.put(`/maintenance-requests/${form.id}`, form)
+      const idx = items.value.findIndex(i => i.id === form.id)
+      if (idx > -1) items.value[idx] = data.data
+      toast.success('تم تعديل طلب الصيانة بنجاح')
     } else {
-      await api.post('/maintenance', form)
-      showToast('تم إضافة طلب الصيانة بنجاح')
+      const { data } = await api.post('/maintenance-requests', form)
+      items.value.unshift(data.data)
+      toast.success('تم إضافة طلب الصيانة بنجاح')
     }
-    closeDialog()
-    await fetchItems()
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر حفظ البيانات'
+    toast.error(err.response?.data?.message || 'تعذر حفظ طلب الصيانة')
   } finally {
     saving.value = false
   }
 }
-
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
-}
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 250px !important;
-}
-
-.filter-select {
-  width: 170px !important;
-}
-
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.maint-cell {
+.unit-cell {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -359,7 +386,7 @@ function exportCSV() {
 .icon-avatar {
   width: 36px;
   height: 36px;
-  background: #F3E8FF;
+  background: #EFF6FF;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -381,7 +408,7 @@ function exportCSV() {
 
 .desc-text {
   font-size: 13px;
-  color: var(--text-primary);
+  color: var(--text-secondary);
 }
 
 .date-text {
@@ -389,19 +416,21 @@ function exportCSV() {
   color: var(--text-secondary);
 }
 
-.form-row {
-  display: flex;
-  gap: 14px;
+.priority-pill {
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.priority-low { background: #F1F5F9; color: #475569; }
+.priority-medium { background: #FEF3C7; color: #D97706; }
+.priority-high { background: #FEE2E2; color: #DC2626; }
+
+.filter-select {
+  width: 170px !important;
 }
 
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
-}
-
-.required {
-  color: var(--danger);
+.text-blue {
+  color: #2563EB;
 }
 </style>

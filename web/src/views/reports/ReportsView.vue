@@ -2,19 +2,19 @@
   <div class="reports-page">
     <div class="page-toolbar">
       <div class="toolbar-filters">
-        <Select v-model="filters.building_id" :options="buildings" optionLabel="name" optionValue="id" placeholder="المبنى" showClear @change="fetchReport" />
-        <DatePicker v-model="filters.from" placeholder="من تاريخ" @change="fetchReport" />
-        <DatePicker v-model="filters.to" placeholder="إلى تاريخ" @change="fetchReport" />
+        <Select v-model="filters.building_id" :options="buildings" optionLabel="name" optionValue="id" placeholder="المبنى" showClear @change="fetchReport" class="filter-select" />
+        <DatePicker v-model="filters.from" placeholder="من تاريخ" @change="fetchReport" class="filter-datepicker" />
+        <DatePicker v-model="filters.to" placeholder="إلى تاريخ" @change="fetchReport" class="filter-datepicker" />
       </div>
       <div class="toolbar-actions">
-        <button class="btn-primary" @click="exportPDF"><i class="pi pi-file-pdf"></i> PDF</button>
-        <button class="btn-primary" @click="exportExcel"><i class="pi pi-file-excel"></i> Excel</button>
+        <button class="btn-secondary" @click="exportPDF"><i class="pi pi-file-pdf"></i> تصدير PDF</button>
+        <button class="btn-primary" @click="exportExcel"><i class="pi pi-file-excel"></i> تصدير Excel</button>
       </div>
     </div>
 
     <div class="reports-grid">
-      <Card>
-        <template #title>تقرير الدخل</template>
+      <Card class="saas-report-card">
+        <template #title><span class="card-header-title"><i class="pi pi-chart-line text-blue"></i> تقرير الدخل</span></template>
         <template #content>
           <div class="report-summary">
             <div class="summary-item">
@@ -33,8 +33,8 @@
         </template>
       </Card>
 
-      <Card>
-        <template #title>تقرير المصروفات</template>
+      <Card class="saas-report-card">
+        <template #title><span class="card-header-title"><i class="pi pi-receipt text-red"></i> تقرير المصروفات</span></template>
         <template #content>
           <div class="report-summary">
             <div class="summary-item" v-for="cat in expenseCategories" :key="cat.key">
@@ -49,21 +49,25 @@
         </template>
       </Card>
 
-      <Card>
-        <template #title>صافي الربح / الخسارة</template>
+      <Card class="saas-report-card">
+        <template #title><span class="card-header-title"><i class="pi pi-wallet text-green"></i> صافي الربح / الخسارة</span></template>
         <template #content>
           <div class="profit-loss">
             <div class="pl-item positive" v-if="reportData.net_profit >= 0">
-              <i class="pi pi-arrow-up"></i>
+              <div class="pl-icon-bg success-bg">
+                <i class="pi pi-arrow-up"></i>
+              </div>
               <div>
-                <span>صافي الربح</span>
+                <span class="pl-label">صافي الربح</span>
                 <strong>{{ formatCurrency(reportData.net_profit) }}</strong>
               </div>
             </div>
             <div class="pl-item negative" v-else>
-              <i class="pi pi-arrow-down"></i>
+              <div class="pl-icon-bg danger-bg">
+                <i class="pi pi-arrow-down"></i>
+              </div>
               <div>
-                <span>صافي الخسارة</span>
+                <span class="pl-label">صافي الخسارة</span>
                 <strong>{{ formatCurrency(Math.abs(reportData.net_profit)) }}</strong>
               </div>
             </div>
@@ -72,19 +76,31 @@
       </Card>
     </div>
 
-    <Card>
-      <template #title>تفاصيل الدخل</template>
-      <template #content>
-        <DataTable :value="reportData.details || []" stripedRows paginator :rows="15">
-          <Column field="building" header="المبنى"></Column>
-          <Column field="unit" header="الوحدة"></Column>
-          <Column field="tenant" header="المستأجر"></Column>
-          <Column field="rent" header="الإيجار"><template #body="s">{{ formatCurrency(s.data.rent) }}</template></Column>
-          <Column field="utilities" header="المرافق"><template #body="s">{{ formatCurrency(s.data.utilities) }}</template></Column>
-          <Column field="total" header="المجموع"><template #body="s">{{ formatCurrency(s.data.total) }}</template></Column>
-        </DataTable>
+    <!-- Enterprise SaaS Card Table Layout for Details -->
+    <EnterpriseTable
+      :value="reportData.details || []"
+      :loading="loading"
+      searchPlaceholder="بحث في تفاصيل الدخل..."
+      emptyTitle="لا توجد تفاصيل متاحة"
+      emptySubtitle="لم يتم العثور على أي تفاصيل دخل ضمن الفترة المحددة"
+      :columns="tableColumns"
+      @refresh="fetchReport"
+    >
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('building')" field="building" header="المبنى" sortable></Column>
+        <Column v-if="!hiddenColumns.includes('unit')" field="unit" header="الوحدة" sortable></Column>
+        <Column v-if="!hiddenColumns.includes('tenant')" field="tenant" header="المستأجر" sortable></Column>
+        <Column v-if="!hiddenColumns.includes('rent')" field="rent" header="الإيجار" sortable>
+          <template #body="s"><span class="amount-val">{{ formatCurrency(s.data.rent) }}</span></template>
+        </Column>
+        <Column v-if="!hiddenColumns.includes('utilities')" field="utilities" header="المرافق" sortable>
+          <template #body="s"><span class="amount-val">{{ formatCurrency(s.data.utilities) }}</span></template>
+        </Column>
+        <Column v-if="!hiddenColumns.includes('total')" field="total" header="المجموع" sortable>
+          <template #body="s"><span class="font-bold text-success">{{ formatCurrency(s.data.total) }}</span></template>
+        </Column>
       </template>
-    </Card>
+    </EnterpriseTable>
   </div>
 </template>
 
@@ -92,12 +108,25 @@
 import { ref, reactive, onMounted } from 'vue'
 import api from '@/services/api'
 import { useAppStore } from '@/stores/app'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
 const appStore = useAppStore()
-const items = ref([])
 const buildings = ref([])
+const loading = ref(false)
+const toast = useToastStore()
 
 const filters = reactive({ building_id: null, from: null, to: null })
+
+const tableColumns = [
+  { field: 'building', header: 'المبنى' },
+  { field: 'unit', header: 'الوحدة' },
+  { field: 'tenant', header: 'المستأجر' },
+  { field: 'rent', header: 'الإيجار' },
+  { field: 'utilities', header: 'المرافق' },
+  { field: 'total', header: 'المجموع' }
+]
 
 const reportData = ref({
   total_rent: 0, total_utilities: 0, total_income: 0,
@@ -120,6 +149,7 @@ async function fetchBuildings() {
 }
 
 async function fetchReport() {
+  loading.value = true
   try {
     const params = {}
     if (filters.building_id) params.building_id = filters.building_id
@@ -127,7 +157,9 @@ async function fetchReport() {
     if (filters.to) params.to = filters.to
     const { data } = await api.get('/reports/profit-loss', { params })
     reportData.value = data.data
-  } catch { /* */ }
+  } catch { /* */ } finally {
+    loading.value = false
+  }
 }
 
 function exportPDF() { window.open(api.defaults.baseURL + '/reports/profit-loss?export=pdf', '_blank') }
@@ -142,28 +174,66 @@ function exportExcel() { window.open(api.defaults.baseURL + '/reports/profit-los
   margin-bottom: 24px;
 }
 
+.saas-report-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .report-summary { display: flex; flex-direction: column; gap: 12px; }
 
 .summary-item {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
 }
 
 .summary-item.highlight {
   border-bottom: none; padding-top: 12px; margin-top: 4px;
-  border-top: 2px solid var(--primary);
+  border-top: 2px solid var(--accent);
 }
 
-.summary-item strong { font-size: 18px; color: var(--text-primary); }
+.summary-item strong { font-size: 16px; color: var(--text-primary); }
 
-.profit-loss { text-align: center; padding: 20px; }
+.profit-loss { padding: 10px; }
 
-.pl-item { display: flex; align-items: center; justify-content: center; gap: 16px; }
-.pl-item.positive { color: var(--success); }
-.pl-item.negative { color: var(--danger); }
-.pl-item i { font-size: 2rem; }
-.pl-item span { display: block; font-size: 14px; }
-.pl-item strong { font-size: 28px; font-weight: 700; }
+.pl-item { display: flex; align-items: center; gap: 16px; }
+.pl-icon-bg {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+.success-bg { background: #ECFDF5; color: #10B981; }
+.danger-bg { background: #FEF2F2; color: #EF4444; }
+
+.pl-label { display: block; font-size: 13px; color: var(--text-secondary); }
+.pl-item strong { font-size: 24px; font-weight: 700; }
+.positive strong { color: #10B981; }
+.negative strong { color: #EF4444; }
+
+.amount-val { font-size: 13.5px; color: var(--text-secondary); }
+.font-bold { font-weight: 700; }
+.text-success { color: var(--success); }
+
+.filter-select { width: 180px !important; }
+.filter-datepicker { width: 150px !important; }
+
+.text-blue { color: #2563EB; }
+.text-red { color: #EF4444; }
+.text-green { color: #10B981; }
 
 @media (max-width: 1024px) { .reports-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 768px) { .reports-grid { grid-template-columns: 1fr; } }

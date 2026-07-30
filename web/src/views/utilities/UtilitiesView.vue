@@ -1,66 +1,48 @@
 <template>
   <div class="page-view">
-    <!-- Feedback Messages -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with Horizontal SaaS Filters & Actions -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="بحث برقم الوحدة..." class="search-input-field" />
-        </div>
+    <!-- Header Banner / Feedback -->
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="بحث بنوع المرافق، رقم الوحدة، أو العداد..."
+      emptyTitle="لا توجد قراءات عدادات مسجلة"
+      emptySubtitle="لم يتم العثور على أي قراءات تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #filters>
         <Select
           v-model="filters.utility_type"
-          :options="typeFilter"
+          :options="typeOptions"
           optionLabel="label"
           optionValue="value"
-          placeholder="جميع الخدمات"
+          placeholder="جميع أنواع الخدمات"
           showClear
           @change="fetchItems"
           class="filter-select"
         />
-      </div>
+      </template>
 
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
-          <i class="pi pi-plus"></i> تسجيل قراءة جديدة
+          <i class="pi pi-plus"></i> تسجيل قراءة عداد
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="unit.unit_number" header="الوحدة العقارية" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('utility_type')" field="utility_type" header="نوع الخدمة" sortable>
           <template #body="slotProps">
-            <div class="utility-cell">
-              <div class="icon-avatar">
-                <i :class="slotProps.data.utility_type === 'electricity' ? 'pi pi-bolt text-amber' : 'pi pi-compass text-blue'"></i>
-              </div>
+            <span class="utility-badge">
+              <i :class="slotProps.data.utility_type === 'electricity' ? 'pi pi-bolt text-warning' : 'pi pi-compass text-info'"></i>
+              {{ typeLabels[slotProps.data.utility_type] || slotProps.data.utility_type }}
+            </span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('unit.unit_number')" field="unit.unit_number" header="الوحدة والمبنى" sortable>
+          <template #body="slotProps">
+            <div class="unit-cell">
               <div class="cell-text">
                 <span class="font-bold">وحدة #{{ slotProps.data.unit?.unit_number || '—' }}</span>
                 <span class="sub-text">{{ slotProps.data.unit?.building?.name || 'مبنى غير محدد' }}</span>
@@ -69,87 +51,138 @@
           </template>
         </Column>
 
-        <Column field="utility_type" header="نوع الخدمة" sortable>
-          <template #body="slotProps">
-            <span class="type-pill">
-              {{ slotProps.data.utility_type === 'electricity' ? 'كهرباء' : 'ماء' }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="reading_date" header="تاريخ القراءة" sortable>
+        <Column v-if="!hiddenColumns.includes('reading_date')" field="reading_date" header="تاريخ القراءة" sortable>
           <template #body="slotProps">
             <span class="date-text">{{ slotProps.data.reading_date || '—' }}</span>
           </template>
         </Column>
 
-        <Column field="previous_reading" header="القراءة السابقة">
+        <Column v-if="!hiddenColumns.includes('previous_reading')" field="previous_reading" header="القراءة السابقة">
           <template #body="slotProps">
-            <span>{{ slotProps.data.previous_reading || 0 }}</span>
+            <span class="text-muted">{{ slotProps.data.previous_reading || 0 }}</span>
           </template>
         </Column>
 
-        <Column field="current_reading" header="القراءة الحالية">
+        <Column v-if="!hiddenColumns.includes('current_reading')" field="current_reading" header="القراءة الحالية">
           <template #body="slotProps">
             <span class="font-bold">{{ slotProps.data.current_reading || 0 }}</span>
           </template>
         </Column>
 
-        <Column field="consumption" header="معدل الاستهلاك" sortable>
+        <Column v-if="!hiddenColumns.includes('consumption')" field="consumption" header="معدل الاستهلاك" sortable>
           <template #body="slotProps">
             <span class="consumption-tag">{{ slotProps.data.consumption || 0 }} وحدة</span>
           </template>
         </Column>
 
-        <Column field="total" header="إجمالي التكلفة" sortable>
+        <Column v-if="!hiddenColumns.includes('total')" field="total" header="إجمالي التكلفة" sortable>
           <template #body="slotProps">
             <span class="total-amount">{{ formatCurrency(slotProps.data.total) }}</span>
           </template>
         </Column>
-
-        <!-- Empty State -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-bolt"></i>
-            <p>لا توجد قراءات عدادات مسجلة تطابق البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+      </template>
+    </EnterpriseTable>
 
     <!-- Dialog -->
     <Dialog
       v-model:visible="showDialog"
       header="تسجيل قراءة عداد جديدة"
       modal
-      :style="{ width: '520px' }"
+      :style="{ width: '540px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-field">
-          <label>الوحدة العقارية <span class="required">*</span></label>
-          <Select v-model="form.unit_id" :options="units" optionLabel="label" optionValue="id" placeholder="اختر الوحدة المستهدفة" class="w-full" />
+        <!-- Section 1: Unit & Type -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-bolt"></i>
+            <span>الوحدة ونوع الخدمة</span>
+          </div>
+
+          <FormField
+            label="الوحدة العقارية"
+            required
+            forId="util-unit"
+            :errorMessage="errors.unit_id"
+            helpText="اختر الوحدة المزودة بالعداد"
+          >
+            <Select
+              id="util-unit"
+              v-model="form.unit_id"
+              :options="units"
+              optionLabel="label"
+              optionValue="id"
+              placeholder="اختر الوحدة المستهدفة"
+              class="w-full"
+              @change="clearFieldError('unit_id')"
+            />
+          </FormField>
+
+          <div class="form-grid-2">
+            <FormField
+              label="نوع الخدمة"
+              forId="util-type"
+            >
+              <Select
+                id="util-type"
+                v-model="form.utility_type"
+                :options="typeOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+              />
+            </FormField>
+
+            <FormField
+              label="تاريخ القراءة"
+              forId="util-date"
+            >
+              <DatePicker
+                id="util-date"
+                v-model="form.reading_date"
+                class="w-full"
+                placeholder="اختر التاريخ"
+              />
+            </FormField>
+          </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>نوع الخدمة</label>
-            <Select v-model="form.utility_type" :options="typeOptions" optionLabel="label" optionValue="value" class="w-full" />
+        <!-- Section 2: Meter Readings -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-chart-line"></i>
+            <span>قراءات العداد</span>
           </div>
-          <div class="form-field flex-1">
-            <label>تاريخ القراءة</label>
-            <DatePicker v-model="form.reading_date" class="w-full" placeholder="اختر التاريخ" />
-          </div>
-        </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>القراءة السابقة</label>
-            <InputNumber v-model="form.previous_reading" class="w-full" :min="0" />
-          </div>
-          <div class="form-field flex-1">
-            <label>القراءة الحالية <span class="required">*</span></label>
-            <InputNumber v-model="form.current_reading" class="w-full" :min="0" />
+          <div class="form-grid-2">
+            <FormField
+              label="القراءة السابقة"
+              forId="util-prev"
+            >
+              <InputNumber
+                id="util-prev"
+                v-model="form.previous_reading"
+                class="w-full"
+                :min="0"
+              />
+            </FormField>
+
+            <FormField
+              label="القراءة الحالية"
+              required
+              forId="util-curr"
+              :errorMessage="errors.current_reading"
+            >
+              <InputNumber
+                id="util-curr"
+                v-model="form.current_reading"
+                class="w-full"
+                :min="0"
+                placeholder="أدخل القراءة الحالية"
+                @input="clearFieldError('current_reading')"
+              />
+            </FormField>
           </div>
         </div>
 
@@ -166,34 +199,74 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import api from '@/services/api'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const dt = ref(null)
 const items = ref([])
 const units = ref([])
 const loading = ref(false)
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
 
 const filters = reactive({ utility_type: null })
 
-const form = reactive({ unit_id: null, utility_type: 'electricity', reading_date: null, previous_reading: 0, current_reading: 0 })
-
-const typeFilter = ref([{ label: 'كهرباء', value: 'electricity' }, { label: 'ماء', value: 'water' }])
-const typeOptions = ref([{ label: 'كهرباء', value: 'electricity' }, { label: 'ماء', value: 'water' }])
-
-const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) return items.value
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.unit?.unit_number?.toString().toLowerCase().includes(q) ||
-    item.unit?.building?.name?.toLowerCase().includes(q)
-  )
+const form = reactive({
+  unit_id: null, utility_type: 'electricity', reading_date: null,
+  previous_reading: 0, current_reading: null
 })
+
+const errors = reactive({
+  unit_id: '', current_reading: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+const tableColumns = [
+  { field: 'utility_type', header: 'نوع الخدمة' },
+  { field: 'unit.unit_number', header: 'الوحدة والمبنى' },
+  { field: 'reading_date', header: 'تاريخ القراءة' },
+  { field: 'previous_reading', header: 'القراءة السابقة' },
+  { field: 'current_reading', header: 'القراءة الحالية' },
+  { field: 'consumption', header: 'معدل الاستهلاك' },
+  { field: 'total', header: 'إجمالي التكلفة' }
+]
+
+const typeLabels = { electricity: 'كهرباء', water: 'مياه', gas: 'غاز' }
+const typeOptions = ref([
+  { label: 'كهرباء', value: 'electricity' },
+  { label: 'مياه', value: 'water' },
+  { label: 'غاز', value: 'gas' }
+])
+
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.unit_id) {
+    errors.unit_id = 'يرجى اختيار الوحدة العقارية'
+    isValid = false
+  }
+
+  if (form.current_reading === null || form.current_reading === undefined || form.current_reading < 0) {
+    errors.current_reading = 'يرجى إدخال القراءة الحالية للعداد'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
 
 function formatCurrency(amount) {
   if (!amount) return '0 ₪'
@@ -212,142 +285,74 @@ async function fetchUnits() {
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
-    const params = filters.utility_type ? { type: filters.utility_type } : {}
+    const params = filters.utility_type ? { utility_type: filters.utility_type } : {}
     const { data } = await api.get('/utility-readings', { params })
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل القراءات: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل قراءات الخدمات: ' + (err.response?.data?.message || err.message))
     items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
+function resetForm() {
+  Object.assign(form, {
+    unit_id: null, utility_type: 'electricity', reading_date: null,
+    previous_reading: 0, current_reading: null
+  })
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
 function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
   showDialog.value = false
-  Object.assign(form, { unit_id: null, utility_type: 'electricity', reading_date: null, previous_reading: 0, current_reading: 0 })
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.unit_id || form.current_reading === null) {
-    errorMsg.value = 'يرجى اختيار الوحدة وإدخال القراءة الحالية'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
-    await api.post('/utility-readings', form)
-    showToast('تم حفظ القراءة بنجاح')
-    closeDialog()
-    await fetchItems()
+    const { data } = await api.post('/utility-readings', form)
+    items.value.unshift(data.data)
+    toast.success('تم تسجيل قراءة العداد بنجاح')
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر حفظ البيانات'
+    toast.error(err.response?.data?.message || 'تعذر تسجيل قراءة العداد')
   } finally {
     saving.value = false
   }
 }
-
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
-}
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
+.utility-badge {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
+  gap: 6px;
+  background: #F1F5F9;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 250px !important;
-}
-
-.filter-select {
-  width: 170px !important;
-}
-
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.utility-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.icon-avatar {
-  width: 36px;
-  height: 36px;
-  background: #FFFBEB;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-}
-.cell-text {
+.unit-cell {
   display: flex;
   flex-direction: column;
 }
@@ -360,21 +365,18 @@ function exportCSV() {
   color: var(--text-secondary);
 }
 
-.type-pill {
-  background: #F1F5F9;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  font-weight: 500;
+.date-text {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 
 .consumption-tag {
   background: #EFF6FF;
-  color: var(--accent);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  font-size: 12px;
+  color: #2563EB;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
   font-weight: 600;
+  font-size: 12px;
 }
 
 .total-amount {
@@ -382,17 +384,10 @@ function exportCSV() {
   color: var(--text-primary);
 }
 
-.date-text {
-  font-size: 13px;
-  color: var(--text-secondary);
+.filter-select {
+  width: 170px !important;
 }
 
-.form-row {
-  display: flex;
-  gap: 14px;
-}
-
-.required {
-  color: var(--danger);
-}
+.text-warning { color: #F59E0B; }
+.text-info { color: #0EA5E9; }
 </style>

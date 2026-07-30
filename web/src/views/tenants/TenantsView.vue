@@ -1,60 +1,29 @@
 <template>
   <div class="page-view">
     <!-- Header Banner / Feedback -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with SaaS Filter & Search -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText
-            v-model="filters.search"
-            placeholder="بحث بالاسم أو رقم الهوية أو الهاتف..."
-            class="search-input-field"
-            @input="fetchItems"
-          />
-        </div>
-      </div>
-
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="البحث باسم المستأجر، رقم الهوية، أو الهاتف..."
+      emptyTitle="لا يوجد مستأجرين مسجلين"
+      emptySubtitle="لم يتم العثور على أي مستأجرين يطابقون خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+      @row-click="onRowClick"
+    >
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
           <i class="pi pi-user-plus"></i> إضافة مستأجر جديد
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="items"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="first_name" header="اسم المستأجر" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('first_name')" field="first_name" header="اسم المستأجر" sortable>
           <template #body="slotProps">
-            <div class="tenant-cell">
+            <div class="tenant-name-cell">
               <div class="user-avatar-circle">
-                <span>{{ slotProps.data.first_name?.charAt(0) }}</span>
+                <span>{{ slotProps.data.first_name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="cell-text">
                 <span class="font-bold">{{ slotProps.data.first_name }} {{ slotProps.data.last_name }}</span>
@@ -64,107 +33,182 @@
           </template>
         </Column>
 
-        <Column field="phone" header="رقم الهاتف">
+        <Column v-if="!hiddenColumns.includes('phone')" field="phone" header="رقم الهاتف" sortable>
           <template #body="slotProps">
-            <span class="phone-link" v-if="slotProps.data.phone">
-              <i class="pi pi-phone text-blue"></i>
+            <span class="phone-text" v-if="slotProps.data.phone">
+              <i class="pi pi-phone text-muted"></i>
               {{ slotProps.data.phone }}
             </span>
             <span v-else class="text-muted">—</span>
           </template>
         </Column>
 
-        <Column field="email" header="البريد الإلكتروني">
+        <Column v-if="!hiddenColumns.includes('email')" field="email" header="البريد الإلكتروني" sortable>
           <template #body="slotProps">
-            <span v-if="slotProps.data.email" class="email-text">{{ slotProps.data.email }}</span>
+            <span class="email-text" v-if="slotProps.data.email">
+              <i class="pi pi-envelope text-muted"></i>
+              {{ slotProps.data.email }}
+            </span>
             <span v-else class="text-muted">—</span>
           </template>
         </Column>
 
-        <Column header="الوحدة المأجورة">
+        <Column v-if="!hiddenColumns.includes('current_unit')" field="current_unit" header="الوحدة المأجورة">
           <template #body="slotProps">
-            <span v-if="slotProps.data.current_unit" class="unit-badge">
-              <i class="pi pi-home"></i>
-              وحدة #{{ slotProps.data.current_unit.unit_number }}
+            <span v-if="slotProps.data.active_contracts && slotProps.data.active_contracts.length" class="unit-pill">
+              <i class="pi pi-home text-blue"></i>
+              وحدة #{{ slotProps.data.active_contracts[0]?.unit?.unit_number }}
             </span>
-            <span v-else class="text-muted">لا يوجد عقد نشط</span>
+            <span v-else class="text-muted font-italic">لا يوجد عقد نشط</span>
           </template>
         </Column>
 
-        <Column header="الحالة">
+        <Column v-if="!hiddenColumns.includes('is_active')" field="is_active" header="الحالة" sortable>
           <template #body="slotProps">
             <span
               class="status-badge"
-              :class="slotProps.data.is_active ? 'status-available' : 'status-expired'"
+              :class="slotProps.data.active_contracts && slotProps.data.active_contracts.length ? 'status-occupied' : 'status-available'"
             >
-              {{ slotProps.data.is_active ? 'نشط' : 'غير نشط' }}
+              {{ slotProps.data.active_contracts && slotProps.data.active_contracts.length ? 'مستأجر حالي' : 'مستأجر سابق' }}
             </span>
           </template>
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 100px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
           <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="editItem(slotProps.data)" title="تعديل">
-                <i class="pi pi-pencil"></i>
-              </button>
-              <button class="btn-icon btn-danger" @click="confirmDelete(slotProps.data)" title="حذف">
-                <i class="pi pi-trash"></i>
-              </button>
-            </div>
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
         </Column>
+      </template>
+    </EnterpriseTable>
 
-        <!-- Empty State -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-users"></i>
-            <p>لا يوجد مستأجرين مسجلين يطابقون البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+    <!-- Side Drawer Inspection -->
+    <EntityDrawer
+      v-model="showDrawer"
+      entityType="tenant"
+      :entityId="selectedTenantId"
+    />
 
     <!-- Form Dialog -->
     <Dialog
       v-model:visible="showDialog"
       :header="isEditing ? 'تعديل بيانات المستأجر' : 'إضافة مستأجر جديد'"
       modal
-      :style="{ width: '580px' }"
+      :style="{ width: '600px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>الاسم الأول <span class="required">*</span></label>
-            <InputText v-model="form.first_name" placeholder="مثال: خالد" class="w-full" />
+        <!-- Section 1: Personal Info -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-user"></i>
+            <span>البيانات الشخصية وهوية المستأجر</span>
           </div>
-          <div class="form-field flex-1">
-            <label>اسم العائلة <span class="required">*</span></label>
-            <InputText v-model="form.last_name" placeholder="مثال: العلي" class="w-full" />
+
+          <div class="form-grid-2">
+            <FormField
+              label="الاسم الأول"
+              required
+              forId="tenant-firstname"
+              :errorMessage="errors.first_name"
+            >
+              <InputText
+                id="tenant-firstname"
+                v-model="form.first_name"
+                placeholder="مثال: خالد"
+                class="w-full"
+                @input="clearFieldError('first_name')"
+              />
+            </FormField>
+
+            <FormField
+              label="اسم العائلة"
+              required
+              forId="tenant-lastname"
+              :errorMessage="errors.last_name"
+            >
+              <InputText
+                id="tenant-lastname"
+                v-model="form.last_name"
+                placeholder="مثال: العلي"
+                class="w-full"
+                @input="clearFieldError('last_name')"
+              />
+            </FormField>
           </div>
+
+          <FormField
+            label="رقم الهوية الوطنية / رقم الجواز"
+            required
+            forId="tenant-idnum"
+            :errorMessage="errors.id_number"
+            helpText="يجب إدخال رقم هويّة رسمية صحيح للتوثيق في العقود"
+          >
+            <InputText
+              id="tenant-idnum"
+              v-model="form.id_number"
+              placeholder="أدخل رقم الهوية الرسمية (9 أرقام)"
+              class="w-full"
+              @input="clearFieldError('id_number')"
+            />
+          </FormField>
         </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>رقم الهوية / الجواز <span class="required">*</span></label>
-            <InputText v-model="form.id_number" placeholder="أدخل رقم الهوية الرسمية" class="w-full" />
+        <!-- Section 2: Contact Info -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-phone"></i>
+            <span>معلومات التواصل والعنوان</span>
           </div>
-          <div class="form-field flex-1">
-            <label>رقم الهاتف</label>
-            <InputText v-model="form.phone" placeholder="059xxxxxxx" class="w-full" />
+
+          <div class="form-grid-2">
+            <FormField
+              label="رقم الهاتف"
+              required
+              forId="tenant-phone"
+              :errorMessage="errors.phone"
+              helpText="مثال: 059xxxxxxx"
+            >
+              <InputText
+                id="tenant-phone"
+                v-model="form.phone"
+                placeholder="059xxxxxxx"
+                class="w-full"
+                @input="clearFieldError('phone')"
+              />
+            </FormField>
+
+            <FormField
+              label="البريد الإلكتروني"
+              forId="tenant-email"
+              :errorMessage="errors.email"
+              helpText="لإرسال إشعارات الفواتير تلقائياً"
+            >
+              <InputText
+                id="tenant-email"
+                v-model="form.email"
+                type="email"
+                placeholder="example@domain.com"
+                class="w-full"
+                @input="clearFieldError('email')"
+              />
+            </FormField>
           </div>
-        </div>
 
-        <div class="form-field">
-          <label>البريد الإلكتروني</label>
-          <InputText v-model="form.email" type="email" placeholder="example@domain.com" class="w-full" />
-        </div>
-
-        <div class="form-field">
-          <label>العنوان الدائم / الملاحظات</label>
-          <Textarea v-model="form.address" placeholder="أدخل أي عنوان سكن دائم أو ملاحظات إضافية" class="w-full" rows="2" />
+          <FormField
+            label="العنوان الدائم / ملاحظات إضافية"
+            forId="tenant-address"
+          >
+            <Textarea
+              id="tenant-address"
+              v-model="form.address"
+              placeholder="أدخل أي عنوان سكن دائم، جهة عمل، أو ملاحظات مرجعية"
+              class="w-full"
+              rows="2"
+            />
+          </FormField>
         </div>
 
         <div class="form-actions">
@@ -178,100 +222,191 @@
     </Dialog>
 
     <!-- Delete Confirmation Modal -->
-    <Dialog v-model:visible="showDeleteModal" header="تأكيد عملية الحذف" modal :style="{ width: '400px' }">
-      <div class="dialog-body text-center">
-        <i class="pi pi-exclamation-triangle warning-icon"></i>
-        <p class="delete-msg">هل أنت متأكد من حذف المستأجر <strong>{{ itemToDelete?.first_name }} {{ itemToDelete?.last_name }}</strong>؟</p>
-        <span class="delete-sub">لا يمكن التراجع عن هذه العملية إذا كان له عقود مسجلة.</span>
-        <div class="form-actions center-actions">
-          <button class="btn-secondary" @click="showDeleteModal = false">إلغاء</button>
-          <button class="btn-primary btn-danger-action" @click="deleteItemConfirmed">تأكيد الحذف</button>
-        </div>
-      </div>
-    </Dialog>
+    <ConfirmModal
+      v-model:visible="showDeleteModal"
+      title="تأكيد الحذف"
+      :message="`هل أنت متأكد من حذف المستأجر <strong>${ itemToDelete?.first_name } ${ itemToDelete?.last_name }</strong>؟`"
+      variant="danger"
+      confirmText="تأكيد الحذف"
+      @confirm="deleteItemConfirmed"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import EntityDrawer from '@/components/common/EntityDrawer.vue'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const dt = ref(null)
 const items = ref([])
 const loading = ref(false)
+const toast = useToastStore()
+const router = useRouter()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
+
+const showDrawer = ref(false)
+const selectedTenantId = ref(null)
 
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
 
-const filters = reactive({ search: '' })
+const tableColumns = [
+  { field: 'first_name', header: 'اسم المستأجر' },
+  { field: 'phone', header: 'رقم الهاتف' },
+  { field: 'email', header: 'البريد الإلكتروني' },
+  { field: 'current_unit', header: 'الوحدة المأجورة' },
+  { field: 'is_active', header: 'الحالة' }
+]
 
 const form = reactive({
   id: null, first_name: '', last_name: '', id_number: '', phone: '', email: '', address: ''
 })
 
+const errors = reactive({
+  first_name: '', last_name: '', id_number: '', phone: '', email: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.first_name || !form.first_name.trim()) {
+    errors.first_name = 'يرجى إدخال الاسم الأول'
+    isValid = false
+  }
+
+  if (!form.last_name || !form.last_name.trim()) {
+    errors.last_name = 'يرجى إدخال اسم العائلة'
+    isValid = false
+  }
+
+  if (!form.id_number || !form.id_number.trim()) {
+    errors.id_number = 'يرجى إدخال رقم الهوية الوطنية أو الجواز'
+    isValid = false
+  }
+
+  if (!form.phone || !form.phone.trim()) {
+    errors.phone = 'يرجى إدخال رقم الهاتف للتواصل'
+    isValid = false
+  }
+
+  if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    errors.email = 'صيغة البريد الإلكتروني غير صحيحة'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'معاينة الملف الشخصي',
+      icon: 'pi pi-eye',
+      command: () => router.push(`/tenants/${row.id}`)
+    },
+    {
+      label: 'تعديل البيانات',
+      icon: 'pi pi-pencil',
+      command: () => editItem(row)
+    },
+    {
+      label: 'حذف المستأجر',
+      icon: 'pi pi-trash',
+      danger: true,
+      command: () => confirmDelete(row)
+    }
+  ]
+}
+
 onMounted(() => fetchItems())
+
+function onRowClick(event) {
+  if (event.data?.id) {
+    router.push(`/tenants/${event.data.id}`)
+  }
+}
 
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
-    const params = filters.search ? { search: filters.search } : {}
-    const { data } = await api.get('/tenants', { params })
+    const { data } = await api.get('/tenants')
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل قائمة المستأجرين: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل قائمة المستأجرين: ' + (err.response?.data?.message || err.message))
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
 function editItem(item) {
+  resetForm()
   Object.assign(form, item)
   isEditing.value = true
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function resetForm() {
   isEditing.value = false
-  form.id = null; form.first_name = ''; form.last_name = ''; form.id_number = ''
-  form.phone = ''; form.email = ''; form.address = ''
+  Object.assign(form, { id: null, first_name: '', last_name: '', id_number: '', phone: '', email: '', address: '' })
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.first_name || !form.last_name || !form.id_number) {
-    errorMsg.value = 'يرجى تعبئة الحقول الأساسية (الاسم ورقم الهوية)'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
     if (isEditing.value) {
-      await api.put(`/tenants/${form.id}`, form)
-      showToast('تم تعديل بيانات المستأجر بنجاح')
+      const { data } = await api.put(`/tenants/${form.id}`, form)
+      const idx = items.value.findIndex(i => i.id === form.id)
+      if (idx > -1) items.value[idx] = data.data
+      toast.success('تم تعديل بيانات المستأجر بنجاح')
     } else {
-      await api.post('/tenants', form)
-      showToast('تم إضافة المستأجر بنجاح')
+      const { data } = await api.post('/tenants', form)
+      items.value.unshift(data.data)
+      toast.success('تم إضافة المستأجر بنجاح')
     }
-    closeDialog()
-    await fetchItems()
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر حفظ البيانات'
+    toast.error(err.response?.data?.message || 'تعذر حفظ البيانات')
   } finally {
     saving.value = false
   }
@@ -286,86 +421,18 @@ async function deleteItemConfirmed() {
   if (!itemToDelete.value) return
   try {
     await api.delete(`/tenants/${itemToDelete.value.id}`)
-    showToast('تم حذف المستأجر بنجاح')
+    toast.success('تم حذف المستأجر بنجاح')
     showDeleteModal.value = false
     itemToDelete.value = null
     await fetchItems()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'خطأ أثناء الحذف'
+    toast.error(err.response?.data?.message || 'خطأ أثناء عملية الحذف')
   }
-}
-
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
 }
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 300px !important;
-}
-
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.tenant-cell {
+.tenant-name-cell {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -374,7 +441,7 @@ function exportCSV() {
   width: 36px;
   height: 36px;
   background: #EFF6FF;
-  color: #2563EB;
+  color: var(--accent);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -395,46 +462,31 @@ function exportCSV() {
   color: var(--text-secondary);
 }
 
-.phone-link {
+.phone-text, .email-text {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  direction: ltr;
 }
 
-.email-text {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.unit-badge {
+.unit-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ECFDF5;
-  color: #047857;
-  border: 1px solid #A7F3D0;
+  background: #F1F5F9;
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
 }
 
-.form-row {
-  display: flex;
-  gap: 14px;
+.font-italic {
+  font-style: italic;
+  font-size: 12.5px;
 }
 
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
-}
-
-.required {
-  color: var(--danger);
+.text-blue {
+  color: #2563EB;
 }
 
 .text-center {

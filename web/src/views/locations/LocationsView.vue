@@ -1,60 +1,24 @@
 <template>
   <div class="page-view">
     <!-- Header Banner / Feedback -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with SaaS Filter & Actions -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="البحث باسم الموقع أو العنوان..." class="search-input-field" />
-        </div>
-        <Select
-          v-model="filters.is_active"
-          :options="statusFilterOptions"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="تصفية حسب الحالة"
-          showClear
-          class="filter-select"
-        />
-      </div>
-      
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="البحث باسم الموقع أو العنوان..."
+      emptyTitle="لا توجد مواقع عقارية مسجلة"
+      emptySubtitle="لم يتم العثور على أي مواقع تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
           <i class="pi pi-plus"></i> إضافة موقع جديد
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="name" header="اسم الموقع العقاري" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('name')" field="name" header="اسم الموقع العقاري" sortable>
           <template #body="slotProps">
             <div class="location-name-cell">
               <div class="icon-avatar">
@@ -62,26 +26,31 @@
               </div>
               <div class="cell-text">
                 <span class="font-bold">{{ slotProps.data.name }}</span>
-                <span class="sub-text">{{ slotProps.data.address || 'عنوان غير مسجل' }}</span>
+                <span class="sub-text">كود: LOC-{{ slotProps.data.id }}</span>
               </div>
             </div>
           </template>
         </Column>
 
-        <Column field="buildings_count" header="عدد المباني" sortable>
+        <Column v-if="!hiddenColumns.includes('address')" field="address" header="العنوان">
           <template #body="slotProps">
-            <span class="count-badge">
-              <i class="pi pi-building text-amber"></i>
+            <span class="address-text">{{ slotProps.data.address || '—' }}</span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('buildings_count')" field="buildings_count" header="عدد المباني" sortable>
+          <template #body="slotProps">
+            <span class="buildings-count-pill">
               {{ slotProps.data.buildings_count || 0 }} مباني
             </span>
           </template>
         </Column>
 
-        <Column field="is_active" header="الحالة التشغيلية" sortable>
+        <Column v-if="!hiddenColumns.includes('is_active')" field="is_active" header="الحالة" sortable>
           <template #body="slotProps">
             <span
               class="status-badge"
-              :class="slotProps.data.is_active ? 'status-available' : 'status-expired'"
+              :class="slotProps.data.is_active ? 'status-active' : 'status-expired'"
             >
               {{ slotProps.data.is_active ? 'نشط' : 'غير نشط' }}
             </span>
@@ -89,56 +58,82 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 100px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
           <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="editItem(slotProps.data)" title="تعديل">
-                <i class="pi pi-pencil"></i>
-              </button>
-              <button class="btn-icon btn-danger" @click="confirmDelete(slotProps.data)" title="حذف">
-                <i class="pi pi-trash"></i>
-              </button>
-            </div>
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
         </Column>
-
-        <!-- Empty & Loading States -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-map-marker"></i>
-            <p>لا توجد مواقع عقارية مسجلة تطابق خيارات البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+      </template>
+    </EnterpriseTable>
 
     <!-- Form Dialog with Clean SaaS Sections -->
     <Dialog
       v-model:visible="showDialog"
       :header="isEditing ? 'تعديل بيانات الموقع العقاري' : 'إضافة موقع عقاري جديد'"
       modal
-      :style="{ width: '500px' }"
+      :style="{ width: '520px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-field">
-          <label>اسم الموقع العقاري <span class="required">*</span></label>
-          <InputText v-model="form.name" placeholder="مثال: مجمع الصفوة التجاري" class="w-full" />
+        <!-- Section 1: Identity & Address -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-map-marker"></i>
+            <span>الاسم والعنوان</span>
+          </div>
+
+          <FormField
+            label="اسم الموقع العقاري"
+            required
+            forId="loc-name"
+            :errorMessage="errors.name"
+            helpText="مثال: مجمع الصفوة التجاري أو حي النخيل"
+          >
+            <InputText
+              id="loc-name"
+              v-model="form.name"
+              placeholder="مثال: مجمع الصفوة التجاري"
+              class="w-full"
+              @input="clearFieldError('name')"
+            />
+          </FormField>
+
+          <FormField
+            label="العنوان والتفاصيل"
+            forId="loc-address"
+            helpText="أدخل العنوان التفصيلي أو المرفقات التوضيحية للموقع"
+          >
+            <Textarea
+              id="loc-address"
+              v-model="form.address"
+              placeholder="أدخل العنوان الحي، الشارع، أو الحي السكني"
+              class="w-full"
+              rows="3"
+            />
+          </FormField>
         </div>
 
-        <div class="form-field">
-          <label>العنوان والتفاصيل</label>
-          <Textarea v-model="form.address" placeholder="أدخل العنوان الحي، الشارع، أو الحي السكني" class="w-full" rows="3" />
-        </div>
+        <!-- Section 2: Status -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-cog"></i>
+            <span>الحالة التشغيلية</span>
+          </div>
 
-        <div class="form-field">
-          <label>حالة التشغيل</label>
-          <SelectButton
-            v-model="form.is_active"
-            :options="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
+          <FormField
+            label="حالة التشغيل"
+            forId="loc-status"
+            helpText="المواقع غير النشطة تكون مخفية عند اختيار المواقع للمباني الجديدة"
+          >
+            <SelectButton
+              id="loc-status"
+              v-model="form.is_active"
+              :options="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+            />
+          </FormField>
         </div>
 
         <div class="form-actions">
@@ -152,111 +147,145 @@
     </Dialog>
 
     <!-- Delete Confirmation Modal -->
-    <Dialog
+    <ConfirmModal
       v-model:visible="showDeleteModal"
-      header="تأكيد عملية الحذف"
-      modal
-      :style="{ width: '400px' }"
-    >
-      <div class="dialog-body text-center">
-        <i class="pi pi-exclamation-triangle warning-icon"></i>
-        <p class="delete-msg">هل أنت متأكد من حذف الموقع <strong>{{ itemToDelete?.name }}</strong>؟</p>
-        <span class="delete-sub">قد يؤدي حذف هذا الموقع إلى التأثير على المباني والوحدات المرتبطة به.</span>
-        <div class="form-actions center-actions">
-          <button class="btn-secondary" @click="showDeleteModal = false">إلغاء</button>
-          <button class="btn-primary btn-danger-action" @click="deleteItemConfirmed">تأكيد الحذف</button>
-        </div>
-      </div>
-    </Dialog>
+      title="تأكيد الحذف"
+      :message="`هل أنت متأكد من حذف الموقع <strong>${ itemToDelete?.name }</strong>؟`"
+      variant="danger"
+      confirmText="تأكيد الحذف"
+      @confirm="deleteItemConfirmed"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import api from '@/services/api'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const dt = ref(null)
 const items = ref([])
 const loading = ref(false)
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
 
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
 
-const filters = reactive({ is_active: null })
-
 const form = reactive({
   id: null, name: '', address: '', is_active: true
 })
+
+const errors = reactive({
+  name: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+const tableColumns = [
+  { field: 'name', header: 'اسم الموقع العقاري' },
+  { field: 'address', header: 'العنوان' },
+  { field: 'buildings_count', header: 'عدد المباني' },
+  { field: 'is_active', header: 'الحالة' }
+]
 
 const statusOptions = ref([
   { label: 'نشط', value: true },
   { label: 'غير نشط', value: false }
 ])
 
-const statusFilterOptions = ref([
-  { label: 'نشط', value: true },
-  { label: 'غير نشط', value: false }
-])
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
 
-const filteredItems = computed(() => {
-  return items.value.filter(item => {
-    const matchesSearch = !searchQuery.value.trim() ||
-      item.name?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      item.address?.toLowerCase().includes(searchQuery.value.toLowerCase())
-    
-    const matchesStatus = filters.is_active === null || item.is_active === filters.is_active
-    return matchesSearch && matchesStatus
-  })
-})
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
 
-onMounted(() => { fetchItems() })
+  if (!form.name || !form.name.trim()) {
+    errors.name = 'يرجى إدخال اسم الموقع العقاري'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'تعديل',
+      icon: 'pi pi-pencil',
+      command: () => editItem(row)
+    },
+    {
+      label: 'حذف الموقع',
+      icon: 'pi pi-trash',
+      danger: true,
+      command: () => confirmDelete(row)
+    }
+  ]
+}
+
+onMounted(() => fetchItems())
 
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
     const { data } = await api.get('/locations')
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل المواقع: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل قائمة المواقع: ' + (err.response?.data?.message || err.message))
+    items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
 function editItem(item) {
+  resetForm()
   Object.assign(form, item)
   isEditing.value = true
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function resetForm() {
   isEditing.value = false
-  form.id = null; form.name = ''; form.address = ''; form.is_active = true
+  form.id = null
+  form.name = ''
+  form.address = ''
+  form.is_active = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.name) {
-    errorMsg.value = 'يرجى إدخال اسم الموقع العقاري'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
@@ -264,15 +293,16 @@ async function saveItem() {
       const { data } = await api.put(`/locations/${form.id}`, form)
       const idx = items.value.findIndex(i => i.id === form.id)
       if (idx > -1) items.value[idx] = data.data
-      showToast('تم تعديل الموقع العقاري بنجاح')
+      toast.success('تم تعديل بيانات الموقع بنجاح')
     } else {
       const { data } = await api.post('/locations', form)
       items.value.unshift(data.data)
-      showToast('تم إضافة الموقع العقاري بنجاح')
+      toast.success('تم إضافة الموقع بنجاح')
     }
-    closeDialog()
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر حفظ البيانات'
+    toast.error(err.response?.data?.message || 'تعذر حفظ بيانات الموقع')
   } finally {
     saving.value = false
   }
@@ -287,89 +317,17 @@ async function deleteItemConfirmed() {
   if (!itemToDelete.value) return
   try {
     await api.delete(`/locations/${itemToDelete.value.id}`)
-    showToast('تم حذف الموقع بنجاح')
+    toast.success('تم حذف الموقع بنجاح')
     showDeleteModal.value = false
     itemToDelete.value = null
     await fetchItems()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'خطأ أثناء عملية الحذف'
+    toast.error(err.response?.data?.message || 'خطأ أثناء عملية الحذف')
   }
-}
-
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
 }
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 260px !important;
-}
-
-.filter-select {
-  width: 180px !important;
-}
-
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
 .location-name-cell {
   display: flex;
   align-items: center;
@@ -398,28 +356,21 @@ function exportCSV() {
   color: var(--text-secondary);
 }
 
-.count-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: #F8FAFC;
-  border: 1px solid var(--border);
+.address-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.buildings-count-pill {
+  background: #F1F5F9;
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
 }
 
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
-}
-
-.required {
-  color: var(--danger);
+.text-blue {
+  color: #2563EB;
 }
 
 .text-center {

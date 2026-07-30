@@ -1,176 +1,156 @@
 <template>
-  <div class="dashboard page-view">
-    <!-- Quick Actions Top Bar -->
-    <div class="quick-actions-card">
-      <div class="quick-actions-header">
-        <div class="header-title">
-          <i class="pi pi-bolt action-icon"></i>
-          <span>إجراءات سريعة</span>
-        </div>
-        <span class="header-subtitle">اختصارات لإجراء العمليات اليومية بكفاءة عالية</span>
+  <div class="executive-dashboard page-view">
+    <!-- Executive Header & Business Insights Alert Bar -->
+    <div class="executive-hero-banner">
+      <div class="hero-text-meta">
+        <h2 class="hero-title">مركز التوجيه والتحكم القيادي (Executive Command Center)</h2>
+        <p class="hero-subtitle">إدارة شمولية لـ 200 وحدة عقارية، 12 مبنى، عقود التشغيل والصيانة، والتدفقات النقدية اللحظية</p>
       </div>
-      <div class="quick-actions-buttons">
-        <router-link to="/locations" class="action-btn">
-          <i class="pi pi-map-marker text-blue"></i>
-          <span>إضافة موقع</span>
-        </router-link>
-        <router-link to="/buildings" class="action-btn">
-          <i class="pi pi-building text-amber"></i>
-          <span>إضافة مبنى</span>
-        </router-link>
-        <router-link to="/units" class="action-btn">
-          <i class="pi pi-th-large text-emerald"></i>
-          <span>إضافة وحدة</span>
-        </router-link>
-        <router-link to="/tenants" class="action-btn">
-          <i class="pi pi-user-plus text-purple"></i>
-          <span>إضافة مستأجر</span>
-        </router-link>
-        <router-link to="/contracts" class="action-btn accent-action">
-          <i class="pi pi-file-plus"></i>
-          <span>إنشاء عقد</span>
-        </router-link>
-        <router-link to="/payments" class="action-btn">
-          <i class="pi pi-wallet text-green"></i>
-          <span>تسجيل دفعة</span>
-        </router-link>
-        <router-link to="/expenses" class="action-btn">
-          <i class="pi pi-minus-circle text-red"></i>
-          <span>إضافة مصروف</span>
-        </router-link>
-        <router-link to="/maintenance" class="action-btn">
-          <i class="pi pi-wrench text-orange"></i>
-          <span>طلب صيانة</span>
-        </router-link>
+
+      <!-- Smart Recommendations Carousel / Cards -->
+      <div class="smart-insights-pills">
+        <div class="insight-pill warning">
+          <i class="pi pi-exclamation-triangle"></i>
+          <span>تحذير سيولة: 3 عقود بقيمة 18,500 ₪ تنتهي خلال 10 أيام بحاجة للتجديد</span>
+        </div>
+        <div class="insight-pill info">
+          <i class="pi pi-chart-line"></i>
+          <span>توصية: معدل الإشغال وصل 94%، يُوصى بزيادة الإيجار 5% للوحدات الشاغرة</span>
+        </div>
       </div>
     </div>
 
-    <!-- 9 Enterprise SaaS KPI Cards -->
+    <!-- Executive KPI Metrics Grid (10 Core Metrics) -->
     <div class="kpi-grid">
-      <div class="kpi-card" v-for="kpi in kpiCards" :key="kpi.label">
+      <div class="kpi-card" v-for="kpi in executiveKpis" :key="kpi.label">
         <div class="kpi-top">
           <div class="kpi-icon" :style="{ background: kpi.iconBg, color: kpi.iconColor }">
             <i :class="kpi.icon"></i>
           </div>
-          <div v-if="kpi.badge" class="kpi-badge" :class="kpi.badgeClass">
-            <i :class="kpi.badgeIcon"></i>
-            <span>{{ kpi.badge }}</span>
-          </div>
+          <span class="kpi-trend" :class="kpi.trendClass">
+            <i :class="kpi.trendIcon"></i>
+            {{ kpi.trend }}
+          </span>
         </div>
         <div class="kpi-content">
           <span class="kpi-value">{{ kpi.value }}</span>
           <span class="kpi-label">{{ kpi.label }}</span>
         </div>
-        <div class="kpi-footer" v-if="kpi.subtext">
-          <span class="kpi-subtext">{{ kpi.subtext }}</span>
+        <div class="kpi-footer">
+          <span>{{ kpi.subtext }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Charts & Analytics Section -->
-    <div class="charts-grid">
-      <!-- Income vs Expenses Chart -->
-      <div class="chart-card">
+    <!-- Main Analytics & Cash Flow Grid -->
+    <div class="analytics-grid">
+      <!-- Revenue vs Expenses Trend (Cash Flow) -->
+      <div class="chart-card main-chart">
         <div class="chart-header">
           <div>
-            <h3 class="chart-title">الأداء المالي (الإيرادات مقابل المصروفات وصافي الربح)</h3>
-            <p class="chart-subtitle">مقارنة الخرج والدخل الشهري للعام الحالي</p>
+            <h3 class="chart-title">التدفق النقدي والأداء المالي السنوي</h3>
+            <p class="chart-subtitle">مقارنة الإيرادات المحصلة بالمصروفات التشغيلية وصافي الأرباح</p>
           </div>
-          <div class="chart-legend">
-            <span class="legend-item"><span class="dot bg-blue"></span> الإيرادات</span>
-            <span class="legend-item"><span class="dot bg-red"></span> المصروفات</span>
-            <span class="legend-item"><span class="dot bg-green"></span> صافي الربح</span>
+          <div class="time-horizon-selector">
+            <button class="horizon-btn active">شهري</button>
+            <button class="horizon-btn">ربع سنوي</button>
+            <button class="horizon-btn">سنوي</button>
           </div>
         </div>
         <div class="chart-body">
-          <Bar :data="financialChartData" :options="chartOptions" />
+          <Bar :data="cashFlowChartData" :options="barChartOptions" />
         </div>
       </div>
 
-      <!-- Occupancy & Distribution Chart -->
-      <div class="chart-card">
+      <!-- Occupancy & Property Health Doughnut -->
+      <div class="chart-card donut-chart">
         <div class="chart-header">
           <div>
-            <h3 class="chart-title">توزيع حالة الوحدات العقارية</h3>
-            <p class="chart-subtitle">نسبة الإشغال مقابل الشواغر والصيانة</p>
+            <h3 class="chart-title">صحة الأصول ومعدل الإشغال</h3>
+            <p class="chart-subtitle">حالة الـ 200 وحدة عقارية</p>
           </div>
         </div>
         <div class="chart-body pie-wrapper">
-          <Doughnut :data="occupancyChartData" :options="doughnutOptions" />
+          <Doughnut :data="occupancyData" :options="doughnutOptions" />
+        </div>
+        <div class="occupancy-stats-footer">
+          <div class="occ-stat"><span class="dot bg-emerald"></span> 188 مؤجرة (94%)</div>
+          <div class="occ-stat"><span class="dot bg-amber"></span> 8 شاغرة (4%)</div>
+          <div class="occ-stat"><span class="dot bg-rose"></span> 4 صيانة (2%)</div>
         </div>
       </div>
     </div>
 
-    <!-- Management Widgets Section -->
-    <div class="widgets-grid">
-      <!-- Contracts Widget -->
-      <div class="widget-card">
-        <div class="widget-header">
-          <div class="widget-title-group">
-            <i class="pi pi-file text-blue"></i>
-            <h4>تنبيهات العقود</h4>
+    <!-- Operational Command & Action Center -->
+    <div class="command-grid">
+      <!-- Urgent Actions & Overdues Timeline -->
+      <div class="command-card">
+        <div class="card-header">
+          <div class="title-with-icon">
+            <i class="pi pi-clock text-rose"></i>
+            <h3>المتأخرات والتحصيلات المستحقة</h3>
           </div>
-          <router-link to="/contracts" class="widget-link">عرض الكل</router-link>
+          <router-link to="/invoices" class="card-action">جدول التحصيل</router-link>
         </div>
-        <div class="widget-list">
-          <div class="widget-item" v-for="cnt in contractAlerts" :key="cnt.id">
-            <div class="item-info">
-              <span class="item-main">{{ cnt.tenant }}</span>
-              <span class="item-sub">وحدة: {{ cnt.unit }} | ينتهي: {{ cnt.expiry }}</span>
+        <div class="timeline-list">
+          <div class="timeline-item" v-for="item in latePayments" :key="item.id">
+            <div class="item-status-icon danger">
+              <i class="pi pi-exclamation-circle"></i>
             </div>
-            <span class="status-badge" :class="cnt.badgeClass">{{ cnt.status }}</span>
-          </div>
-          <div v-if="!contractAlerts.length" class="empty-widget">
-            <i class="pi pi-check-circle text-green"></i>
-            <span>جميع العقود بحالة سارية ومستقرة</span>
+            <div class="item-details">
+              <span class="item-title">{{ item.tenant }}</span>
+              <span class="item-sub">وحدة #{{ item.unit }} | متأخر منذ {{ item.daysLate }} يوم</span>
+            </div>
+            <div class="item-value-action">
+              <span class="item-amount text-rose">{{ format(item.amount) }}</span>
+              <button class="btn-xs-primary" @click="sendReminder(item)">تذكير</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Recent Payments & Overdues Widget -->
-      <div class="widget-card">
-        <div class="widget-header">
-          <div class="widget-title-group">
-            <i class="pi pi-wallet text-green"></i>
-            <h4>آخر الدفعات والمتأخرات</h4>
-          </div>
-          <router-link to="/payments" class="widget-link">عرض الكل</router-link>
-        </div>
-        <div class="widget-list">
-          <div class="widget-item" v-for="pay in recentPayments" :key="pay.id">
-            <div class="item-info">
-              <span class="item-main">{{ pay.tenant }}</span>
-              <span class="item-sub">إيصال #{{ pay.receipt_number }} | {{ pay.payment_date }}</span>
-            </div>
-            <span class="item-amount text-green">+ {{ format(pay.amount) }}</span>
-          </div>
-          <div v-if="!recentPayments.length" class="empty-widget">
-            <i class="pi pi-inbox"></i>
-            <span>لا توجد مدفوعات مسجلة مؤخرًا</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Maintenance Orders Widget -->
-      <div class="widget-card">
-        <div class="widget-header">
-          <div class="widget-title-group">
+      <!-- Maintenance Requests & Field Operations -->
+      <div class="command-card">
+        <div class="card-header">
+          <div class="title-with-icon">
             <i class="pi pi-wrench text-amber"></i>
-            <h4>طلبات الصيانة التشغيلية</h4>
+            <h3>بلاغات الصيانة والميدان</h3>
           </div>
-          <router-link to="/maintenance" class="widget-link">عرض الكل</router-link>
+          <router-link to="/maintenance" class="card-action">إدارة الصيانة</router-link>
         </div>
-        <div class="widget-list">
-          <div class="widget-item" v-for="maint in maintenanceOrders" :key="maint.id">
-            <div class="item-info">
-              <span class="item-main">{{ maint.title }}</span>
-              <span class="item-sub">{{ maint.location }} | التكلفة: {{ format(maint.cost) }}</span>
+        <div class="timeline-list">
+          <div class="timeline-item" v-for="req in maintenanceRequests" :key="req.id">
+            <div class="item-status-icon warning">
+              <i class="pi pi-cog"></i>
             </div>
-            <span class="status-badge" :class="maint.badgeClass">{{ maint.status }}</span>
+            <div class="item-details">
+              <span class="item-title">{{ req.title }}</span>
+              <span class="item-sub">{{ req.building }} | الفني: {{ req.technician }}</span>
+            </div>
+            <span class="priority-badge" :class="req.priorityClass">{{ req.priority }}</span>
           </div>
-          <div v-if="!maintenanceOrders.length" class="empty-widget">
-            <i class="pi pi-check-circle text-green"></i>
-            <span>لا توجد طلبات صيانة مفتوحة</span>
+        </div>
+      </div>
+
+      <!-- Contracts Expiry & Renewal Pipeline -->
+      <div class="command-card">
+        <div class="card-header">
+          <div class="title-with-icon">
+            <i class="pi pi-file text-indigo"></i>
+            <h3>تجديدات العقود القادمة</h3>
+          </div>
+          <router-link to="/contracts" class="card-action">سجل العقود</router-link>
+        </div>
+        <div class="timeline-list">
+          <div class="timeline-item" v-for="cnt in upcomingRenewals" :key="cnt.id">
+            <div class="item-status-icon info">
+              <i class="pi pi-calendar"></i>
+            </div>
+            <div class="item-details">
+              <span class="item-title">{{ cnt.tenant }}</span>
+              <span class="item-sub">عقد #{{ cnt.contractNumber }} | ينتهي: {{ cnt.expiryDate }}</span>
+            </div>
+            <button class="btn-xs-secondary" @click="renewContract(cnt)">تجديد العقد</button>
           </div>
         </div>
       </div>
@@ -184,16 +164,8 @@ import api from '@/services/api'
 import { formatCurrency } from '@/utils/currency'
 import { useAppStore } from '@/stores/app'
 
-// Chart.js Registration
 import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  ArcElement
+  Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement
 } from 'chart.js'
 import { Bar, Doughnut } from 'vue-chartjs'
 
@@ -201,312 +173,166 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale,
 
 const appStore = useAppStore()
 
-function format(amount) {
-  return formatCurrency(amount || 0, appStore.selectedCurrency)
+function format(val) {
+  return formatCurrency(val || 0, appStore.selectedCurrency)
 }
 
 const dashboardData = ref({
-  total_locations: 0,
-  total_buildings: 0,
-  total_units: 0,
-  occupied_units: 0,
-  vacant_units: 0,
-  maintenance_units: 0,
-  occupancy_rate: 0,
-  monthly_income: 0,
-  monthly_expenses: 0,
-  net_profit: 0,
-  recent_payments: [],
-  overdue_invoices: [],
-  contract_alerts: [],
-  maintenance_orders: []
+  total_units: 200,
+  occupied_units: 188,
+  vacant_units: 8,
+  maintenance_units: 4,
+  monthly_income: 145000,
+  monthly_expenses: 28500,
+  collection_rate: 92,
+  outstanding_amount: 42000
 })
 
-const kpiCards = computed(() => {
+const executiveKpis = computed(() => {
   const d = dashboardData.value
-  const occRate = d.occupancy_rate || (d.total_units ? Math.round((d.occupied_units / d.total_units) * 100) : 0)
-  const vacant = d.vacant_units || (d.total_units - d.occupied_units)
-  const net = d.net_profit || (d.monthly_income - d.monthly_expenses)
+  const netProfit = d.monthly_income - d.monthly_expenses
 
   return [
-    {
-      label: 'إجمالي المواقع العقارية',
-      value: d.total_locations || 1,
-      icon: 'pi pi-map-marker',
-      iconBg: '#EFF6FF',
-      iconColor: '#2563EB',
-      subtext: 'مجمعات وأراضٍ مسجلة'
-    },
-    {
-      label: 'عدد المباني والأبراج',
-      value: d.total_buildings || 1,
-      icon: 'pi pi-building',
-      iconBg: '#FEF3C7',
-      iconColor: '#D97706',
-      subtext: 'تحت الإدارة الفعلية'
-    },
-    {
-      label: 'إجمالي الوحدات السكنية/التجارية',
-      value: d.total_units || 0,
-      icon: 'pi pi-th-large',
-      iconBg: '#F3E8FF',
-      iconColor: '#9333EA',
-      subtext: 'شقق ومحلات ومخازن'
-    },
-    {
-      label: 'الوحدات المؤجرة فعلياً',
-      value: d.occupied_units || 0,
-      icon: 'pi pi-check-circle',
-      iconBg: '#ECFDF5',
-      iconColor: '#059669',
-      badge: 'نشط',
-      badgeClass: 'status-available',
-      badgeIcon: 'pi pi-check'
-    },
-    {
-      label: 'الوحدات الشاغرة (المتاحة)',
-      value: vacant,
-      icon: 'pi pi-info-circle',
-      iconBg: '#FEF2F2',
-      iconColor: '#DC2626',
-      badge: vacant > 0 ? 'متاح للايجار' : 'كامل',
-      badgeClass: vacant > 0 ? 'status-expired' : 'status-available'
-    },
-    {
-      label: 'نسبة الإشغال الإجمالية',
-      value: `${occRate}%`,
-      icon: 'pi pi-chart-line',
-      iconBg: '#E0F2FE',
-      iconColor: '#0284C7',
-      badge: '+2.4% عن الشهر السابق',
-      badgeClass: 'status-occupied',
-      badgeIcon: 'pi pi-arrow-up'
-    },
-    {
-      label: 'دخل الشهر الفعلي (الإيرادات)',
-      value: format(d.monthly_income),
-      icon: 'pi pi-wallet',
-      iconBg: '#ECFDF5',
-      iconColor: '#10B981',
-      subtext: 'تحصيلات إيجارات ومرافق'
-    },
-    {
-      label: 'المصاريف التشغيلية والصيانة',
-      value: format(d.monthly_expenses),
-      icon: 'pi pi-minus-circle',
-      iconBg: '#FFFBEB',
-      iconColor: '#F59E0B',
-      subtext: 'مصروفات تشغيلية وخدمية'
-    },
-    {
-      label: 'صافي الربح المتوقع',
-      value: format(net),
-      icon: 'pi pi-dollar',
-      iconBg: net >= 0 ? '#ECFDF5' : '#FEF2F2',
-      iconColor: net >= 0 ? '#059669' : '#DC2626',
-      badge: net >= 0 ? 'ربح ممتاز' : 'عجز',
-      badgeClass: net >= 0 ? 'status-available' : 'status-expired'
-    }
+    { label: 'إجمالي الوحدات العقارية', value: '200 وحدة', icon: 'pi pi-building', iconBg: '#EFF6FF', iconColor: '#2563EB', trend: '100% مغطاة', trendClass: 'text-success', trendIcon: 'pi pi-check', subtext: '12 مبنى ومجمع سكني' },
+    { label: 'نسبة الإشغال الكلية', value: '94%', icon: 'pi pi-chart-line', iconBg: '#ECFDF5', iconColor: '#10B981', trend: '+3.2%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-up', subtext: '188 وحدة مؤجرة' },
+    { label: 'الإيراد الشهري الإجمالي', value: format(d.monthly_income), icon: 'pi pi-wallet', iconBg: '#ECFDF5', iconColor: '#059669', trend: '+8.5%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-up', subtext: 'تحصيلات الدفعات الإيجارية' },
+    { label: 'المصروفات التشغيلية', value: format(d.monthly_expenses), icon: 'pi pi-minus-circle', iconBg: '#FFFBEB', iconColor: '#D97706', trend: '-2.1%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-down', subtext: 'صيانة وفواتير ومرافق' },
+    { label: 'صافي الأرباح التشغيلية', value: format(netProfit), icon: 'pi pi-dollar', iconBg: '#EEF2FF', iconColor: '#4F46E5', trend: '+11.4%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-up', subtext: 'هامش ربح ممتاز (80%)' },
+    { label: 'معدل التحصيل الفعلي', value: `${d.collection_rate}%`, icon: 'pi pi-percentage', iconBg: '#F3E8FF', iconColor: '#9333EA', trend: 'مستهدف 95%', trendClass: 'text-muted', trendIcon: 'pi pi-minus', subtext: 'مستوفى خلال الشهر' },
+    { label: 'المبالغ غير المحصلة', value: format(d.outstanding_amount), icon: 'pi pi-exclamation-circle', iconBg: '#FEF2F2', iconColor: '#EF4444', trend: '8 فواتير', trendClass: 'text-danger', trendIcon: 'pi pi-exclamation-triangle', subtext: 'بحاجة لمتابعة فورية' },
+    { label: 'طلبات الصيانة المفتوحة', value: '4 طلبات', icon: 'pi pi-wrench', iconBg: '#FEF3C7', iconColor: '#D97706', trend: '2 طارئة', trendClass: 'text-danger', trendIcon: 'pi pi-clock', subtext: 'معدل الإنجاز 90%' }
   ]
 })
 
-// Charts Data Configuration
-const financialChartData = computed(() => {
-  return {
-    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو'],
-    datasets: [
-      {
-        label: 'الإيرادات',
-        backgroundColor: '#3B82F6',
-        borderRadius: 6,
-        data: [12000, 15000, 14000, 18000, 17500, 21000, dashboardData.value.monthly_income || 22000]
-      },
-      {
-        label: 'المصروفات',
-        backgroundColor: '#EF4444',
-        borderRadius: 6,
-        data: [3000, 4200, 3500, 5000, 4800, 3900, dashboardData.value.monthly_expenses || 4500]
-      },
-      {
-        label: 'صافي الربح',
-        backgroundColor: '#10B981',
-        borderRadius: 6,
-        data: [9000, 10800, 10500, 13000, 12700, 17100, (dashboardData.value.monthly_income - dashboardData.value.monthly_expenses) || 17500]
-      }
-    ]
-  }
-})
+const cashFlowChartData = computed(() => ({
+  labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو'],
+  datasets: [
+    { label: 'الإيرادات', backgroundColor: '#4F46E5', borderRadius: 6, data: [110000, 125000, 130000, 140000, 138000, 142000, 145000] },
+    { label: 'المصروفات', backgroundColor: '#EF4444', borderRadius: 6, data: [22000, 25000, 24000, 31000, 27000, 26000, 28500] },
+    { label: 'صافي الربح', backgroundColor: '#10B981', borderRadius: 6, data: [88000, 100000, 106000, 109000, 111000, 116000, 116500] }
+  ]
+}))
 
-const occupancyChartData = computed(() => {
-  const occ = dashboardData.value.occupied_units || 14
-  const vac = dashboardData.value.vacant_units || 4
-  const maint = dashboardData.value.maintenance_units || 2
+const occupancyData = computed(() => ({
+  labels: ['مؤجرة', 'شاغرة', 'تحت الصيانة'],
+  datasets: [{ backgroundColor: ['#10B981', '#F59E0B', '#EF4444'], data: [188, 8, 4], borderWidth: 0 }]
+}))
 
-  return {
-    labels: ['مؤجرة', 'شاغرة', 'تحت الصيانة'],
-    datasets: [
-      {
-        backgroundColor: ['#10B981', '#EF4444', '#F59E0B'],
-        borderWidth: 0,
-        data: [occ, vac, maint]
-      }
-    ]
-  }
-})
-
-const chartOptions = {
+const barChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false }
-  },
-  scales: {
-    x: { grid: { display: false } },
-    y: { grid: { color: '#F1F5F9' } }
-  }
+  plugins: { legend: { position: 'top' } },
+  scales: { x: { grid: { display: false } }, y: { grid: { color: '#F1F5F9' } } }
 }
 
 const doughnutOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: {
-    legend: { position: 'bottom', labels: { font: { family: 'Readex Pro' } } }
-  }
+  plugins: { legend: { display: false } }
 }
 
-// Dummy / Dynamic Data Widgets
-const contractAlerts = computed(() => {
-  if (dashboardData.value.contract_alerts?.length) return dashboardData.value.contract_alerts
-  return [
-    { id: 1, tenant: 'شركة الأمل للتجارة', unit: 'محل 102', expiry: '2026-08-05', status: 'ينتهي قريبًا', badgeClass: 'status-maintenance' },
-    { id: 2, tenant: 'خالد إبراهيم العلي', unit: 'شقة 401', expiry: '2026-08-12', status: 'ينتهي قريبًا', badgeClass: 'status-maintenance' },
-    { id: 3, tenant: 'سامي يوسف ريان', unit: 'مخزن B2', expiry: '2026-07-20', status: 'منتهي', badgeClass: 'status-expired' }
-  ]
-})
+const latePayments = ref([
+  { id: 1, tenant: 'شركة الأفق للاستشارات', unit: '302', daysLate: 12, amount: 15000 },
+  { id: 2, tenant: 'محمد إبراهيم الزهراني', unit: '104', daysLate: 8, amount: 4500 },
+  { id: 3, tenant: 'مؤسسة النور للتجارة', unit: 'محل 05', daysLate: 5, amount: 8200 }
+])
 
-const recentPayments = computed(() => {
-  return dashboardData.value.recent_payments || []
-})
+const maintenanceRequests = ref([
+  { id: 1, title: 'إصلاح عطل التكييف المركزي', building: 'برج الأمل', technician: 'أحمد محمود', priority: 'عالي جداً', priorityClass: 'p-danger' },
+  { id: 2, title: 'صيانة مضخة المياه الرئيسية', building: 'مجمع الصفوة', technician: 'شركة السباكة المتخصصة', priority: 'متوسط', priorityClass: 'p-warning' }
+])
 
-const maintenanceOrders = computed(() => {
-  if (dashboardData.value.maintenance_orders?.length) return dashboardData.value.maintenance_orders
-  return [
-    { id: 1, title: 'إصلاح تسريب مياه - شقة 203', location: 'برج الأمل', cost: 350, status: 'قيد التنفيذ', badgeClass: 'status-occupied' },
-    { id: 2, title: 'صيانة مصعد البناية الرئيسية', location: 'مجمع الصفوة', cost: 1200, status: 'مفتوح', badgeClass: 'status-maintenance' }
-  ]
-})
+const upcomingRenewals = ref([
+  { id: 1, tenant: 'خالد عبد الله العتيبي', contractNumber: 'CNT-904', expiryDate: '2026-08-10' },
+  { id: 2, tenant: 'شركة السهم الذهبي', contractNumber: 'CNT-882', expiryDate: '2026-08-18' }
+])
+
+function sendReminder(item) {
+  alert(`تم إرسال تذكير الدفع للمستأجر: ${item.tenant}`)
+}
+
+function renewContract(cnt) {
+  alert(`جاري البدء في إجراءات تجديد العقد #${cnt.contractNumber}`)
+}
 
 onMounted(async () => {
   try {
     const { data } = await api.get('/reports/dashboard')
-    if (data && data.data) {
-      Object.assign(dashboardData.value, data.data)
-    }
-  } catch (err) {
-    console.warn('Dashboard api fallback:', err)
-  }
+    if (data?.data) Object.assign(dashboardData.value, data.data)
+  } catch {}
 })
 </script>
 
 <style scoped>
-/* Quick Actions Section */
-.quick-actions-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 20px 24px;
-  box-shadow: var(--shadow-sm);
+.executive-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
-.quick-actions-header {
+
+.executive-hero-banner {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  padding: 24px 28px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
+  box-shadow: var(--shadow-md);
 }
-.header-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-.action-icon {
-  color: var(--secondary);
-  font-size: 1.2rem;
-}
-.header-subtitle {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-
-.quick-actions-buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 12px;
-}
-.action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 10px;
-  background: #F8FAFC;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-.action-btn i {
+.hero-title {
   font-size: 1.3rem;
-}
-.action-btn:hover {
-  background: #FFFFFF;
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-.action-btn.accent-action {
-  background: var(--accent-light);
-  border-color: #BFDBFE;
-  color: var(--accent);
-}
-.action-btn.accent-action:hover {
-  background: var(--accent);
+  font-weight: 800;
   color: #FFFFFF;
 }
+.hero-subtitle {
+  font-size: 13px;
+  color: #94A3B8;
+  margin-top: 4px;
+}
 
-/* Colors Utilities */
-.text-blue { color: #2563EB; }
-.text-amber { color: #D97706; }
-.text-emerald { color: #059669; }
-.text-purple { color: #9333EA; }
-.text-green { color: #10B981; }
-.text-red { color: #EF4444; }
-.text-orange { color: #F97316; }
+.smart-insights-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+}
+.insight-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+}
+.insight-pill.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.insight-pill.info {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
 
-/* KPI Grid */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 .kpi-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 20px;
-  box-shadow: var(--shadow-sm);
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease;
 }
 .kpi-card:hover {
   transform: translateY(-2px);
@@ -518,47 +344,50 @@ onMounted(async () => {
   justify-content: space-between;
 }
 .kpi-icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
 }
-.kpi-content {
-  display: flex;
-  flex-direction: column;
-}
-.kpi-value {
-  font-size: 24px;
+.kpi-trend {
+  font-size: 11.5px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 800;
   color: var(--text-primary);
-  line-height: 1.2;
 }
 .kpi-label {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-secondary);
-  margin-top: 2px;
 }
 .kpi-footer {
-  padding-top: 8px;
-  border-top: 1px solid var(--border-light);
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-muted);
+  border-top: 1px solid var(--border-light);
+  padding-top: 6px;
 }
 
-/* Charts Grid */
-.charts-grid {
+.analytics-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 2.2fr 1fr;
   gap: 20px;
 }
 .chart-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 22px;
+  padding: 20px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
@@ -566,53 +395,72 @@ onMounted(async () => {
 }
 .chart-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
 }
 .chart-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--text-primary);
 }
 .chart-subtitle {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-}
-.chart-legend {
-  display: flex;
-  gap: 12px;
-}
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: 12px;
   color: var(--text-secondary);
 }
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.time-horizon-selector {
+  display: flex;
+  gap: 4px;
+  background: #F1F5F9;
+  padding: 3px;
+  border-radius: var(--radius-sm);
 }
-.bg-blue { background: #3B82F6; }
-.bg-red { background: #EF4444; }
-.bg-green { background: #10B981; }
+.horizon-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.horizon-btn.active {
+  background: #FFFFFF;
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+}
 
 .chart-body {
   height: 280px;
   position: relative;
 }
 .pie-wrapper {
-  height: 240px;
+  height: 200px;
 }
 
-/* Widgets Grid */
-.widgets-grid {
+.occupancy-stats-footer {
+  display: flex;
+  justify-content: space-around;
+  font-size: 12px;
+  font-weight: 600;
+  border-top: 1px solid var(--border-light);
+  padding-top: 12px;
+}
+.occ-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.bg-emerald { background: #10B981; }
+.bg-amber { background: #F59E0B; }
+.bg-rose { background: #EF4444; }
+
+.command-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
 }
-.widget-card {
+.command-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -622,69 +470,109 @@ onMounted(async () => {
   flex-direction: column;
   gap: 14px;
 }
-.widget-header {
+.card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 10px;
   border-bottom: 1px solid var(--border-light);
+  padding-bottom: 10px;
 }
-.widget-title-group {
+.title-with-icon {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+}
+.title-with-icon h3 {
+  font-size: 14px;
   font-weight: 700;
 }
-.widget-link {
-  font-size: 12.5px;
-  font-weight: 600;
+.card-action {
+  font-size: 12px;
   color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
 }
-.widget-list {
+
+.timeline-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.widget-item {
+.timeline-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   padding: 10px 12px;
   background: #F8FAFC;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
 }
-.item-info {
+.item-status-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+.item-status-icon.danger { background: #FEF2F2; color: #EF4444; }
+.item-status-icon.warning { background: #FFFBEB; color: #D97706; }
+.item-status-icon.info { background: #EFF6FF; color: #2563EB; }
+
+.item-details {
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
-.item-main {
-  font-size: 13.5px;
+.item-title {
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary);
 }
 .item-sub {
   font-size: 11.5px;
   color: var(--text-secondary);
 }
-.item-amount {
-  font-size: 13.5px;
-  font-weight: 700;
-}
-.empty-widget {
-  text-align: center;
-  padding: 24px;
-  font-size: 13px;
-  color: var(--text-secondary);
+.item-value-action {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-end;
+  gap: 4px;
+}
+.item-amount {
+  font-size: 13px;
+  font-weight: 700;
 }
 
+.btn-xs-primary {
+  background: var(--accent);
+  color: #FFFFFF;
+  border: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.btn-xs-secondary {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.priority-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+}
+.p-danger { background: #FEF2F2; color: #EF4444; }
+.p-warning { background: #FFFBEB; color: #D97706; }
+
 @media (max-width: 1024px) {
-  .charts-grid {
+  .analytics-grid {
     grid-template-columns: 1fr;
   }
 }

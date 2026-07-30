@@ -1,147 +1,174 @@
 <template>
   <div class="page-view">
-    <!-- Feedback Messages -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with Horizontal SaaS Filters & Actions -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="بحث برقم الإيصال أو المستأجر..." class="search-input-field" />
-        </div>
-      </div>
-
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+    <!-- Header Banner / Feedback -->
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="بحث برقم الإيصال، المستأجر، أو الفاتورة..."
+      emptyTitle="لا توجد عمليات سداد مسجلة"
+      emptySubtitle="لم يتم العثور على أي دفعات تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
-          <i class="pi pi-plus"></i> تسجيل دفعة جديدة
+          <i class="pi pi-plus"></i> تسجيل دفعة سداد
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="receipt_number" header="رقم الإيصال" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('receipt_number')" field="receipt_number" header="رقم الإيصال" sortable>
           <template #body="slotProps">
-            <div class="payment-cell">
-              <div class="icon-avatar">
-                <i class="pi pi-wallet text-green"></i>
+            <span class="receipt-code">{{ slotProps.data.receipt_number || 'REC-' + slotProps.data.id }}</span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('invoice.contract.tenant.first_name')" field="invoice.contract.tenant.first_name" header="المستأجر" sortable>
+          <template #body="slotProps">
+            <div class="tenant-cell">
+              <div class="user-avatar-circle">
+                <span>{{ slotProps.data.invoice?.contract?.tenant?.first_name?.charAt(0).toUpperCase() || 'M' }}</span>
               </div>
               <div class="cell-text">
-                <span class="font-bold">#{{ slotProps.data.receipt_number }}</span>
-                <span class="sub-text">فاتورة: #{{ slotProps.data.invoice?.invoice_number || '—' }}</span>
+                <span class="font-bold">{{ slotProps.data.invoice?.contract?.tenant?.first_name }} {{ slotProps.data.invoice?.contract?.tenant?.last_name }}</span>
+                <span class="sub-text">فاتورة #INV-{{ slotProps.data.invoice?.id }}</span>
               </div>
             </div>
           </template>
         </Column>
 
-        <Column header="المستأجر" sortable>
+        <Column v-if="!hiddenColumns.includes('amount')" field="amount" header="المبلغ المدفوع" sortable>
           <template #body="slotProps">
-            <span class="tenant-name" v-if="slotProps.data.invoice?.contract?.tenant">
-              <i class="pi pi-user text-muted"></i>
-              {{ slotProps.data.invoice.contract.tenant.first_name }} {{ slotProps.data.invoice.contract.tenant.last_name }}
-            </span>
-            <span v-else class="text-muted">—</span>
+            <span class="paid-amount">{{ formatCurrency(slotProps.data.amount) }}</span>
           </template>
         </Column>
 
-        <Column field="amount" header="المبلغ المدفوع" sortable>
+        <Column v-if="!hiddenColumns.includes('payment_date')" field="payment_date" header="تاريخ الدفع" sortable>
           <template #body="slotProps">
-            <span class="payment-amount">{{ formatCurrency(slotProps.data.amount) }}</span>
+            <span class="date-text">{{ slotProps.data.payment_date || '—' }}</span>
           </template>
         </Column>
 
-        <Column field="payment_date" header="تاريخ الدفع" sortable>
+        <Column v-if="!hiddenColumns.includes('payment_method')" field="payment_method" header="طريقة الدفع" sortable>
           <template #body="slotProps">
-            <span class="date-text"><i class="pi pi-calendar text-muted"></i> {{ slotProps.data.payment_date || '—' }}</span>
-          </template>
-        </Column>
-
-        <Column field="payment_method" header="طريقة الدفع">
-          <template #body="slotProps">
-            <span class="method-badge">
+            <span class="method-pill">
+              <i :class="slotProps.data.payment_method === 'cash' ? 'pi pi-money-bill' : 'pi pi-credit-card'"></i>
               {{ methodLabels[slotProps.data.payment_method] || slotProps.data.payment_method }}
             </span>
           </template>
         </Column>
 
-        <Column header="الإجراءات" style="width: 100px; text-align: center;">
+        <!-- Actions -->
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
           <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="printReceipt(slotProps.data)" title="طباعة الإيصال">
-                <i class="pi pi-print"></i>
-              </button>
-            </div>
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
         </Column>
-
-        <!-- Empty State -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-wallet"></i>
-            <p>لا توجد مدفوعات مسجلة تطابق البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+      </template>
+    </EnterpriseTable>
 
     <!-- Create Payment Dialog -->
     <Dialog
       v-model:visible="showDialog"
       header="تسجيل دفعة سداد جديدة"
       modal
-      :style="{ width: '540px' }"
+      :style="{ width: '560px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-field">
-          <label>الفاتورة المستحقة <span class="required">*</span></label>
-          <Select v-model="form.invoice_id" :options="unpaidInvoices" optionLabel="label" optionValue="id" placeholder="اختر الفاتورة المراد سدادها" class="w-full" />
-        </div>
-
-        <div class="form-field">
-          <label>المبلغ المدفوع (₪) <span class="required">*</span></label>
-          <InputNumber v-model="form.amount" class="w-full" :min="1" placeholder="أدخل المبلغ" />
-        </div>
-
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>تاريخ الدفع</label>
-            <DatePicker v-model="form.payment_date" class="w-full" placeholder="اختر التاريخ" />
+        <!-- Section 1: Invoice & Amount -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-receipt"></i>
+            <span>الفاتورة والمبلغ</span>
           </div>
-          <div class="form-field flex-1">
-            <label>طريقة الدفع</label>
-            <Select v-model="form.payment_method" :options="methodOptions" optionLabel="label" optionValue="value" class="w-full" />
-          </div>
+
+          <FormField
+            label="الفاتورة المستحقة"
+            required
+            forId="pay-invoice"
+            :errorMessage="errors.invoice_id"
+            helpText="اختر الفاتورة المستهدفة بالسداد"
+          >
+            <Select
+              id="pay-invoice"
+              v-model="form.invoice_id"
+              :options="unpaidInvoices"
+              optionLabel="label"
+              optionValue="id"
+              placeholder="اختر الفاتورة المراد سدادها"
+              class="w-full"
+              @change="clearFieldError('invoice_id')"
+            />
+          </FormField>
+
+          <FormField
+            label="المبلغ المدفوع (₪)"
+            required
+            forId="pay-amount"
+            :errorMessage="errors.amount"
+            helpText="أدخل المبلغ المسدد للشيكل"
+          >
+            <InputNumber
+              id="pay-amount"
+              v-model="form.amount"
+              class="w-full"
+              :min="1"
+              placeholder="أدخل المبلغ المدفوع"
+              @input="clearFieldError('amount')"
+            />
+          </FormField>
         </div>
 
-        <div class="form-field">
-          <label>رقم مرجعي / رقم الشيك (اختياري)</label>
-          <InputText v-model="form.reference_number" class="w-full" placeholder="أدخل الرقم المرجعي للعملية" />
+        <!-- Section 2: Method & Reference -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-wallet"></i>
+            <span>تفاصيل عملية الدفع</span>
+          </div>
+
+          <div class="form-grid-2">
+            <FormField
+              label="تاريخ الدفع"
+              forId="pay-date"
+            >
+              <DatePicker
+                id="pay-date"
+                v-model="form.payment_date"
+                class="w-full"
+                placeholder="اختر التاريخ"
+              />
+            </FormField>
+
+            <FormField
+              label="طريقة الدفع"
+              forId="pay-method"
+            >
+              <Select
+                id="pay-method"
+                v-model="form.payment_method"
+                :options="methodOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+              />
+            </FormField>
+          </div>
+
+          <FormField
+            label="رقم مرجعي / رقم الشيك (اختياري)"
+            forId="pay-ref"
+            helpText="أدخل رقم الحوالة أو رقم الشيك في حال السداد البنكي"
+          >
+            <InputText
+              id="pay-ref"
+              v-model="form.reference_number"
+              class="w-full"
+              placeholder="أدخل الرقم المرجعي للعملية"
+            />
+          </FormField>
         </div>
 
         <div class="form-actions">
@@ -157,20 +184,36 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import api from '@/services/api'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const dt = ref(null)
 const items = ref([])
 const unpaidInvoices = ref([])
 const loading = ref(false)
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
 
 const form = reactive({ invoice_id: null, amount: null, payment_date: null, payment_method: 'cash', reference_number: '' })
+
+const errors = reactive({
+  invoice_id: '', amount: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+const tableColumns = [
+  { field: 'receipt_number', header: 'رقم الإيصال' },
+  { field: 'invoice.contract.tenant.first_name', header: 'المستأجر' },
+  { field: 'amount', header: 'المبلغ المدفوع' },
+  { field: 'payment_date', header: 'تاريخ الدفع' },
+  { field: 'payment_method', header: 'طريقة الدفع' }
+]
 
 const methodLabels = { cash: 'نقدي', bank_transfer: 'تحويل بنكي', cheque: 'شيك' }
 const methodOptions = ref([
@@ -179,15 +222,40 @@ const methodOptions = ref([
   { label: 'شيك', value: 'cheque' }
 ])
 
-const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) return items.value
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.receipt_number?.toString().toLowerCase().includes(q) ||
-    item.invoice?.contract?.tenant?.first_name?.toLowerCase().includes(q) ||
-    item.invoice?.contract?.tenant?.last_name?.toLowerCase().includes(q)
-  )
-})
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.invoice_id) {
+    errors.invoice_id = 'يرجى اختيار الفاتورة المستحقة بالسداد'
+    isValid = false
+  }
+
+  if (form.amount === null || form.amount === undefined || form.amount <= 0) {
+    errors.amount = 'يرجى إدخال مبلغ سداد أهلي أكبر من صفر'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'طباعة الإيصال',
+      icon: 'pi pi-print',
+      command: () => printReceipt(row)
+    }
+  ]
+}
 
 function formatCurrency(amount) {
   if (!amount) return '0 ₪'
@@ -198,10 +266,10 @@ onMounted(() => { fetchInvoices(); fetchItems() })
 
 async function fetchInvoices() {
   try {
-    const { data } = await api.get('/invoices?status=unpaid')
+    const { data } = await api.get('/invoices', { params: { status: 'unpaid' } })
     unpaidInvoices.value = data.data.map(i => ({
       ...i,
-      label: `فاتورة #${i.invoice_number} - ${i.contract?.tenant?.first_name || ''} (${formatCurrency(i.total_amount - i.paid_amount)})`
+      label: `فاتورة #INV-${i.id} - المستأجر: ${i.contract?.tenant?.first_name || ''} ${i.contract?.tenant?.last_name || ''} (مستحق: ${formatCurrency(i.total_amount)})`
     }))
   } catch (err) { console.error(err) }
 }
@@ -209,143 +277,88 @@ async function fetchInvoices() {
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
     const { data } = await api.get('/payments')
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل قائمة المدفوعات: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل سجلات الدفع: ' + (err.response?.data?.message || err.message))
     items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function resetForm() {
   Object.assign(form, { invoice_id: null, amount: null, payment_date: null, payment_method: 'cash', reference_number: '' })
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.invoice_id || !form.amount) {
-    errorMsg.value = 'يرجى اختيار الفاتورة والمبلغ'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
     await api.post('/payments', form)
-    showToast('تم تسجيل الدفعة بنجاح')
-    closeDialog()
+    toast.success('تم تسجيل الدفعة بنجاح وإصدار الإيصال')
+    showDialog.value = false
+    resetForm()
     await fetchItems()
     await fetchInvoices()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر تسجيل الدفعة'
+    toast.error(err.response?.data?.message || 'تعذر تسجيل الدفعة')
   } finally {
     saving.value = false
   }
 }
 
 function printReceipt(payment) {
-  try {
-    const url = api.defaults.baseURL + `/payments/${payment.id}/receipt`
-    window.open(url, '_blank')
-  } catch (err) { console.error(err) }
-}
-
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
+  window.open(`${api.defaults.baseURL}/payments/${payment.id}/receipt`, '_blank')
 }
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
+.receipt-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--accent);
+  background: #EFF6FF;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
 }
 
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 260px !important;
-}
-
-.toolbar-actions {
+.tenant-cell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.payment-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.icon-avatar {
+.user-avatar-circle {
   width: 36px;
   height: 36px;
-  background: #ECFDF5;
-  border-radius: var(--radius-sm);
+  background: #EFF6FF;
+  color: var(--accent);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-weight: 700;
+  font-size: 14px;
 }
 .cell-text {
   display: flex;
@@ -360,48 +373,24 @@ function exportCSV() {
   color: var(--text-secondary);
 }
 
-.tenant-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.payment-amount {
+.paid-amount {
   font-weight: 700;
   color: var(--success);
 }
 
 .date-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   font-size: 13px;
   color: var(--text-secondary);
 }
 
-.method-badge {
+.method-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #F1F5F9;
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 500;
-}
-
-.form-row {
-  display: flex;
-  gap: 14px;
-}
-
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
-}
-
-.required {
-  color: var(--danger);
 }
 </style>

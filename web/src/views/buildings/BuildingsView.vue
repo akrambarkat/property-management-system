@@ -1,160 +1,184 @@
 <template>
   <div class="page-view">
-    <!-- Feedback Error Banner -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <!-- Feedback Toast Banner -->
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with SaaS Filter & Search -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="البحث في المباني..." class="search-input-field" />
-        </div>
+    <!-- Header Banner / Feedback -->
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="البحث باسم المبنى أو الموقع..."
+      emptyTitle="لا توجد مباني مسجلة"
+      emptySubtitle="لم يتم العثور على أي مباني تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #filters>
         <Select
           v-model="filters.location_id"
           :options="locations"
           optionLabel="name"
           optionValue="id"
-          placeholder="تصفية حسب الموقع"
+          placeholder="جميع المواقع"
           showClear
           @change="fetchItems"
           class="filter-select"
         />
-      </div>
-      <button class="btn-primary" @click="openCreateDialog">
-        <i class="pi pi-plus"></i> إضافة مبنى جديد
-      </button>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="name" header="اسم المبنى" sortable>
+      <template #actions>
+        <button class="btn-primary" @click="openCreateDialog">
+          <i class="pi pi-plus"></i> إضافة مبنى جديد
+        </button>
+      </template>
+
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('name')" field="name" header="اسم المبنى" sortable>
           <template #body="slotProps">
             <div class="building-name-cell">
-              <i class="pi pi-building text-amber"></i>
-              <span class="font-bold">{{ slotProps.data.name }}</span>
+              <div class="icon-avatar">
+                <i class="pi pi-building text-blue"></i>
+              </div>
+              <div class="cell-text">
+                <span class="font-bold">{{ slotProps.data.name }}</span>
+                <span class="sub-text">كود: BLD-{{ slotProps.data.id }}</span>
+              </div>
             </div>
           </template>
         </Column>
 
-        <Column field="location.name" header="الموقع العقاري" sortable>
+        <Column v-if="!hiddenColumns.includes('location.name')" field="location.name" header="الموقع العقاري" sortable>
           <template #body="slotProps">
-            <span class="location-tag">
-              <i class="pi pi-map-marker"></i>
-              {{ slotProps.data.location?.name || 'غير محدد' }}
+            <span class="location-tag" v-if="slotProps.data.location">
+              <i class="pi pi-map-marker text-muted"></i>
+              {{ slotProps.data.location.name }}
             </span>
+            <span v-else class="text-muted">—</span>
           </template>
         </Column>
 
-        <Column field="floors" header="عدد الطوابق" sortable>
+        <Column v-if="!hiddenColumns.includes('floors')" field="floors" header="عدد الطوابق" sortable>
           <template #body="slotProps">
-            <span>{{ slotProps.data.floors }} طوابق</span>
+            <span class="floors-text">{{ slotProps.data.floors }} طوابق</span>
           </template>
         </Column>
 
-        <Column header="عدد الوحدات">
+        <Column v-if="!hiddenColumns.includes('units_count')" field="units_count" header="عدد الوحدات" sortable>
           <template #body="slotProps">
-            <span class="units-count-badge">
+            <span class="units-count-pill">
               {{ slotProps.data.units_count || 0 }} وحدة
             </span>
           </template>
         </Column>
 
-        <Column header="الحالة">
+        <Column v-if="!hiddenColumns.includes('is_active')" field="is_active" header="الحالة" sortable>
           <template #body="slotProps">
             <span
               class="status-badge"
-              :class="slotProps.data.is_active ? 'status-available' : 'status-expired'"
+              :class="slotProps.data.is_active ? 'status-active' : 'status-expired'"
             >
               {{ slotProps.data.is_active ? 'نشط' : 'غير نشط' }}
             </span>
           </template>
         </Column>
 
-        <!-- Actions Dropdown SaaS Style -->
-        <Column header="الإجراءات" style="width: 100px; text-align: center;">
+        <!-- Actions -->
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
           <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="editItem(slotProps.data)" title="تعديل">
-                <i class="pi pi-pencil"></i>
-              </button>
-              <button class="btn-icon btn-danger" @click="confirmDelete(slotProps.data)" title="حذف">
-                <i class="pi pi-trash"></i>
-              </button>
-            </div>
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
         </Column>
-
-        <!-- Empty & Loading States -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-building"></i>
-            <p>لا توجد مباني مسجلة تطابق خيارات البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+      </template>
+    </EnterpriseTable>
 
     <!-- Form Dialog with Clean SaaS Sections -->
     <Dialog
       v-model:visible="showDialog"
       :header="isEditing ? 'تعديل بيانات المبنى' : 'إضافة مبنى جديد'"
       modal
-      :style="{ width: '520px' }"
+      :style="{ width: '560px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-field">
-          <label>الموقع العقاري <span class="required">*</span></label>
-          <Select
-            v-model="form.location_id"
-            :options="locations"
-            optionLabel="name"
-            optionValue="id"
-            placeholder="اختر الموقع العقاري"
-            class="w-full"
-          />
+        <!-- Section 1: Basic Info -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-building"></i>
+            <span>معلومات المبنى الرئيسية</span>
+          </div>
+
+          <FormField
+            label="اسم المبنى / البرج"
+            required
+            forId="bldg-name"
+            :errorMessage="errors.name"
+            helpText="أدخل اسماً مميزاً للمبنى يسهل التعرف عليه"
+          >
+            <InputText
+              id="bldg-name"
+              v-model="form.name"
+              placeholder="مثال: برج السلام التنموي"
+              class="w-full"
+              @input="clearFieldError('name')"
+            />
+          </FormField>
+
+          <FormField
+            label="الموقع العقاري المرتبط"
+            required
+            forId="bldg-location"
+            :errorMessage="errors.location_id"
+            helpText="حدد المجمع أو المنطقة العقارية التي يتبع لها هذا المبنى"
+          >
+            <Select
+              id="bldg-location"
+              v-model="form.location_id"
+              :options="locations"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="اختر الموقع العقاري"
+              class="w-full"
+              @change="clearFieldError('location_id')"
+            />
+          </FormField>
         </div>
 
-        <div class="form-field">
-          <label>اسم المبنى / البرج <span class="required">*</span></label>
-          <InputText v-model="form.name" placeholder="مثال: برج السلام التنموي" class="w-full" />
-        </div>
+        <!-- Section 2: Operational Specs -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-cog"></i>
+            <span>التفاصيل التشغيلية</span>
+          </div>
 
-        <div class="form-field">
-          <label>عدد الطوابق</label>
-          <InputNumber v-model="form.floors" class="w-full" :min="1" :max="100" />
-        </div>
+          <div class="form-grid-2">
+            <FormField
+              label="عدد الطوابق"
+              forId="bldg-floors"
+              :errorMessage="errors.floors"
+              helpText="من 1 إلى 100 طابق"
+            >
+              <InputNumber
+                id="bldg-floors"
+                v-model="form.floors"
+                class="w-full"
+                :min="1"
+                :max="100"
+              />
+            </FormField>
 
-        <div class="form-field">
-          <label>حالة التشغيل</label>
-          <SelectButton
-            v-model="form.is_active"
-            :options="statusOptions"
-            optionLabel="label"
-            optionValue="value"
-          />
+            <FormField
+              label="حالة التشغيل"
+              forId="bldg-status"
+              helpText="المباني غير النشطة لا تظهر في العقود الجديدة"
+            >
+              <SelectButton
+                id="bldg-status"
+                v-model="form.is_active"
+                :options="statusOptions"
+                optionLabel="label"
+                optionValue="value"
+              />
+            </FormField>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -168,38 +192,35 @@
     </Dialog>
 
     <!-- Delete Confirmation Modal -->
-    <Dialog
+    <ConfirmModal
       v-model:visible="showDeleteModal"
-      header="تأكيد عملية الحذف"
-      modal
-      :style="{ width: '400px' }"
-    >
-      <div class="dialog-body text-center">
-        <i class="pi pi-exclamation-triangle warning-icon"></i>
-        <p class="delete-msg">هل أنت متأكد من حذف المبنى <strong>{{ itemToDelete?.name }}</strong>؟</p>
-        <span class="delete-sub">لا يمكن التراجع عن هذا الإجراء بعد الحذف.</span>
-        <div class="form-actions center-actions">
-          <button class="btn-secondary" @click="showDeleteModal = false">إلغاء</button>
-          <button class="btn-primary btn-danger-action" @click="deleteItemConfirmed">تأكيد الحذف</button>
-        </div>
-      </div>
-    </Dialog>
+      title="تأكيد الحذف"
+      :message="`هل أنت متأكد من حذف المبنى <strong>${ itemToDelete?.name }</strong>؟`"
+      variant="danger"
+      confirmText="تأكيد الحذف"
+      @confirm="deleteItemConfirmed"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
 const items = ref([])
 const locations = ref([])
 const loading = ref(false)
+const router = useRouter()
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
 
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
@@ -210,19 +231,75 @@ const form = reactive({
   id: null, location_id: null, name: '', floors: 1, is_active: true
 })
 
+const errors = reactive({
+  name: '', location_id: '', floors: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+const tableColumns = [
+  { field: 'name', header: 'اسم المبنى' },
+  { field: 'location.name', header: 'الموقع العقاري' },
+  { field: 'floors', header: 'عدد الطوابق' },
+  { field: 'units_count', header: 'عدد الوحدات' },
+  { field: 'is_active', header: 'الحالة' }
+]
+
 const statusOptions = ref([
   { label: 'نشط', value: true },
   { label: 'غير نشط', value: false }
 ])
 
-const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) return items.value
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.name?.toLowerCase().includes(q) ||
-    item.location?.name?.toLowerCase().includes(q)
-  )
-})
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.name || !form.name.trim()) {
+    errors.name = 'يرجى إدخال اسم المبنى'
+    isValid = false
+  }
+
+  if (!form.location_id) {
+    errors.location_id = 'يرجى اختيار الموقع العقاري المرتبط'
+    isValid = false
+  }
+
+  if (!form.floors || form.floors < 1) {
+    errors.floors = 'يجب أن يكون عدد الطوابق طابق واحد على الأقل'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'عرض الملف',
+      icon: 'pi pi-eye',
+      command: () => router.push(`/buildings/${row.id}`)
+    },
+    {
+      label: 'تعديل',
+      icon: 'pi pi-pencil',
+      command: () => editItem(row)
+    },
+    {
+      label: 'حذف المبنى',
+      icon: 'pi pi-trash',
+      danger: true,
+      command: () => confirmDelete(row)
+    }
+  ]
+}
 
 onMounted(() => { fetchLocations(); fetchItems() })
 
@@ -231,65 +308,78 @@ async function fetchLocations() {
     const { data } = await api.get('/locations')
     locations.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل المواقع: ' + (err.response?.data?.message || err.message)
+    console.error(err)
   }
 }
 
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
     const params = filters.location_id ? { location_id: filters.location_id } : {}
     const { data } = await api.get('/buildings', { params })
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل المباني: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل قائمة المباني: ' + (err.response?.data?.message || err.message))
+    items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
 function editItem(item) {
-  Object.assign(form, item)
+  resetForm()
+  Object.assign(form, { ...item, location_id: item.location_id || item.location?.id })
   isEditing.value = true
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function resetForm() {
   isEditing.value = false
-  form.id = null; form.location_id = null; form.name = ''; form.floors = 1; form.is_active = true
+  form.id = null
+  form.location_id = null
+  form.name = ''
+  form.floors = 1
+  form.is_active = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.name || !form.location_id) {
-    errorMsg.value = 'يرجى تعبئة الحقول المطلوبة'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
     if (isEditing.value) {
-      await api.put(`/buildings/${form.id}`, form)
-      showToast('تم تعديل بيانات المبنى بنجاح')
+      const { data } = await api.put(`/buildings/${form.id}`, form)
+      const idx = items.value.findIndex(i => i.id === form.id)
+      if (idx > -1) items.value[idx] = data.data
+      toast.success('تم تعديل بيانات المبنى بنجاح')
     } else {
-      await api.post('/buildings', form)
-      showToast('تم إضافة المبنى بنجاح')
+      const { data } = await api.post('/buildings', form)
+      items.value.unshift(data.data)
+      toast.success('تم إضافة المبنى بنجاح')
     }
-    closeDialog()
-    await fetchItems()
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر حفظ البيانات'
+    toast.error(err.response?.data?.message || 'تعذر حفظ بيانات المبنى')
   } finally {
     saving.value = false
   }
@@ -304,115 +394,71 @@ async function deleteItemConfirmed() {
   if (!itemToDelete.value) return
   try {
     await api.delete(`/buildings/${itemToDelete.value.id}`)
-    showToast('تم حذف المبنى بنجاح')
+    toast.success('تم حذف المبنى بنجاح')
     showDeleteModal.value = false
     itemToDelete.value = null
     await fetchItems()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'خطأ أثناء عملية الحذف'
+    toast.error(err.response?.data?.message || 'خطأ أثناء عملية الحذف')
   }
 }
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 240px !important;
-}
-
-.filter-select {
-  width: 200px !important;
-}
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
 .building-name-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+}
+.icon-avatar {
+  width: 36px;
+  height: 36px;
+  background: #EFF6FF;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+.cell-text {
+  display: flex;
+  flex-direction: column;
 }
 .font-bold {
   font-weight: 600;
   color: var(--text-primary);
+}
+.sub-text {
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .location-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-secondary);
   font-size: 13px;
 }
 
-.units-count-badge {
+.floors-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.units-count-pill {
   background: #F1F5F9;
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary);
 }
 
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
+.text-blue {
+  color: #2563EB;
 }
 
-.required {
-  color: var(--danger);
+.filter-select {
+  width: 180px !important;
 }
 
 .text-center {

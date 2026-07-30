@@ -1,185 +1,228 @@
 <template>
   <div class="page-view">
-    <!-- Feedback Messages -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with Horizontal SaaS Filters & Actions -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="بحث برقم الفاتورة أو المستأجر..." class="search-input-field" />
-        </div>
+    <!-- Header Banner / Feedback -->
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="بحث برقم الفاتورة، المستأجر، أو الوحدة..."
+      emptyTitle="لا توجد فواتير مسجلة"
+      emptySubtitle="لم يتم العثور على أي فواتير تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #filters>
         <Select
           v-model="filters.status"
-          :options="statusFilter"
+          :options="statusFilterOptions"
           optionLabel="label"
           optionValue="value"
-          placeholder="جميع الحالات"
+          placeholder="جميع حالات الفواتير"
           showClear
           @change="fetchItems"
           class="filter-select"
         />
-        <DatePicker v-model="filters.from" placeholder="من تاريخ" @change="fetchItems" class="filter-datepicker" />
-        <DatePicker v-model="filters.to" placeholder="إلى تاريخ" @change="fetchItems" class="filter-datepicker" />
-      </div>
+      </template>
 
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
-          <i class="pi pi-plus"></i> إضافة فاتورة جديد
+          <i class="pi pi-plus"></i> إنشاء فاتورة جديدة
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="invoice_number" header="رقم الفاتورة" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('id')" field="id" header="رقم الفاتورة" sortable>
           <template #body="slotProps">
-            <div class="invoice-cell">
-              <div class="icon-avatar">
-                <i class="pi pi-receipt text-blue"></i>
+            <span class="invoice-code">INV-{{ String(slotProps.data.id).padStart(4, '0') }}</span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('contract.tenant.first_name')" field="contract.tenant.first_name" header="المستأجر والوحدة" sortable>
+          <template #body="slotProps">
+            <div class="tenant-cell">
+              <div class="user-avatar-circle">
+                <span>{{ slotProps.data.contract?.tenant?.first_name?.charAt(0).toUpperCase() || 'M' }}</span>
               </div>
               <div class="cell-text">
-                <span class="font-bold">#{{ slotProps.data.invoice_number }}</span>
-                <span class="sub-text">إصدار: {{ slotProps.data.issue_date || '—' }}</span>
+                <span class="font-bold">{{ slotProps.data.contract?.tenant?.first_name }} {{ slotProps.data.contract?.tenant?.last_name }}</span>
+                <span class="sub-text">وحدة #{{ slotProps.data.contract?.unit?.unit_number || '—' }}</span>
               </div>
             </div>
           </template>
         </Column>
 
-        <Column field="contract.tenant.first_name" header="المستأجر" sortable>
+        <Column v-if="!hiddenColumns.includes('issue_date')" field="issue_date" header="التواريخ" sortable>
           <template #body="slotProps">
-            <span class="tenant-name" v-if="slotProps.data.contract?.tenant">
-              <i class="pi pi-user text-muted"></i>
-              {{ slotProps.data.contract.tenant.first_name }} {{ slotProps.data.contract.tenant.last_name }}
-            </span>
-            <span v-else class="text-muted">—</span>
-          </template>
-        </Column>
-
-        <Column field="due_date" header="تاريخ الاستحقاق" sortable>
-          <template #body="slotProps">
-            <span class="date-text"><i class="pi pi-calendar text-muted"></i> {{ slotProps.data.due_date || '—' }}</span>
-          </template>
-        </Column>
-
-        <Column field="total_amount" header="المبلغ الإجمالي" sortable>
-          <template #body="slotProps">
-            <span class="amount-total">{{ formatCurrency(slotProps.data.total_amount) }}</span>
-          </template>
-        </Column>
-
-        <Column field="paid_amount" header="المدفوع" sortable>
-          <template #body="slotProps">
-            <span class="amount-paid">{{ formatCurrency(slotProps.data.paid_amount) }}</span>
-          </template>
-        </Column>
-
-        <Column header="الحالة">
-          <template #body="slotProps">
-            <span :class="'status-badge status-' + slotProps.data.status">
-              {{ invStatusLabels[slotProps.data.status] || slotProps.data.status }}
-            </span>
-          </template>
-        </Column>
-
-        <Column header="الإجراءات" style="width: 120px; text-align: center;">
-          <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="printInvoice(slotProps.data)" title="طباعة الفاتورة">
-                <i class="pi pi-print"></i>
-              </button>
-              <button v-if="slotProps.data.status !== 'paid'" class="btn-icon text-success" @click="payInvoice(slotProps.data)" title="تسديد الدفعة">
-                <i class="pi pi-dollar"></i>
-              </button>
+            <div class="date-cell">
+              <span>إصدار: {{ slotProps.data.issue_date || '—' }}</span>
+              <span class="sub-text">استحقاق: {{ slotProps.data.due_date || '—' }}</span>
             </div>
           </template>
         </Column>
 
-        <!-- Empty State -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-receipt"></i>
-            <p>لا توجد فواتير مسجلة تطابق البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+        <Column v-if="!hiddenColumns.includes('total_amount')" field="total_amount" header="المبلغ الإجمالي" sortable>
+          <template #body="slotProps">
+            <span class="total-amount">{{ formatCurrency(slotProps.data.total_amount) }}</span>
+          </template>
+        </Column>
 
-    <!-- Create Invoice Dialog -->
+        <Column v-if="!hiddenColumns.includes('status')" field="status" header="حالة السداد" sortable>
+          <template #body="slotProps">
+            <span
+              class="status-badge"
+              :class="getStatusClass(slotProps.data.status)"
+            >
+              {{ statusLabels[slotProps.data.status] || slotProps.data.status }}
+            </span>
+          </template>
+        </Column>
+
+        <!-- Actions -->
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+          <template #body="slotProps">
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
+          </template>
+        </Column>
+      </template>
+    </EnterpriseTable>
+
+    <!-- Create / Edit Dialog -->
     <Dialog
       v-model:visible="showDialog"
-      header="إضافة فاتورة تحصيل جديدة"
+      :header="isEditing ? 'تعديل الفاتورة' : 'إنشاء فاتورة جديدة'"
       modal
       :style="{ width: '640px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-field">
-          <label>العقد <span class="required">*</span></label>
-          <Select v-model="form.contract_id" :options="contracts" optionLabel="label" optionValue="id" placeholder="اختر العقد والمرتبط به المستأجر" class="w-full" />
+        <!-- Section 1: Contract & Dates -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-file"></i>
+            <span>العقد وتواريخ الفاتورة</span>
+          </div>
+
+          <FormField
+            label="العقد المرتبط"
+            required
+            forId="inv-contract"
+            :errorMessage="errors.contract_id"
+            helpText="اختر عقد الإيجار المراد إصدار الفاتورة له"
+          >
+            <Select
+              id="inv-contract"
+              v-model="form.contract_id"
+              :options="contracts"
+              optionLabel="label"
+              optionValue="id"
+              placeholder="اختر العقد"
+              class="w-full"
+              @change="onContractChange"
+            />
+          </FormField>
+
+          <div class="form-grid-2">
+            <FormField
+              label="تاريخ الإصدار"
+              forId="inv-issue-date"
+            >
+              <DatePicker
+                id="inv-issue-date"
+                v-model="form.issue_date"
+                class="w-full"
+                placeholder="اختر التاريخ"
+              />
+            </FormField>
+
+            <FormField
+              label="تاريخ الاستحقاق"
+              forId="inv-due-date"
+            >
+              <DatePicker
+                id="inv-due-date"
+                v-model="form.due_date"
+                class="w-full"
+                placeholder="اختر التاريخ"
+              />
+            </FormField>
+          </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>تاريخ الإصدار</label>
-            <DatePicker v-model="form.issue_date" class="w-full" placeholder="اختر التاريخ" />
+        <!-- Section 2: Items Breakdown & Amounts -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-calculator"></i>
+            <span>تفاصيل وتفكيك البنود المستحقة</span>
           </div>
-          <div class="form-field flex-1">
-            <label>تاريخ الاستحقاق</label>
-            <DatePicker v-model="form.due_date" class="w-full" placeholder="اختر التاريخ" />
-          </div>
-        </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>قيمة الإيجار (₪)</label>
-            <InputNumber v-model="form.rent_amount" class="w-full" :min="0" />
-          </div>
-          <div class="form-field flex-1">
-            <label>رسوم الكهرباء (₪)</label>
-            <InputNumber v-model="form.electricity_amount" class="w-full" :min="0" />
-          </div>
-        </div>
+          <div class="form-grid-2">
+            <FormField
+              label="قيمة الإيجار (₪)"
+              forId="inv-rent"
+            >
+              <InputNumber
+                id="inv-rent"
+                v-model="form.rent_amount"
+                class="w-full"
+                :min="0"
+              />
+            </FormField>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>رسوم المياه (₪)</label>
-            <InputNumber v-model="form.water_amount" class="w-full" :min="0" />
-          </div>
-          <div class="form-field flex-1">
-            <label>رسوم الإنترنت (₪)</label>
-            <InputNumber v-model="form.internet_amount" class="w-full" :min="0" />
-          </div>
-        </div>
+            <FormField
+              label="رسوم الكهرباء (₪)"
+              forId="inv-elec"
+            >
+              <InputNumber
+                id="inv-elec"
+                v-model="form.electricity_amount"
+                class="w-full"
+                :min="0"
+              />
+            </FormField>
 
-        <div class="form-field">
-          <label>خدمات وصيانة إضافية (₪)</label>
-          <InputNumber v-model="form.services_amount" class="w-full" :min="0" />
+            <FormField
+              label="رسوم المياه (₪)"
+              forId="inv-water"
+            >
+              <InputNumber
+                id="inv-water"
+                v-model="form.water_amount"
+                class="w-full"
+                :min="0"
+              />
+            </FormField>
+
+            <FormField
+              label="رسوم الإنترنت (₪)"
+              forId="inv-net"
+            >
+              <InputNumber
+                id="inv-net"
+                v-model="form.internet_amount"
+                class="w-full"
+                :min="0"
+              />
+            </FormField>
+          </div>
+
+          <FormField
+            label="خدمات وصيانة إضافية (₪)"
+            forId="inv-services"
+          >
+            <InputNumber
+              id="inv-services"
+              v-model="form.services_amount"
+              class="w-full"
+              :min="0"
+            />
+          </FormField>
+
+          <!-- Computed Total Preview -->
+          <div class="total-preview-box">
+            <span>إجمالي الفاتورة المحسوب:</span>
+            <strong class="calculated-sum">{{ formatCurrency(calculatedTotal) }}</strong>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -197,43 +240,103 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import api from '@/services/api'
-import { useAppStore } from '@/stores/app'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const appStore = useAppStore()
-const dt = ref(null)
 const items = ref([])
 const contracts = ref([])
 const loading = ref(false)
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
+const isEditing = ref(false)
 
-const filters = reactive({ status: null, from: null, to: null })
+const filters = reactive({ status: null })
 
 const form = reactive({
-  contract_id: null, issue_date: null, due_date: null, rent_amount: 0,
-  electricity_amount: 0, water_amount: 0, internet_amount: 0, services_amount: 0
+  id: null, contract_id: null, issue_date: null, due_date: null,
+  rent_amount: 0, electricity_amount: 0, water_amount: 0,
+  internet_amount: 0, services_amount: 0
 })
 
-const invStatusLabels = { paid: 'مدفوعة بالكامل', unpaid: 'غير مدفوعة', partial: 'مدفوعة جزئياً', overdue: 'متأخرة عن الاستحقاق' }
-const statusFilter = ref([
-  { label: 'مدفوعة بالكامل', value: 'paid' },
+const errors = reactive({
+  contract_id: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+const calculatedTotal = computed(() => {
+  return (Number(form.rent_amount) || 0) +
+         (Number(form.electricity_amount) || 0) +
+         (Number(form.water_amount) || 0) +
+         (Number(form.internet_amount) || 0) +
+         (Number(form.services_amount) || 0)
+})
+
+const tableColumns = [
+  { field: 'id', header: 'رقم الفاتورة' },
+  { field: 'contract.tenant.first_name', header: 'المستأجر والوحدة' },
+  { field: 'issue_date', header: 'التواريخ' },
+  { field: 'total_amount', header: 'المبلغ الإجمالي' },
+  { field: 'status', header: 'حالة السداد' }
+]
+
+const statusLabels = { unpaid: 'غير مدفوعة', partial: 'مدفوعة جزئياً', paid: 'مدفوعة بالكامل', overdue: 'متأخرة' }
+
+const statusFilterOptions = ref([
   { label: 'غير مدفوعة', value: 'unpaid' },
-  { label: 'متأخرة عن الاستحقاق', value: 'overdue' },
-  { label: 'مدفوعة جزئياً', value: 'partial' }
+  { label: 'مدفوعة جزئياً', value: 'partial' },
+  { label: 'مدفوعة بالكامل', value: 'paid' },
+  { label: 'متأخرة', value: 'overdue' }
 ])
 
-const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) return items.value
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.invoice_number?.toString().toLowerCase().includes(q) ||
-    item.contract?.tenant?.first_name?.toLowerCase().includes(q) ||
-    item.contract?.tenant?.last_name?.toLowerCase().includes(q)
-  )
-})
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.contract_id) {
+    errors.contract_id = 'يرجى اختيار عقد الإيجار المرتبط'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getStatusClass(status) {
+  switch (status) {
+    case 'paid': return 'status-paid'
+    case 'unpaid': return 'status-expired'
+    case 'partial': return 'status-pending'
+    case 'overdue': return 'status-danger'
+    default: return 'status-info'
+  }
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'تعديل الفاتورة',
+      icon: 'pi pi-pencil',
+      command: () => editItem(row)
+    },
+    {
+      label: 'طباعة الفاتورة',
+      icon: 'pi pi-print',
+      command: () => printInvoice(row)
+    }
+  ]
+}
 
 function formatCurrency(amount) {
   if (!amount) return '0 ₪'
@@ -244,181 +347,126 @@ onMounted(() => { fetchContracts(); fetchItems() })
 
 async function fetchContracts() {
   try {
-    const { data } = await api.get('/contracts?status=active')
+    const { data } = await api.get('/contracts', { params: { status: 'active' } })
     contracts.value = data.data.map(c => ({
       ...c,
-      label: `عقد #${c.contract_number} - ${c.tenant?.first_name || ''} ${c.tenant?.last_name || ''}`
+      label: `عقد CNT-${String(c.id).padStart(4, '0')} - ${c.tenant?.first_name || ''} ${c.tenant?.last_name || ''} (وحدة #${c.unit?.unit_number || ''})`
     }))
-  } catch (err) {
-    console.error(err)
-  }
+  } catch (err) { console.error(err) }
 }
 
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
-    const params = {}
-    if (filters.status) params.status = filters.status
-    if (filters.from) params.from = filters.from
-    if (filters.to) params.to = filters.to
+    const params = filters.status ? { status: filters.status } : {}
     const { data } = await api.get('/invoices', { params })
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل الفواتير: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل الفواتير: ' + (err.response?.data?.message || err.message))
     items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
+function onContractChange() {
+  clearFieldError('contract_id')
+  const contract = contracts.value.find(c => c.id === form.contract_id)
+  if (contract && !isEditing.value) {
+    form.rent_amount = contract.rent_amount || 0
+  }
 }
 
+
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function editItem(item) {
+  resetForm()
+  Object.assign(form, item)
+  isEditing.value = true
+  showDialog.value = true
+}
+
+function resetForm() {
+  isEditing.value = false
   Object.assign(form, {
-    contract_id: null, issue_date: null, due_date: null, rent_amount: 0,
-    electricity_amount: 0, water_amount: 0, internet_amount: 0, services_amount: 0
+    id: null, contract_id: null, issue_date: null, due_date: null,
+    rent_amount: 0, electricity_amount: 0, water_amount: 0,
+    internet_amount: 0, services_amount: 0
   })
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.contract_id) {
-    errorMsg.value = 'يرجى اختيار العقد المرتبط'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
-    await api.post('/invoices', form)
-    showToast('تمت إضافة الفاتورة بنجاح')
-    closeDialog()
-    await fetchItems()
+    if (isEditing.value) {
+      const { data } = await api.put(`/invoices/${form.id}`, form)
+      const idx = items.value.findIndex(i => i.id === form.id)
+      if (idx > -1) items.value[idx] = data.data
+      toast.success('تم تعديل الفاتورة بنجاح')
+    } else {
+      const { data } = await api.post('/invoices', form)
+      items.value.unshift(data.data)
+      toast.success('تم إنشاء الفاتورة بنجاح')
+    }
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر إضافة الفاتورة'
+    toast.error(err.response?.data?.message || 'تعذر حفظ الفاتورة')
   } finally {
     saving.value = false
   }
 }
 
-async function printInvoice(inv) {
-  try {
-    const url = api.defaults.baseURL + `/invoices/${inv.id}/pdf`
-    window.open(url, '_blank')
-  } catch (err) {
-    console.error(err)
-  }
-}
-
-async function payInvoice(inv) {
-  try {
-    await api.patch(`/invoices/${inv.id}/pay`)
-    showToast('تم تسديد الفاتورة بنجاح')
-    await fetchItems()
-  } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر تسديد الفاتورة'
-  }
-}
-
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
+function printInvoice(invoice) {
+  window.open(`${api.defaults.baseURL}/invoices/${invoice.id}/pdf`, '_blank')
 }
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
+.invoice-code {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--accent);
+  background: #EFF6FF;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
 }
 
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 240px !important;
-}
-
-.filter-select {
-  width: 170px !important;
-}
-.filter-datepicker {
-  width: 150px !important;
-}
-
-.toolbar-actions {
+.tenant-cell {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.invoice-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.icon-avatar {
+.user-avatar-circle {
   width: 36px;
   height: 36px;
   background: #EFF6FF;
-  border-radius: var(--radius-sm);
+  color: var(--accent);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-weight: 700;
+  font-size: 14px;
 }
 .cell-text {
   display: flex;
@@ -433,52 +481,36 @@ function exportCSV() {
   color: var(--text-secondary);
 }
 
-.tenant-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.date-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.date-cell {
+  display: flex;
+  flex-direction: column;
   font-size: 13px;
-  color: var(--text-secondary);
 }
 
-.amount-total {
+.total-amount {
   font-weight: 700;
   color: var(--text-primary);
 }
 
-.amount-paid {
-  font-weight: 600;
-  color: var(--success);
-}
-
-.form-row {
-  display: flex;
-  gap: 14px;
-}
-
-.action-buttons-group {
+.total-preview-box {
   display: flex;
   align-items: center;
-  gap: 4px;
-  justify-content: center;
+  justify-content: space-between;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+.calculated-sum {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
 }
 
-.text-success {
-  color: var(--success) !important;
-}
-.text-success:hover {
-  background: var(--success-bg) !important;
-}
-
-.required {
-  color: var(--danger);
+.filter-select {
+  width: 180px !important;
 }
 </style>

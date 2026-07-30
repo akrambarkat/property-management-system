@@ -88,6 +88,26 @@ const routes = [
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/settings/SettingsView.vue')
+      },
+      {
+        path: 'buildings/:id',
+        name: 'BuildingProfile',
+        component: () => import('@/views/buildings/BuildingProfileView.vue')
+      },
+      {
+        path: 'tenants/:id',
+        name: 'TenantProfile',
+        component: () => import('@/views/tenants/TenantProfileView.vue')
+      },
+      {
+        path: 'units/:id',
+        name: 'UnitProfile',
+        component: () => import('@/views/units/UnitProfileView.vue')
+      },
+      {
+        path: 'analytics',
+        name: 'Analytics',
+        component: () => import('@/views/reports/AnalyticsHubView.vue')
       }
     ]
   },

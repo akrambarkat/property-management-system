@@ -1,10 +1,16 @@
 <template>
   <div class="layout-wrapper" :class="{ 'sidebar-collapsed': appStore.sidebarCollapsed }">
+    <!-- Global Toast Container -->
+    <ToastContainer />
+
+    <!-- Fixed Sidebar -->
     <AppSidebar />
+
     <div class="layout-main">
+      <!-- Fixed Sticky Navbar with Integrated Global Search & Quick Actions -->
       <AppHeader @open-command-palette="showCommandPalette = true" />
       
-      <!-- Sub-Navbar Breadcrumb Area (Per Specification: Breadcrumbs belong UNDER navbar) -->
+      <!-- Sub-Navbar Breadcrumb Area (Directly Below Sticky Navbar) -->
       <div class="sub-navbar-breadcrumb">
         <nav class="breadcrumb-container">
           <ol class="breadcrumb-list">
@@ -24,28 +30,31 @@
           </ol>
         </nav>
 
-        <div class="page-quick-stats">
+        <div class="header-breadcrumb-right">
           <span class="system-time"><i class="pi pi-clock"></i> {{ currentTime }}</span>
         </div>
       </div>
 
+      <!-- Main Balanced Content Viewport -->
       <main class="layout-content">
-        <router-view v-slot="{ Component }">
-          <transition name="fade-slide" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+        <div class="content-container">
+          <router-view v-slot="{ Component }">
+            <transition name="fade-slide" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </div>
       </main>
     </div>
 
-    <!-- Command Palette (Global Search Ctrl+K) Modal -->
+    <!-- Indexed Command Palette (Global Search Ctrl+K) -->
     <Dialog
       v-model:visible="showCommandPalette"
       :modal="true"
       :showHeader="false"
       :dismissableMask="true"
       class="command-palette-dialog"
-      :style="{ width: '640px', maxWidth: '90vw' }"
+      :style="{ width: '640px', maxWidth: '92vw' }"
     >
       <div class="command-palette-body">
         <div class="command-search-header">
@@ -99,6 +108,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
+import ToastContainer from '@/components/common/ToastContainer.vue'
 import { useAppStore } from '@/stores/app'
 
 const route = useRoute()
@@ -203,6 +213,7 @@ onUnmounted(() => {
   min-height: 100vh;
   background-color: var(--bg-main);
   direction: rtl;
+  overflow: hidden;
 }
 
 .layout-main {
@@ -212,13 +223,14 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  height: 100vh;
 }
 
 .sidebar-collapsed .layout-main {
   margin-right: 80px;
 }
 
-/* Sub-Navbar Breadcrumb Area */
+/* Sub-Navbar Breadcrumb Area - Positioned Directly Below Sticky Header */
 .sub-navbar-breadcrumb {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
@@ -227,6 +239,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  flex-shrink: 0;
 }
 
 .breadcrumb-list {
@@ -272,13 +285,21 @@ onUnmounted(() => {
   gap: 6px;
 }
 
+/* Layout Content - Clean Single Scroll Container */
 .layout-content {
   flex: 1;
   padding: 24px 28px;
   overflow-y: auto;
+  min-height: 0;
 }
 
-/* Command Palette Modal Styling */
+.content-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Command Palette Styling */
 .command-palette-body {
   display: flex;
   flex-direction: column;

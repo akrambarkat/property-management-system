@@ -1,29 +1,30 @@
 <template>
   <div class="page-view">
-    <!-- Feedback Messages -->
-    <div v-if="errorMsg" class="error-banner">
-      <i class="pi pi-exclamation-circle"></i>
-      <span>{{ errorMsg }}</span>
-      <span class="close-banner" @click="errorMsg = ''">×</span>
-    </div>
-
-    <transition name="fade">
-      <div v-if="toastMsg" class="toast-banner">
-        <i class="pi pi-check-circle"></i>
-        <span>{{ toastMsg }}</span>
-      </div>
-    </transition>
-
-    <!-- Page Toolbar with Horizontal SaaS Filters & Actions -->
-    <div class="page-toolbar">
-      <div class="toolbar-filters">
-        <div class="search-input-wrapper">
-          <i class="pi pi-search search-icon"></i>
-          <InputText v-model="searchQuery" placeholder="بحث باسم المبنى أو الوصف..." class="search-input-field" />
-        </div>
+    <!-- Header Banner / Feedback -->
+            <!-- Enterprise SaaS Card Table Layout -->
+    <EnterpriseTable
+      :value="items"
+      :loading="loading"
+      searchPlaceholder="بحث ببيان المصروف، التصنيف، أو المبنى..."
+      emptyTitle="لا توجد مصروفات مسجلة"
+      emptySubtitle="لم يتم العثور على أي مصروفات تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      @refresh="fetchItems"
+    >
+      <template #filters>
+        <Select
+          v-model="filters.building_id"
+          :options="buildings"
+          optionLabel="name"
+          optionValue="id"
+          placeholder="جميع المباني"
+          showClear
+          @change="fetchItems"
+          class="filter-select"
+        />
         <Select
           v-model="filters.category"
-          :options="categoryFilter"
+          :options="categoryOptions"
           optionLabel="label"
           optionValue="value"
           placeholder="جميع التصنيفات"
@@ -31,121 +32,163 @@
           @change="fetchItems"
           class="filter-select"
         />
-      </div>
+      </template>
 
-      <div class="toolbar-actions">
-        <button class="btn-secondary" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-download"></i> تصدير
-        </button>
+      <template #actions>
         <button class="btn-primary" @click="openCreateDialog">
           <i class="pi pi-plus"></i> إضافة مصروف جديد
         </button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Enterprise SaaS Card Table Layout -->
-    <div class="table-container-card">
-      <DataTable
-        ref="dt"
-        :value="filteredItems"
-        stripedRows
-        paginator
-        :rows="12"
-        :loading="loading"
-        responsiveLayout="scroll"
-        class="custom-saas-table"
-      >
-        <Column field="building.name" header="المبنى / العقار" sortable>
+      <template #default="{ hiddenColumns }">
+        <Column v-if="!hiddenColumns.includes('building.name')" field="building.name" header="المبنى العقاري" sortable>
           <template #body="slotProps">
-            <div class="expense-cell">
-              <div class="icon-avatar">
-                <i class="pi pi-building text-red"></i>
-              </div>
-              <div class="cell-text">
-                <span class="font-bold">{{ slotProps.data.building?.name || 'مصروف عام' }}</span>
-                <span class="sub-text">تاريخ: {{ slotProps.data.expense_date?.split('T')[0] || '—' }}</span>
-              </div>
-            </div>
+            <span class="building-name" v-if="slotProps.data.building">
+              <i class="pi pi-building text-muted"></i>
+              {{ slotProps.data.building.name }}
+            </span>
+            <span v-else class="text-muted">مصروف عام</span>
           </template>
         </Column>
 
-        <Column field="category" header="التصنيف" sortable>
+        <Column v-if="!hiddenColumns.includes('category')" field="category" header="تصنيف المصروف" sortable>
           <template #body="slotProps">
-            <span class="category-pill">
+            <span class="category-badge">
               {{ categoryLabels[slotProps.data.category] || slotProps.data.category }}
             </span>
           </template>
         </Column>
 
-        <Column field="amount" header="المبلغ" sortable>
+        <Column v-if="!hiddenColumns.includes('amount')" field="amount" header="المبلغ" sortable>
           <template #body="slotProps">
             <span class="expense-amount">{{ formatCurrency(slotProps.data.amount) }}</span>
           </template>
         </Column>
 
-        <Column field="description" header="بيان المصروف">
+        <Column v-if="!hiddenColumns.includes('expense_date')" field="expense_date" header="التاريخ" sortable>
+          <template #body="slotProps">
+            <span class="date-text">{{ slotProps.data.expense_date || '—' }}</span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('description')" field="description" header="البيان / التفاصيل">
           <template #body="slotProps">
             <span class="desc-text">{{ slotProps.data.description || '—' }}</span>
           </template>
         </Column>
 
-        <Column header="الإجراءات" style="width: 100px; text-align: center;">
+        <!-- Actions -->
+        <Column header="الإجراءات" style="width: 80px; text-align: center;">
           <template #body="slotProps">
-            <div class="action-buttons-group">
-              <button class="btn-icon" @click="editItem(slotProps.data)" title="تعديل">
-                <i class="pi pi-pencil"></i>
-              </button>
-              <button class="btn-icon btn-danger" @click="confirmDelete(slotProps.data)" title="حذف">
-                <i class="pi pi-trash"></i>
-              </button>
-            </div>
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
         </Column>
-
-        <!-- Empty State -->
-        <template #empty>
-          <div class="empty-state">
-            <i class="pi pi-money-bill"></i>
-            <p>لا توجد مصروفات مسجلة تطابق البحث</p>
-          </div>
-        </template>
-      </DataTable>
-    </div>
+      </template>
+    </EnterpriseTable>
 
     <!-- Create / Edit Dialog -->
     <Dialog
       v-model:visible="showDialog"
       :header="isEditing ? 'تعديل بيانات المصروف' : 'إضافة مصروف جديد'"
       modal
-      :style="{ width: '550px' }"
+      :style="{ width: '560px' }"
       class="saas-dialog"
+      :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>المبنى <span class="required">*</span></label>
-            <Select v-model="form.building_id" :options="buildings" optionLabel="name" optionValue="id" placeholder="اختر المبنى" class="w-full" />
+        <!-- Section 1: Classification & Building -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-building"></i>
+            <span>المبنى والتصنيف</span>
           </div>
-          <div class="form-field flex-1">
-            <label>التصنيف</label>
-            <Select v-model="form.category" :options="categoryOptions" optionLabel="label" optionValue="value" class="w-full" />
+
+          <div class="form-grid-2">
+            <FormField
+              label="المبنى العقاري"
+              required
+              forId="exp-building"
+              :errorMessage="errors.building_id"
+              helpText="المبنى الذي صُرف عليه المبلغ"
+            >
+              <Select
+                id="exp-building"
+                v-model="form.building_id"
+                :options="buildings"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر المبنى"
+                class="w-full"
+                @change="clearFieldError('building_id')"
+              />
+            </FormField>
+
+            <FormField
+              label="تصنيف المصروف"
+              forId="exp-cat"
+            >
+              <Select
+                id="exp-cat"
+                v-model="form.category"
+                :options="categoryOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full"
+              />
+            </FormField>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-field flex-1">
-            <label>المبلغ (₪) <span class="required">*</span></label>
-            <InputNumber v-model="form.amount" class="w-full" :min="0" />
+        <!-- Section 2: Amount & Description -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-money-bill"></i>
+            <span>المبلغ والتاريخ</span>
           </div>
-          <div class="form-field flex-1">
-            <label>التاريخ</label>
-            <DatePicker v-model="form.expense_date" class="w-full" placeholder="اختر التاريخ" />
-          </div>
-        </div>
 
-        <div class="form-field">
-          <label>تفاصيل وبيان المصروف</label>
-          <Textarea v-model="form.description" class="w-full" rows="3" placeholder="أدخل تفاصيل وملاحظات المصروف" />
+          <div class="form-grid-2">
+            <FormField
+              label="المبلغ (₪)"
+              required
+              forId="exp-amount"
+              :errorMessage="errors.amount"
+            >
+              <InputNumber
+                id="exp-amount"
+                v-model="form.amount"
+                class="w-full"
+                :min="0"
+                placeholder="أدخل المبلغ"
+                @input="clearFieldError('amount')"
+              />
+            </FormField>
+
+            <FormField
+              label="تاريخ الصرف"
+              forId="exp-date"
+            >
+              <DatePicker
+                id="exp-date"
+                v-model="form.expense_date"
+                class="w-full"
+                placeholder="اختر التاريخ"
+              />
+            </FormField>
+          </div>
+
+          <FormField
+            label="تفاصيل وبيان المصروف"
+            forId="exp-desc"
+            helpText="توضيح الأسباب أو الجهة المستلمة للمبلغ"
+          >
+            <Textarea
+              id="exp-desc"
+              v-model="form.description"
+              class="w-full"
+              rows="3"
+              placeholder="أدخل تفاصيل وملاحظات المصروف"
+            />
+          </FormField>
         </div>
 
         <div class="form-actions">
@@ -159,53 +202,118 @@
     </Dialog>
 
     <!-- Delete Modal -->
-    <Dialog v-model:visible="showDeleteModal" header="تأكيد عملية الحذف" modal :style="{ width: '400px' }">
-      <div class="dialog-body text-center">
-        <i class="pi pi-exclamation-triangle warning-icon"></i>
-        <p class="delete-msg">هل أنت متأكد من حذف المصروف بقيمة <strong>{{ formatCurrency(itemToDelete?.amount) }}</strong>؟</p>
-        <div class="form-actions center-actions">
-          <button class="btn-secondary" @click="showDeleteModal = false">إلغاء</button>
-          <button class="btn-primary btn-danger-action" @click="deleteItemConfirmed">تأكيد الحذف</button>
-        </div>
-      </div>
-    </Dialog>
+    <ConfirmModal
+      v-model:visible="showDeleteModal"
+      title="تأكيد الحذف"
+      :message="`هل أنت متأكد من حذف المصروف بقيمة <strong>${ formatCurrency(itemToDelete?.amount) }</strong>؟`"
+      variant="danger"
+      confirmText="تأكيد الحذف"
+      @confirm="deleteItemConfirmed"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import api from '@/services/api'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import FormField from '@/components/common/FormField.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useToastStore } from '@/stores/toast'
 
-const dt = ref(null)
 const items = ref([])
 const buildings = ref([])
 const loading = ref(false)
+const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
-const errorMsg = ref('')
-const toastMsg = ref('')
-const searchQuery = ref('')
 
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
 
-const filters = reactive({ category: null })
+const filters = reactive({ building_id: null, category: null })
 
-const form = reactive({ id: null, building_id: null, category: 'general', amount: null, expense_date: null, description: '' })
-
-const categoryLabels = { maintenance: 'صيانة', plumbing: 'سباكة', electrical: 'كهرباء', cleaning: 'نظافة', security: 'أمن', general: 'عام' }
-const categoryFilter = ref(Object.entries(categoryLabels).map(([value, label]) => ({ value, label })))
-const categoryOptions = ref(Object.entries(categoryLabels).map(([value, label]) => ({ value, label })))
-
-const filteredItems = computed(() => {
-  if (!searchQuery.value.trim()) return items.value
-  const q = searchQuery.value.toLowerCase()
-  return items.value.filter(item =>
-    item.building?.name?.toLowerCase().includes(q) ||
-    item.description?.toLowerCase().includes(q)
-  )
+const form = reactive({
+  id: null, building_id: null, category: 'maintenance', amount: null,
+  expense_date: null, description: ''
 })
+
+const errors = reactive({
+  building_id: '', amount: ''
+})
+
+const initialFormState = JSON.stringify(form)
+
+const tableColumns = [
+  { field: 'building.name', header: 'المبنى العقاري' },
+  { field: 'category', header: 'تصنيف المصروف' },
+  { field: 'amount', header: 'المبلغ' },
+  { field: 'expense_date', header: 'التاريخ' },
+  { field: 'description', header: 'البيان / التفاصيل' }
+]
+
+const categoryLabels = {
+  maintenance: 'صيانة وتصليحات',
+  electricity: 'كهرباء خدمات',
+  water: 'مياه خدمات',
+  cleaning: 'نظافة وتدبير',
+  security: 'حراسة وأمن',
+  admin: 'إدارية وعمومية',
+  other: 'أخرى'
+}
+
+const categoryOptions = ref([
+  { label: 'صيانة وتصليحات', value: 'maintenance' },
+  { label: 'كهرباء خدمات', value: 'electricity' },
+  { label: 'مياه خدمات', value: 'water' },
+  { label: 'نظافة وتدبير', value: 'cleaning' },
+  { label: 'حراسة وأمن', value: 'security' },
+  { label: 'إدارية وعمومية', value: 'admin' },
+  { label: 'أخرى', value: 'other' }
+])
+
+function clearFieldError(field) {
+  if (errors[field]) errors[field] = ''
+}
+
+function validateForm() {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!form.building_id) {
+    errors.building_id = 'يرجى اختيار المبنى العقاري'
+    isValid = false
+  }
+
+  if (form.amount === null || form.amount === undefined || form.amount <= 0) {
+    errors.amount = 'يرجى إدخال مبلغ مصروف صحيح أكبر من صفر'
+    isValid = false
+  }
+
+  return isValid
+}
+
+function isFormDirty() {
+  return JSON.stringify(form) !== initialFormState
+}
+
+function getRowActions(row) {
+  return [
+    {
+      label: 'تعديل المصروف',
+      icon: 'pi pi-pencil',
+      command: () => editItem(row)
+    },
+    {
+      label: 'حذف المصروف',
+      icon: 'pi pi-trash',
+      danger: true,
+      command: () => confirmDelete(row)
+    }
+  ]
+}
 
 function formatCurrency(amount) {
   if (!amount) return '0 ₪'
@@ -224,59 +332,73 @@ async function fetchBuildings() {
 async function fetchItems() {
   loading.value = true
   try {
-    errorMsg.value = ''
-    const params = filters.category ? { category: filters.category } : {}
+    const params = {}
+    if (filters.building_id) params.building_id = filters.building_id
+    if (filters.category) params.category = filters.category
+
     const { data } = await api.get('/expenses', { params })
     items.value = data.data
   } catch (err) {
-    errorMsg.value = 'خطأ في تحميل المصروفات: ' + (err.response?.data?.message || err.message)
+    toast.error('خطأ في تحميل المصروفات: ' + (err.response?.data?.message || err.message))
     items.value = []
   } finally {
     loading.value = false
   }
 }
 
-function showToast(msg) {
-  toastMsg.value = msg
-  setTimeout(() => { toastMsg.value = '' }, 3000)
-}
 
 function openCreateDialog() {
-  closeDialog()
+  resetForm()
   showDialog.value = true
 }
 
 function editItem(item) {
-  Object.assign(form, { ...item, expense_date: item.expense_date?.split('T')[0] })
+  resetForm()
+  Object.assign(form, item)
   isEditing.value = true
   showDialog.value = true
 }
 
-function closeDialog() {
-  showDialog.value = false
+function resetForm() {
   isEditing.value = false
-  Object.assign(form, { id: null, building_id: null, category: 'general', amount: null, expense_date: null, description: '' })
+  Object.assign(form, {
+    id: null, building_id: null, category: 'maintenance', amount: null,
+    expense_date: null, description: ''
+  })
+  Object.keys(errors).forEach(key => errors[key] = '')
+}
+
+function closeDialog() {
+  if (isFormDirty() && !confirm('لديك تغييرات غير محفوظة، هل أنت متأكد من الإغلاق؟')) {
+    return
+  }
+  showDialog.value = false
+  resetForm()
+}
+
+function handleDialogHide() {
+  resetForm()
 }
 
 async function saveItem() {
-  if (!form.building_id || !form.amount) {
-    errorMsg.value = 'يرجى تحديد المبنى والمبلغ'
-    return
-  }
+  if (!validateForm()) return
 
   saving.value = true
   try {
     if (isEditing.value) {
-      await api.put(`/expenses/${form.id}`, form)
-      showToast('تم تعديل المصروف بنجاح')
+      const { data } = await api.put(`/expenses/${form.id}`, form)
+      const idx = items.value.findIndex(i => i.id === form.id)
+      if (idx > -1) items.value[idx] = data.data
+      toast.success('تم تعديل المصروف بنجاح')
     } else {
-      await api.post('/expenses', form)
-      showToast('تمت إضافة المصروف بنجاح')
+      const { data } = await api.post('/expenses', form)
+      items.value.unshift(data.data)
+      toast.success('تم إضافة المصروف بنجاح')
     }
-    closeDialog()
-    await fetchItems()
+    showDialog.value = false
+    resetForm()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'تعذر حفظ المصروف'
+    toast.error(err.response?.data?.message || 'تعذر حفظ المصروف')
   } finally {
     saving.value = false
   }
@@ -291,118 +413,25 @@ async function deleteItemConfirmed() {
   if (!itemToDelete.value) return
   try {
     await api.delete(`/expenses/${itemToDelete.value.id}`)
-    showToast('تم حذف المصروف بنجاح')
+    toast.success('تم حذف المصروف بنجاح')
     showDeleteModal.value = false
     itemToDelete.value = null
     await fetchItems()
   } catch (err) {
-    errorMsg.value = err.response?.data?.message || 'خطأ أثناء الحذف'
+    toast.error(err.response?.data?.message || 'خطأ أثناء عملية الحذف')
   }
-}
-
-function exportCSV() {
-  if (dt.value) dt.value.exportCSV()
 }
 </script>
 
 <style scoped>
-.error-banner {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid #FECACA;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  display: flex;
+.building-name {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   font-size: 13.5px;
 }
-.close-banner {
-  margin-right: auto;
-  cursor: pointer;
-  font-size: 16px;
-}
 
-.toast-banner {
-  position: fixed;
-  top: 80px;
-  left: 30px;
-  background: #10B981;
-  color: #FFFFFF;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 2000;
-  font-size: 13.5px;
-  font-weight: 500;
-}
-
-.search-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-.search-input-field {
-  padding-right: 36px !important;
-  width: 250px !important;
-}
-
-.filter-select {
-  width: 170px !important;
-}
-
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.table-container-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-
-.expense-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.icon-avatar {
-  width: 36px;
-  height: 36px;
-  background: #FEF2F2;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-}
-.cell-text {
-  display: flex;
-  flex-direction: column;
-}
-.font-bold {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.sub-text {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.category-pill {
+.category-badge {
   background: #F1F5F9;
   padding: 4px 10px;
   border-radius: var(--radius-full);
@@ -415,25 +444,18 @@ function exportCSV() {
   color: var(--danger);
 }
 
+.date-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
 .desc-text {
   font-size: 13px;
   color: var(--text-secondary);
 }
 
-.form-row {
-  display: flex;
-  gap: 14px;
-}
-
-.action-buttons-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  justify-content: center;
-}
-
-.required {
-  color: var(--danger);
+.filter-select {
+  width: 170px !important;
 }
 
 .text-center {
