@@ -81,9 +81,11 @@
 }
 
 /* Dark Mode Tokens (Ready System Override) */
+.p-dark,
 [data-theme="dark"] {
   --bg-main: #0B0F17;
   --bg-surface: #1E293B;
+  --bg-sidebar: #0F172A;
   --bg-subtle: #334155;
 
   --text-primary: #F8FAFC;
@@ -93,6 +95,35 @@
   --border: #334155;
   --border-light: #1E293B;
   --border-hover: #475569;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+
+  /* Semantic dark backgrounds */
+  --primary-50: #1E1B4B;
+  --success-bg: #064E3B;
+  --success-border: #065F46;
+  --warning-bg: #451A03;
+  --warning-border: #78350F;
+  --danger-bg: #450A0A;
+  --danger-border: #7F1D1D;
+  --info-bg: #172554;
+  --info-border: #1E3A5F;
+
+  /* Table header & row overrides for dark mode */
+  .enterprise-saas-table .p-datatable-thead > tr > th,
+  .custom-saas-table .p-datatable-thead > tr > th {
+    background: var(--bg-subtle, #334155) !important;
+  }
+  .enterprise-saas-table .p-datatable-tbody > tr:hover,
+  .custom-saas-table .p-datatable-tbody > tr:hover {
+    background: var(--bg-subtle, #334155) !important;
+  }
+  .enterprise-saas-table .p-datatable-tbody > tr > td {
+    border-bottom-color: var(--border-light) !important;
+  }
 }
 
 /* Global Reset & Box Sizing */
@@ -627,6 +658,78 @@ input, select, textarea, button {
 .empty-state p {
   font-size: 14px;
   color: var(--text-secondary);
+}
+
+/* Dark Mode Global Overrides for Common Scoped Classes */
+.p-dark .icon-avatar,
+.p-dark .type-badge,
+.p-dark .role-employee,
+.p-dark .filter-select,
+.p-dark .priority-low,
+.p-dark .contract-code {
+  background: var(--bg-subtle) !important;
+}
+.p-dark .icon-avatar {
+  color: var(--text-secondary) !important;
+}
+.p-dark .status-available,
+.p-dark .status-active,
+.p-dark .success-bg {
+  background: var(--success-bg) !important;
+  color: var(--success) !important;
+}
+.p-dark .status-occupied,
+.p-dark .status-warning,
+.p-dark .warning-bg {
+  background: var(--warning-bg) !important;
+  color: var(--warning) !important;
+}
+.p-dark .status-expired,
+.p-dark .status-terminated,
+.p-dark .status-danger,
+.p-dark .danger-bg {
+  background: var(--danger-bg) !important;
+  color: var(--danger) !important;
+}
+.p-dark .status-maintenance,
+.p-dark .status-info,
+.p-dark .info-bg {
+  background: var(--info-bg) !important;
+  color: var(--info) !important;
+}
+.p-dark .role-super_admin {
+  background: var(--primary-50) !important;
+  color: var(--accent) !important;
+}
+.p-dark .bg-indigo-light {
+  background: var(--primary-50) !important;
+  border-color: var(--border) !important;
+}
+.p-dark .bg-danger-light {
+  background: var(--danger-bg) !important;
+}
+.p-dark .badge-warning,
+.p-dark .priority-medium,
+.p-dark .role-guard {
+  background: var(--warning-bg) !important;
+  color: var(--warning) !important;
+}
+.p-dark .badge-success {
+  background: var(--success-bg) !important;
+  color: var(--success) !important;
+}
+.p-dark .priority-high {
+  background: var(--danger-bg) !important;
+  color: var(--danger) !important;
+}
+.p-dark .bg-emerald {
+  background: #10B981 !important;
+}
+.p-dark .bg-amber {
+  background: #F59E0B !important;
+}
+.p-dark .bg-rose {
+  background: #EF4444 !important;
 }
 
 /* Custom Scrollbars */

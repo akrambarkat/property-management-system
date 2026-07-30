@@ -81,7 +81,7 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -137,6 +137,7 @@
               optionValue="id"
               placeholder="اختر الموقع العقاري"
               class="w-full"
+              filter
               @change="clearFieldError('location_id')"
             />
           </FormField>

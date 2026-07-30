@@ -84,7 +84,7 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -124,6 +124,7 @@
               optionValue="id"
               placeholder="اختر الوحدة المستهدفة"
               class="w-full"
+              filter
               @change="clearFieldError('unit_id')"
             />
           </FormField>
@@ -165,6 +166,7 @@
                 optionLabel="label"
                 optionValue="value"
                 class="w-full"
+                filter
               />
             </FormField>
 
@@ -179,6 +181,7 @@
                 optionLabel="label"
                 optionValue="value"
                 class="w-full"
+                filter
               />
             </FormField>
           </div>

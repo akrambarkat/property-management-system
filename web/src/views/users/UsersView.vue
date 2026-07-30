@@ -75,7 +75,7 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -184,6 +184,7 @@
                 optionLabel="label"
                 optionValue="value"
                 class="w-full"
+                filter
               />
             </FormField>
 

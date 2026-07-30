@@ -1,191 +1,276 @@
 <template>
   <div class="page-view profile-dashboard">
-    <!-- Header with Back Button -->
-    <div class="profile-header">
-      <div class="header-left">
-        <button class="btn-icon" @click="router.back()">
-          <i class="pi pi-arrow-right"></i>
-        </button>
-        <div class="profile-title-block">
-          <div class="flex-align gap-3">
-            <div class="tenant-avatar">
-              <i class="pi pi-user"></i>
-            </div>
-            <div>
-              <h2 class="profile-title">شركة الأفق للاستشارات ذ.م.م</h2>
-              <span class="profile-subtitle">
-                <i class="pi pi-id-card text-muted"></i>
-                رقم الهوية/السجل: 1029384756 | مستأجر منذ 3 سنوات
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="header-actions">
-        <button class="btn-secondary">
-          <i class="pi pi-send"></i> إرسال رسالة
-        </button>
-        <button class="btn-primary">
-          <i class="pi pi-file-edit"></i> تعديل البيانات
-        </button>
-      </div>
-    </div>
-
-    <div class="profile-body-grid">
-      <!-- Middle/Left Column -->
-      <div class="profile-col-left">
-        <!-- Quick Collection Center (Action Panel) -->
-        <div class="dashboard-widget highlight-widget">
-          <div class="widget-header">
-            <h3>مركز التحصيل السريع</h3>
-            <i class="pi pi-bolt text-warning text-xl"></i>
-          </div>
-          <div class="collection-center">
-            <div class="outstanding-box">
-              <span class="box-label">مستحقات متأخرة</span>
-              <span class="box-value text-danger">15,000 ₪</span>
-            </div>
-            <div class="collection-actions">
-              <button class="btn-primary w-full justify-center">
-                <i class="pi pi-money-bill"></i> تسجيل دفعة جديدة
-              </button>
-              <button class="btn-secondary w-full justify-center">
-                <i class="pi pi-whatsapp"></i> تذكير عبر واتساب
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Upcoming Contract Expiration -->
-        <div class="dashboard-widget">
-          <div class="widget-header">
-            <h3>العقد الحالي</h3>
-            <span class="badge badge-warning">ينتهي قريباً</span>
-          </div>
-          <div class="contract-card">
-            <div class="contract-meta">
-              <span class="c-label">رقم العقد</span>
-              <span class="c-val">CNT-2024-089</span>
-            </div>
-            <div class="contract-meta">
-              <span class="c-label">الوحدة</span>
-              <span class="c-val">مكتب 501 (برج السلام)</span>
-            </div>
-            <div class="contract-meta">
-              <span class="c-label">تاريخ الانتهاء</span>
-              <span class="c-val text-danger font-bold">12 أغسطس 2026</span>
-            </div>
-            <button class="btn-xs-primary mt-2">تجديد العقد</button>
-          </div>
-        </div>
-        
-        <!-- Contact Info -->
-        <div class="dashboard-widget">
-          <div class="widget-header">
-            <h3>معلومات التواصل</h3>
-          </div>
-          <div class="contact-list">
-            <div class="contact-item">
-              <i class="pi pi-phone text-muted"></i>
-              <span>+970 599 123 456</span>
-            </div>
-            <div class="contact-item">
-              <i class="pi pi-envelope text-muted"></i>
-              <span>info@alufuq.com</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Column: History & Activities -->
-      <div class="profile-col-right">
-        
-        <!-- Payment History Table -->
-        <div class="dashboard-widget">
-          <div class="widget-header">
-            <h3>سجل الدفعات الأخير</h3>
-            <router-link to="/payments" class="text-xs text-accent font-bold">عرض السجل الكامل</router-link>
-          </div>
-          <table class="simple-table">
-            <thead>
-              <tr>
-                <th>رقم الإيصال</th>
-                <th>التاريخ</th>
-                <th>المبلغ</th>
-                <th>طريقة الدفع</th>
-                <th>الحالة</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>#RCP-1045</td>
-                <td>01/07/2026</td>
-                <td class="font-bold">5,000 ₪</td>
-                <td>تحويل بنكي</td>
-                <td><span class="status-badge status-active">مكتمل</span></td>
-              </tr>
-              <tr>
-                <td>#RCP-1012</td>
-                <td>01/06/2026</td>
-                <td class="font-bold">5,000 ₪</td>
-                <td>نقدي</td>
-                <td><span class="status-badge status-active">مكتمل</span></td>
-              </tr>
-              <tr>
-                <td>#RCP-0988</td>
-                <td>01/05/2026</td>
-                <td class="font-bold">5,000 ₪</td>
-                <td>شيك</td>
-                <td><span class="status-badge status-expired">مرتجع</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Recent Activities Timeline -->
-        <div class="dashboard-widget mt-4">
-          <div class="widget-header">
-            <h3>الخط الزمني للأنشطة</h3>
-          </div>
-          <div class="timeline-container">
-            <div class="timeline-row">
-              <div class="t-icon bg-warning-light"><i class="pi pi-exclamation-triangle text-warning"></i></div>
-              <div class="t-content">
-                <span class="t-title">تذكير بدفعة متأخرة</span>
-                <span class="t-time">اليوم, 10:30 صباحاً</span>
-                <p class="t-desc">تم إرسال تذكير آلي عبر البريد الإلكتروني لدفع إيجار شهر أغسطس.</p>
+    <div v-if="loading" class="text-center py-8 text-muted">جاري التحميل...</div>
+    <template v-else-if="tenant">
+      <div class="profile-header">
+        <div class="header-left">
+          <button class="btn-icon" @click="router.back()">
+            <i class="pi pi-arrow-right"></i>
+          </button>
+          <div class="profile-title-block">
+            <div class="flex-align gap-3">
+              <div class="tenant-avatar">
+                <img v-if="tenant.id_photo_url" :src="tenant.id_photo_url" class="avatar-img" />
+                <i v-else class="pi pi-user"></i>
+              </div>
+              <div>
+                <h2 class="profile-title">{{ fullName }}</h2>
+                <span class="profile-subtitle">
+                  <i class="pi pi-id-card text-muted"></i>
+                  الرقم المدني/سجل: {{ tenant.id_number || '—' }} | مستأجر منذ {{ monthsSinceJoined }} شهر
+                </span>
               </div>
             </div>
-            <div class="timeline-row">
-              <div class="t-icon bg-info-light"><i class="pi pi-wrench text-info"></i></div>
-              <div class="t-content">
-                <span class="t-title">إغلاق طلب صيانة #MNT-202</span>
-                <span class="t-time">قبل 3 أيام</span>
-                <p class="t-desc">تم الانتهاء من صيانة مكيف المكتب وتسليمه للمستأجر.</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-secondary" @click="router.push(`/tenants`)">
+            <i class="pi pi-arrow-left"></i> العودة للقائمة
+          </button>
+        </div>
+      </div>
+
+      <div class="profile-body-grid">
+        <div class="profile-col-left">
+          <div class="dashboard-widget highlight-widget">
+            <div class="widget-header">
+              <h3>مركز التحصيل السريع</h3>
+              <i class="pi pi-bolt text-warning text-xl"></i>
+            </div>
+            <div class="collection-center">
+              <div class="outstanding-box">
+                <span class="box-label">إجمالي المستحقات</span>
+                <span class="box-value" :class="outstandingTotal > 0 ? 'text-danger' : 'text-success'">{{ format(outstandingTotal) }}</span>
+              </div>
+              <div class="collection-actions">
+                <button class="btn-primary w-full justify-center" @click="router.push('/payments')">
+                  <i class="pi pi-money-bill"></i> تسجيل دفعة جديدة
+                </button>
               </div>
             </div>
-            <div class="timeline-row">
-              <div class="t-icon bg-success-light"><i class="pi pi-file text-success"></i></div>
-              <div class="t-content">
-                <span class="t-title">توقيع الملحق الإضافي</span>
-                <span class="t-time">قبل شهر</span>
-                <p class="t-desc">تم توقيع ملحق لاستئجار موقف سيارة إضافي.</p>
+          </div>
+
+          <div class="dashboard-widget">
+            <div class="widget-header">
+              <h3>العقد الحالي</h3>
+              <span v-if="activeContract" class="badge" :class="contractEndSoon ? 'badge-warning' : 'badge-success'">{{ contractEndSoon ? 'ينتهي قريباً' : 'نشط' }}</span>
+            </div>
+            <div v-if="activeContract" class="contract-card">
+              <div class="contract-meta">
+                <span class="c-label">رقم العقد</span>
+                <span class="c-val">{{ activeContract.contract_number }}</span>
+              </div>
+              <div class="contract-meta">
+                <span class="c-label">الوحدة</span>
+                <span class="c-val">وحدة {{ activeContract.unit?.unit_number || '—' }} ({{ activeContract.unit?.building?.name || '—' }})</span>
+              </div>
+              <div class="contract-meta">
+                <span class="c-label">قيمة الإيجار</span>
+                <span class="c-val">{{ format(activeContract.rent_amount) }}/شهرياً</span>
+              </div>
+              <div class="contract-meta">
+                <span class="c-label">تاريخ الانتهاء</span>
+                <span class="c-val" :class="contractEndSoon ? 'text-danger font-bold' : ''">{{ activeContract.end_date }}</span>
+              </div>
+            </div>
+            <div v-else class="text-muted" style="padding: 16px; text-align: center;">لا يوجد عقد نشط حالياً</div>
+          </div>
+
+          <div class="dashboard-widget">
+            <div class="widget-header">
+              <h3>معلومات التواصل</h3>
+            </div>
+            <div class="contact-list">
+              <div v-if="tenant.phone" class="contact-item">
+                <i class="pi pi-phone text-muted"></i>
+                <span dir="ltr" style="text-align: right;">{{ tenant.phone }}</span>
+              </div>
+              <div v-if="tenant.email" class="contact-item">
+                <i class="pi pi-envelope text-muted"></i>
+                <span>{{ tenant.email }}</span>
+              </div>
+              <div v-if="!tenant.phone && !tenant.email" class="contact-item text-muted">
+                <span>لا توجد معلومات تواصل</span>
               </div>
             </div>
           </div>
         </div>
 
+        <div class="profile-col-right">
+          <div class="dashboard-widget">
+            <div class="widget-header">
+              <h3>طلبات الصيانة</h3>
+              <span v-if="maintenanceItems.length" class="text-xs text-muted">{{ maintenanceItems.length }} طلب</span>
+            </div>
+            <div class="widget-list">
+              <div v-if="maintenanceItems.length === 0" class="text-muted" style="padding: 16px; text-align: center;">لا توجد طلبات صيانة</div>
+              <div v-for="m in maintenanceItems" :key="m.id" class="widget-list-item">
+                <div class="item-icon" :class="m.status === 'completed' ? 'bg-info-light' : 'bg-warning-light'">
+                  <i :class="m.status === 'completed' ? 'pi pi-check-circle text-info' : 'pi pi-cog text-warning'"></i>
+                </div>
+                <div class="item-info">
+                  <span class="item-title">{{ m.description }}</span>
+                  <span class="item-sub">{{ maintStatusText(m.status) }}{{ m.cost ? ` | التكلفة: ${format(m.cost)}` : '' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-widget mt-4">
+            <div class="widget-header">
+              <h3>سجل الدفعات الأخير</h3>
+              <router-link v-if="recentPayments.length" to="/payments" class="text-xs text-accent font-bold">عرض الكل</router-link>
+            </div>
+            <table class="simple-table">
+              <thead>
+                <tr>
+                  <th>رقم الإيصال</th>
+                  <th>التاريخ</th>
+                  <th>المبلغ</th>
+                  <th>طريقة الدفع</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="recentPayments.length === 0">
+                  <td colspan="4" class="text-muted text-center">لا توجد دفعات مسجلة</td>
+                </tr>
+                <tr v-for="p in recentPayments" :key="p.id">
+                  <td>{{ p.receipt_number || '—' }}</td>
+                  <td>{{ p.payment_date }}</td>
+                  <td class="font-bold">{{ format(p.amount) }}</td>
+                  <td>{{ paymentMethodLabel(p.payment_method) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="dashboard-widget mt-4">
+            <div class="widget-header">
+              <h3>آخر الفواتير</h3>
+            </div>
+            <table class="simple-table">
+              <thead>
+                <tr>
+                  <th>رقم الفاتورة</th>
+                  <th>التاريخ</th>
+                  <th>المبلغ</th>
+                  <th>المتبقي</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="recentInvoices.length === 0">
+                  <td colspan="5" class="text-muted text-center">لا توجد فواتير</td>
+                </tr>
+                <tr v-for="inv in recentInvoices" :key="inv.id">
+                  <td>{{ inv.invoice_number }}</td>
+                  <td>{{ inv.issue_date }}</td>
+                  <td>{{ format(inv.total_amount) }}</td>
+                  <td class="font-bold" :class="inv.balance > 0 ? 'text-danger' : 'text-success'">{{ format(inv.balance) }}</td>
+                  <td><span class="status-badge" :class="inv.status === 'paid' ? 'status-active' : 'status-expired'">{{ inv.status === 'paid' ? 'مدفوع' : inv.status === 'partial' ? 'جزئي' : 'غير مدفوع' }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </div>
+    </template>
+    <div v-else class="text-center py-8 text-danger">فشل تحميل بيانات المستأجر</div>
   </div>
 </template>
 
 <script setup>
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '@/services/api'
+import { formatCurrency } from '@/utils/currency'
+import { useAppStore } from '@/stores/app'
 
-const route = useRoute()
 const router = useRouter()
-const tenantId = route.params.id || '205'
+const route = useRoute()
+const appStore = useAppStore()
+
+const tenant = ref(null)
+const maintenanceItems = ref([])
+const loading = ref(true)
+
+function format(val) {
+  return formatCurrency(val || 0, appStore.selectedCurrency)
+}
+
+const fullName = computed(() => {
+  if (!tenant.value) return '—'
+  return `${tenant.value.first_name} ${tenant.value.last_name}`
+})
+
+const allContracts = computed(() => tenant.value?.contracts || [])
+const activeContract = computed(() => allContracts.value.find(c => c.status === 'active'))
+
+const monthsSinceJoined = computed(() => {
+  if (!allContracts.value.length) return '—'
+  const dates = allContracts.value.map(c => c.start_date ? new Date(c.start_date) : null).filter(Boolean)
+  if (!dates.length) return '—'
+  const earliest = new Date(Math.min(...dates))
+  const now = new Date()
+  return Math.max(1, (now.getFullYear() - earliest.getFullYear()) * 12 + now.getMonth() - earliest.getMonth())
+})
+
+const contractEndSoon = computed(() => {
+  if (!activeContract.value?.end_date) return false
+  const end = new Date(activeContract.value.end_date)
+  const now = new Date()
+  const diff = (end - now) / (1000 * 60 * 60 * 24)
+  return diff >= 0 && diff <= 60
+})
+
+const allInvoices = computed(() => {
+  if (!allContracts.value.length) return []
+  return allContracts.value.flatMap(c => c.invoices || []).sort((a, b) => new Date(b.issue_date) - new Date(a.issue_date))
+})
+
+const outstandingTotal = computed(() => {
+  return allInvoices.value.reduce((sum, inv) => sum + (inv.total_amount - inv.paid_amount), 0)
+})
+
+const recentPayments = computed(() => {
+  const payments = allInvoices.value.flatMap(inv => (inv.payments || []).map(p => ({ ...p, invoice_number: inv.invoice_number })))
+  payments.sort((a, b) => new Date(b.payment_date || b.created_at) - new Date(a.payment_date || a.created_at))
+  return payments.slice(0, 10)
+})
+
+const recentInvoices = computed(() => {
+  return allInvoices.value.slice(0, 10)
+})
+
+const paymentMethodLabel = (method) => {
+  const labels = { bank_transfer: 'تحويل بنكي', cash: 'نقدي', check: 'شيك', credit_card: 'بطاقة ائتمان' }
+  return labels[method] || method || '—'
+}
+
+const maintStatusText = (status) => {
+  const labels = { pending: 'معلق', in_progress: 'قيد التنفيذ', completed: 'مكتمل', cancelled: 'ملغي' }
+  return labels[status] || status || '—'
+}
+
+onMounted(async () => {
+  try {
+    const tenantId = route.params.id
+    const [tenantRes] = await Promise.all([
+      api.get(`/tenants/${tenantId}`),
+    ])
+    tenant.value = tenantRes.data?.data || null
+
+    const active = tenant.value?.contracts?.find(c => c.status === 'active')
+    if (active?.unit?.id) {
+      const maintRes = await api.get('/maintenance', { params: { unit_id: active.unit.id } })
+      maintenanceItems.value = maintRes.data?.data || []
+    }
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -194,7 +279,6 @@ const tenantId = route.params.id || '205'
   flex-direction: column;
   gap: 24px;
 }
-
 .profile-header {
   display: flex;
   align-items: center;
@@ -218,13 +302,15 @@ const tenantId = route.params.id || '205'
   justify-content: center;
   font-size: 1.5rem;
   border: 2px solid #BFDBFE;
+  overflow: hidden;
 }
-.flex-align {
-  display: flex;
-  align-items: center;
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
+.flex-align { display: flex; align-items: center; }
 .gap-3 { gap: 12px; }
-
 .profile-title {
   font-size: 20px;
   font-weight: 800;
@@ -243,7 +329,6 @@ const tenantId = route.params.id || '205'
   display: flex;
   gap: 12px;
 }
-
 .profile-body-grid {
   display: grid;
   grid-template-columns: 1fr 2.2fr;
@@ -254,7 +339,6 @@ const tenantId = route.params.id || '205'
     grid-template-columns: 1fr;
   }
 }
-
 .dashboard-widget {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -267,7 +351,6 @@ const tenantId = route.params.id || '205'
   background: linear-gradient(180deg, #FFFFFF 0%, #FEF9C3 100%);
   border-color: #FDE047;
 }
-
 .widget-header {
   display: flex;
   align-items: center;
@@ -280,7 +363,6 @@ const tenantId = route.params.id || '205'
   color: var(--text-primary);
   margin: 0;
 }
-
 .badge {
   font-size: 11px;
   padding: 2px 8px;
@@ -288,8 +370,7 @@ const tenantId = route.params.id || '205'
   font-weight: 600;
 }
 .badge-warning { background: #FEF3C7; color: #D97706; }
-
-/* Collection Center */
+.badge-success { background: #DCFCE7; color: #16A34A; }
 .collection-center {
   display: flex;
   flex-direction: column;
@@ -307,8 +388,8 @@ const tenantId = route.params.id || '205'
 .box-label { font-size: 12.5px; color: #991B1B; font-weight: 600; }
 .box-value { font-size: 28px; font-weight: 900; margin-top: 4px; }
 .text-danger { color: #DC2626; }
+.text-success { color: #16A34A; }
 .text-warning { color: #D97706; }
-
 .collection-actions {
   display: flex;
   flex-direction: column;
@@ -316,8 +397,6 @@ const tenantId = route.params.id || '205'
 }
 .w-full { width: 100%; }
 .justify-center { justify-content: center; }
-
-/* Contract Card */
 .contract-card {
   display: flex;
   flex-direction: column;
@@ -335,9 +414,7 @@ const tenantId = route.params.id || '205'
 .c-label { color: var(--text-secondary); }
 .c-val { font-weight: 600; color: var(--text-primary); }
 .font-bold { font-weight: 700; }
-.mt-2 { margin-top: 8px; }
-
-/* Contact List */
+.mt-4 { margin-top: 16px; }
 .contact-list {
   display: flex;
   flex-direction: column;
@@ -350,8 +427,6 @@ const tenantId = route.params.id || '205'
   font-size: 14px;
   color: var(--text-primary);
 }
-
-/* Simple Table */
 .simple-table {
   width: 100%;
   border-collapse: collapse;
@@ -377,29 +452,24 @@ const tenantId = route.params.id || '205'
 }
 .status-active { background: #ECFDF5; color: #059669; }
 .status-expired { background: #FEF2F2; color: #DC2626; }
-
-/* Timeline */
-.timeline-container {
+.text-center { text-align: center; }
+.text-muted { color: var(--text-secondary); }
+.text-xs { font-size: 12px; }
+.text-accent { color: var(--accent); }
+.py-8 { padding-top: 32px; padding-bottom: 32px; }
+.widget-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding-left: 8px;
 }
-.timeline-row {
+.widget-list-item {
   display: flex;
-  gap: 16px;
-  position: relative;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
 }
-.timeline-row:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  top: 40px;
-  right: 17px;
-  bottom: -20px;
-  width: 2px;
-  background: var(--border-light);
-}
-.t-icon {
+.widget-list-item:last-child { border-bottom: none; }
+.item-icon {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -407,31 +477,16 @@ const tenantId = route.params.id || '205'
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  z-index: 1;
 }
-.bg-warning-light { background: #FEF3C7; }
 .bg-info-light { background: #E0F2FE; }
 .text-info { color: #0284C7; }
-.bg-success-light { background: #DCFCE7; }
-.text-success { color: #16A34A; }
-
-.t-content {
+.bg-warning-light { background: #FEF3C7; }
+.item-info {
   display: flex;
   flex-direction: column;
-  padding-top: 4px;
+  flex: 1;
+  min-width: 0;
 }
-.t-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.t-time { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
-.t-desc { font-size: 13px; color: var(--text-secondary); margin: 6px 0 0 0; line-height: 1.5; }
-
-.btn-xs-primary {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 11.5px;
-  cursor: pointer;
-  font-weight: 600;
-}
+.item-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
+.item-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 </style>

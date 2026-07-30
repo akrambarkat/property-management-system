@@ -4,18 +4,14 @@
     <div class="executive-hero-banner">
       <div class="hero-text-meta">
         <h2 class="hero-title">مركز التوجيه والتحكم القيادي (Executive Command Center)</h2>
-        <p class="hero-subtitle">إدارة شمولية لـ 200 وحدة عقارية، 12 مبنى، عقود التشغيل والصيانة، والتدفقات النقدية اللحظية</p>
+        <p class="hero-subtitle">إدارة شمولية لـ {{ dashboardData.total_units }} وحدة عقارية، {{ dashboardData.total_buildings }} مبنى، عقود التشغيل والصيانة، والتدفقات النقدية اللحظية</p>
       </div>
 
       <!-- Smart Recommendations Carousel / Cards -->
       <div class="smart-insights-pills">
-        <div class="insight-pill warning">
-          <i class="pi pi-exclamation-triangle"></i>
-          <span>تحذير سيولة: 3 عقود بقيمة 18,500 ₪ تنتهي خلال 10 أيام بحاجة للتجديد</span>
-        </div>
-        <div class="insight-pill info">
-          <i class="pi pi-chart-line"></i>
-          <span>توصية: معدل الإشغال وصل 94%، يُوصى بزيادة الإيجار 5% للوحدات الشاغرة</span>
+        <div class="insight-pill" v-for="(insight, i) in insights" :key="i" :class="insight.type">
+          <i :class="insight.icon"></i>
+          <span>{{ insight.text }}</span>
         </div>
       </div>
     </div>
@@ -67,16 +63,16 @@
         <div class="chart-header">
           <div>
             <h3 class="chart-title">صحة الأصول ومعدل الإشغال</h3>
-            <p class="chart-subtitle">حالة الـ 200 وحدة عقارية</p>
+            <p class="chart-subtitle">حالة الـ {{ dashboardData.total_units }} وحدة عقارية</p>
           </div>
         </div>
         <div class="chart-body pie-wrapper">
           <Doughnut :data="occupancyData" :options="doughnutOptions" />
         </div>
         <div class="occupancy-stats-footer">
-          <div class="occ-stat"><span class="dot bg-emerald"></span> 188 مؤجرة (94%)</div>
-          <div class="occ-stat"><span class="dot bg-amber"></span> 8 شاغرة (4%)</div>
-          <div class="occ-stat"><span class="dot bg-rose"></span> 4 صيانة (2%)</div>
+          <div class="occ-stat"><span class="dot bg-emerald"></span> {{ dashboardData.occupied_units }} مؤجرة ({{ dashboardData.occupancy_rate }}%)</div>
+          <div class="occ-stat"><span class="dot bg-amber"></span> {{ dashboardData.vacant_units }} شاغرة ({{ vacantPercent }}%)</div>
+          <div class="occ-stat"><span class="dot bg-rose"></span> {{ dashboardData.maintenance_units }} صيانة ({{ maintenancePercent }}%)</div>
         </div>
       </div>
     </div>
@@ -119,7 +115,7 @@
           <router-link to="/maintenance" class="card-action">إدارة الصيانة</router-link>
         </div>
         <div class="timeline-list">
-          <div class="timeline-item" v-for="req in maintenanceRequests" :key="req.id">
+          <div class="timeline-item" v-for="req in maintenanceRequestsList" :key="req.id">
             <div class="item-status-icon warning">
               <i class="pi pi-cog"></i>
             </div>
@@ -178,45 +174,114 @@ function format(val) {
 }
 
 const dashboardData = ref({
-  total_units: 200,
-  occupied_units: 188,
-  vacant_units: 8,
-  maintenance_units: 4,
-  monthly_income: 145000,
-  monthly_expenses: 28500,
-  collection_rate: 92,
-  outstanding_amount: 42000
+  total_units: 0,
+  total_buildings: 0,
+  occupied_units: 0,
+  vacant_units: 0,
+  maintenance_units: 0,
+  monthly_income: 0,
+  monthly_expenses: 0,
+  collection_rate: 0,
+  outstanding_amount: 0,
+  occupancy_rate: 0,
+  net_profit: 0,
+  late_payments: [],
+  maintenance_requests: [],
+  upcoming_renewals: [],
+  monthly_cash_flow: [],
+  open_maintenance_count: 0,
+  urgent_maintenance_count: 0
 })
+
+const loading = ref(true)
 
 const executiveKpis = computed(() => {
   const d = dashboardData.value
   const netProfit = d.monthly_income - d.monthly_expenses
+  const profitMargin = d.monthly_income > 0 ? Math.round((netProfit / d.monthly_income) * 100) : 0
 
   return [
-    { label: 'إجمالي الوحدات العقارية', value: '200 وحدة', icon: 'pi pi-building', iconBg: '#EFF6FF', iconColor: '#2563EB', trend: '100% مغطاة', trendClass: 'text-success', trendIcon: 'pi pi-check', subtext: '12 مبنى ومجمع سكني' },
-    { label: 'نسبة الإشغال الكلية', value: '94%', icon: 'pi pi-chart-line', iconBg: '#ECFDF5', iconColor: '#10B981', trend: '+3.2%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-up', subtext: '188 وحدة مؤجرة' },
-    { label: 'الإيراد الشهري الإجمالي', value: format(d.monthly_income), icon: 'pi pi-wallet', iconBg: '#ECFDF5', iconColor: '#059669', trend: '+8.5%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-up', subtext: 'تحصيلات الدفعات الإيجارية' },
-    { label: 'المصروفات التشغيلية', value: format(d.monthly_expenses), icon: 'pi pi-minus-circle', iconBg: '#FFFBEB', iconColor: '#D97706', trend: '-2.1%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-down', subtext: 'صيانة وفواتير ومرافق' },
-    { label: 'صافي الأرباح التشغيلية', value: format(netProfit), icon: 'pi pi-dollar', iconBg: '#EEF2FF', iconColor: '#4F46E5', trend: '+11.4%', trendClass: 'text-success', trendIcon: 'pi pi-arrow-up', subtext: 'هامش ربح ممتاز (80%)' },
-    { label: 'معدل التحصيل الفعلي', value: `${d.collection_rate}%`, icon: 'pi pi-percentage', iconBg: '#F3E8FF', iconColor: '#9333EA', trend: 'مستهدف 95%', trendClass: 'text-muted', trendIcon: 'pi pi-minus', subtext: 'مستوفى خلال الشهر' },
-    { label: 'المبالغ غير المحصلة', value: format(d.outstanding_amount), icon: 'pi pi-exclamation-circle', iconBg: '#FEF2F2', iconColor: '#EF4444', trend: '8 فواتير', trendClass: 'text-danger', trendIcon: 'pi pi-exclamation-triangle', subtext: 'بحاجة لمتابعة فورية' },
-    { label: 'طلبات الصيانة المفتوحة', value: '4 طلبات', icon: 'pi pi-wrench', iconBg: '#FEF3C7', iconColor: '#D97706', trend: '2 طارئة', trendClass: 'text-danger', trendIcon: 'pi pi-clock', subtext: 'معدل الإنجاز 90%' }
+    { label: 'إجمالي الوحدات العقارية', value: `${d.total_units} وحدة`, icon: 'pi pi-building', iconBg: 'var(--info-bg)', iconColor: 'var(--info)', trend: `${d.total_buildings} مبنى`, trendClass: 'text-success', trendIcon: 'pi pi-check', subtext: `${d.total_buildings} مبنى ومجمع سكني` },
+    { label: 'نسبة الإشغال الكلية', value: `${d.occupancy_rate}%`, icon: 'pi pi-chart-line', iconBg: 'var(--success-bg)', iconColor: 'var(--success)', trend: d.occupancy_rate > 0 ? `نشط` : '-', trendClass: 'text-success', trendIcon: 'pi pi-arrow-up', subtext: `${d.occupied_units} وحدة مؤجرة` },
+    { label: 'الإيراد الشهري الإجمالي', value: format(d.monthly_income), icon: 'pi pi-wallet', iconBg: 'var(--success-bg)', iconColor: 'var(--success)', trend: d.monthly_income > 0 ? 'محصل' : '-', trendClass: 'text-success', trendIcon: 'pi pi-check', subtext: 'تحصيلات الدفعات الإيجارية' },
+    { label: 'المصروفات التشغيلية', value: format(d.monthly_expenses), icon: 'pi pi-minus-circle', iconBg: 'var(--warning-bg)', iconColor: 'var(--warning)', trend: 'شهري', trendClass: 'text-muted', trendIcon: 'pi pi-minus', subtext: 'صيانة وفواتير ومرافق' },
+    { label: 'صافي الأرباح التشغيلية', value: format(netProfit), icon: 'pi pi-dollar', iconBg: 'var(--primary-50)', iconColor: 'var(--accent)', trend: d.monthly_income > 0 ? `${profitMargin}%` : '-', trendClass: profitMargin >= 50 ? 'text-success' : 'text-warning', trendIcon: profitMargin >= 50 ? 'pi pi-arrow-up' : 'pi pi-minus', subtext: `هامش ربح ${profitMargin}%` },
+    { label: 'معدل التحصيل الفعلي', value: `${d.collection_rate}%`, icon: 'pi pi-percentage', iconBg: '#F3E8FF', iconColor: '#9333EA', trend: d.collection_rate >= 90 ? 'ممتاز' : d.collection_rate >= 70 ? 'جيد' : 'بحاجة تحسين', trendClass: d.collection_rate >= 90 ? 'text-success' : d.collection_rate >= 70 ? 'text-warning' : 'text-danger', trendIcon: 'pi pi-minus', subtext: 'من إجمالي الفواتير' },
+    { label: 'المبالغ غير المحصلة', value: format(d.outstanding_amount), icon: 'pi pi-exclamation-circle', iconBg: 'var(--danger-bg)', iconColor: 'var(--danger)', trend: `${d.late_payments.length} فواتير`, trendClass: d.late_payments.length > 0 ? 'text-danger' : 'text-success', trendIcon: d.late_payments.length > 0 ? 'pi pi-exclamation-triangle' : 'pi pi-check', subtext: 'بحاجة لمتابعة' },
+    { label: 'طلبات الصيانة المفتوحة', value: `${d.open_maintenance_count} طلبات`, icon: 'pi pi-wrench', iconBg: 'var(--warning-bg)', iconColor: 'var(--warning)', trend: d.urgent_maintenance_count > 0 ? `${d.urgent_maintenance_count} طارئة` : 'لا يوجد', trendClass: d.urgent_maintenance_count > 0 ? 'text-danger' : 'text-success', trendIcon: d.urgent_maintenance_count > 0 ? 'pi pi-clock' : 'pi pi-check', subtext: 'قيد التنفيذ' }
   ]
 })
 
-const cashFlowChartData = computed(() => ({
-  labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو'],
-  datasets: [
-    { label: 'الإيرادات', backgroundColor: '#4F46E5', borderRadius: 6, data: [110000, 125000, 130000, 140000, 138000, 142000, 145000] },
-    { label: 'المصروفات', backgroundColor: '#EF4444', borderRadius: 6, data: [22000, 25000, 24000, 31000, 27000, 26000, 28500] },
-    { label: 'صافي الربح', backgroundColor: '#10B981', borderRadius: 6, data: [88000, 100000, 106000, 109000, 111000, 116000, 116500] }
-  ]
-}))
+const cashFlowChartData = computed(() => {
+  const flow = dashboardData.value.monthly_cash_flow
+  if (!flow || flow.length === 0) {
+    return { labels: [], datasets: [] }
+  }
+  return {
+    labels: flow.map(m => m.label),
+    datasets: [
+      { label: 'الإيرادات', backgroundColor: '#4F46E5', borderRadius: 6, data: flow.map(m => m.income) },
+      { label: 'المصروفات', backgroundColor: '#EF4444', borderRadius: 6, data: flow.map(m => m.expenses) },
+      { label: 'صافي الربح', backgroundColor: '#10B981', borderRadius: 6, data: flow.map(m => m.net_profit) }
+    ]
+  }
+})
 
-const occupancyData = computed(() => ({
-  labels: ['مؤجرة', 'شاغرة', 'تحت الصيانة'],
-  datasets: [{ backgroundColor: ['#10B981', '#F59E0B', '#EF4444'], data: [188, 8, 4], borderWidth: 0 }]
-}))
+const occupancyData = computed(() => {
+  const d = dashboardData.value
+  return {
+    labels: ['مؤجرة', 'شاغرة', 'تحت الصيانة'],
+    datasets: [{
+      backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+      data: [d.occupied_units, d.vacant_units, d.maintenance_units],
+      borderWidth: 0
+    }]
+  }
+})
+
+const vacantPercent = computed(() => {
+  const d = dashboardData.value
+  return d.total_units > 0 ? Math.round((d.vacant_units / d.total_units) * 100) : 0
+})
+
+const maintenancePercent = computed(() => {
+  const d = dashboardData.value
+  return d.total_units > 0 ? Math.round((d.maintenance_units / d.total_units) * 100) : 0
+})
+
+const insights = computed(() => {
+  const d = dashboardData.value
+  const result = []
+  if (d.upcoming_renewals && d.upcoming_renewals.length > 0) {
+    const totalRent = d.upcoming_renewals.reduce((sum, r) => sum + (r.rent_amount || 0), 0)
+    result.push({
+      type: 'warning',
+      icon: 'pi pi-exclamation-triangle',
+      text: `تحذير سيولة: ${d.upcoming_renewals.length} عقد ${totalRent > 0 ? `بقيمة ${format(totalRent)}` : ''} تنتهي خلال 30 يوماً بحاجة للتجديد`
+    })
+  }
+  if (d.occupancy_rate > 85) {
+    result.push({
+      type: 'info',
+      icon: 'pi pi-chart-line',
+      text: `توصية: معدل الإشغال وصل ${d.occupancy_rate}%، يُوصى بزيادة الإيجار للوحدات الشاغرة`
+    })
+  } else if (d.vacant_units > 0) {
+    result.push({
+      type: 'info',
+      icon: 'pi pi-info-circle',
+      text: `هنالك ${d.vacant_units} وحدة شاغرة، يُوصى بتفعيل حملات تسويقية`
+    })
+  }
+  if (d.late_payments && d.late_payments.length > 0) {
+    result.push({
+      type: 'warning',
+      icon: 'pi pi-clock',
+      text: `لديك ${d.late_payments.length} فاتورة متأخرة بقيمة ${format(d.outstanding_amount)}`
+    })
+  }
+  return result
+})
 
 const barChartOptions = {
   responsive: true,
@@ -231,21 +296,9 @@ const doughnutOptions = {
   plugins: { legend: { display: false } }
 }
 
-const latePayments = ref([
-  { id: 1, tenant: 'شركة الأفق للاستشارات', unit: '302', daysLate: 12, amount: 15000 },
-  { id: 2, tenant: 'محمد إبراهيم الزهراني', unit: '104', daysLate: 8, amount: 4500 },
-  { id: 3, tenant: 'مؤسسة النور للتجارة', unit: 'محل 05', daysLate: 5, amount: 8200 }
-])
-
-const maintenanceRequests = ref([
-  { id: 1, title: 'إصلاح عطل التكييف المركزي', building: 'برج الأمل', technician: 'أحمد محمود', priority: 'عالي جداً', priorityClass: 'p-danger' },
-  { id: 2, title: 'صيانة مضخة المياه الرئيسية', building: 'مجمع الصفوة', technician: 'شركة السباكة المتخصصة', priority: 'متوسط', priorityClass: 'p-warning' }
-])
-
-const upcomingRenewals = ref([
-  { id: 1, tenant: 'خالد عبد الله العتيبي', contractNumber: 'CNT-904', expiryDate: '2026-08-10' },
-  { id: 2, tenant: 'شركة السهم الذهبي', contractNumber: 'CNT-882', expiryDate: '2026-08-18' }
-])
+const latePayments = computed(() => dashboardData.value.late_payments || [])
+const maintenanceRequestsList = computed(() => dashboardData.value.maintenance_requests || [])
+const upcomingRenewals = computed(() => dashboardData.value.upcoming_renewals || [])
 
 function sendReminder(item) {
   alert(`تم إرسال تذكير الدفع للمستأجر: ${item.tenant}`)
@@ -259,7 +312,11 @@ onMounted(async () => {
   try {
     const { data } = await api.get('/reports/dashboard')
     if (data?.data) Object.assign(dashboardData.value, data.data)
-  } catch {}
+  } catch {
+    // سيتم عرض بيانات فارغة في حال عدم وجود اتصال
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -360,7 +417,9 @@ onMounted(async () => {
   gap: 4px;
 }
 .text-success { color: var(--success); }
+.text-warning { color: var(--warning, #D97706); }
 .text-danger { color: var(--danger); }
+.text-muted { color: var(--text-muted, #94A3B8); }
 
 .kpi-value {
   font-size: 22px;
@@ -409,7 +468,7 @@ onMounted(async () => {
 .time-horizon-selector {
   display: flex;
   gap: 4px;
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   padding: 3px;
   border-radius: var(--radius-sm);
 }
@@ -423,7 +482,7 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 .horizon-btn.active {
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   color: var(--text-primary);
   font-weight: 600;
   box-shadow: var(--shadow-xs);
@@ -503,7 +562,7 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
 }
@@ -516,9 +575,9 @@ onMounted(async () => {
   justify-content: center;
   font-size: 0.9rem;
 }
-.item-status-icon.danger { background: #FEF2F2; color: #EF4444; }
-.item-status-icon.warning { background: #FFFBEB; color: #D97706; }
-.item-status-icon.info { background: #EFF6FF; color: #2563EB; }
+.item-status-icon.danger { background: var(--danger-bg, #FEF2F2); color: var(--danger, #EF4444); }
+.item-status-icon.warning { background: var(--warning-bg, #FFFBEB); color: var(--warning, #D97706); }
+.item-status-icon.info { background: var(--info-bg, #EFF6FF); color: var(--info, #2563EB); }
 
 .item-details {
   flex: 1;
@@ -554,7 +613,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 .btn-xs-secondary {
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border);
   padding: 3px 8px;
   border-radius: 4px;
@@ -568,8 +627,8 @@ onMounted(async () => {
   font-size: 11px;
   font-weight: 600;
 }
-.p-danger { background: #FEF2F2; color: #EF4444; }
-.p-warning { background: #FFFBEB; color: #D97706; }
+.p-danger { background: var(--danger-bg, #FEF2F2); color: var(--danger, #EF4444); }
+.p-warning { background: var(--warning-bg, #FFFBEB); color: var(--warning, #D97706); }
 
 @media (max-width: 1024px) {
   .analytics-grid {

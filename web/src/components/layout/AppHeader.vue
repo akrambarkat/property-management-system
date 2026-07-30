@@ -212,7 +212,7 @@ function handleLogout() {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border: 1px solid var(--border);
   padding: 8px 14px;
   border-radius: var(--radius-full);
@@ -221,7 +221,7 @@ function handleLogout() {
   transition: all 0.2s ease;
 }
 .global-search-trigger:hover {
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border-color: var(--accent);
   box-shadow: var(--shadow-sm);
 }
@@ -242,7 +242,7 @@ function handleLogout() {
   gap: 3px;
 }
 .search-shortcut kbd {
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border);
   padding: 1px 5px;
   border-radius: 4px;
@@ -299,14 +299,14 @@ function handleLogout() {
   transition: background 0.15s ease;
 }
 .dropdown-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
 }
 
 .currency-badge {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: var(--radius-full);
@@ -325,7 +325,7 @@ function handleLogout() {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -336,7 +336,7 @@ function handleLogout() {
   transition: all 0.15s ease;
 }
 .icon-btn:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   color: var(--text-primary);
 }
 
@@ -354,7 +354,7 @@ function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #FFFFFF;
+  border: 2px solid var(--bg-surface, #FFFFFF);
 }
 
 /* Notifications Overlay Dropdown */
@@ -379,7 +379,7 @@ function handleLogout() {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border-bottom: 1px solid var(--border);
 }
 .dropdown-title {
@@ -411,10 +411,10 @@ function handleLogout() {
   border-bottom: none;
 }
 .notif-item.unread {
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
 }
 .notif-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
 }
 
 .notif-icon {
@@ -454,7 +454,7 @@ function handleLogout() {
 
 .notifications-dropdown-footer {
   padding: 10px;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border-top: 1px solid var(--border);
   text-align: center;
 }
@@ -478,7 +478,7 @@ function handleLogout() {
   height: 36px;
   background: var(--accent-light);
   color: var(--accent);
-  border: 1px solid #BFDBFE;
+  border: 1px solid var(--info-border, #BFDBFE);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -517,7 +517,7 @@ function handleLogout() {
 .logout-icon-btn:hover {
   background: var(--danger-bg);
   color: var(--danger);
-  border-color: #FECACA;
+  border-color: var(--danger-border, #FECACA);
 }
 
 @media (max-width: 900px) {

@@ -110,7 +110,7 @@ onBeforeUnmount(() => {
   top: calc(100% + 4px);
   z-index: 1000;
   min-width: 150px;
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-md, 8px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
@@ -142,7 +142,7 @@ onBeforeUnmount(() => {
 }
 
 .menu-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   color: var(--primary, #2563EB);
 }
 
@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
 }
 
 .menu-item.danger-item:hover {
-  background: #FEF2F2;
+  background: var(--danger-bg, #FEF2F2);
   color: #DC2626;
 }
 

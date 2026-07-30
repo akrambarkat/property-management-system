@@ -96,13 +96,22 @@
         </transition>
       </div>
 
-      <button
-        class="collapse-btn"
-        @click="appStore.toggleSidebar"
-        :title="appStore.sidebarCollapsed ? 'توسيع القائمة' : 'طَي القائمة'"
-      >
-        <i class="pi pi-chevron-right" :class="{ rotated: appStore.sidebarCollapsed }"></i>
-      </button>
+      <div class="footer-actions">
+        <button
+          class="footer-btn theme-btn"
+          @click="appStore.toggleDarkMode"
+          :title="appStore.isDarkMode ? 'الوضع النهاري' : 'الوضع الليلي'"
+        >
+          <i :class="appStore.isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
+        </button>
+        <button
+          class="collapse-btn"
+          @click="appStore.toggleSidebar"
+          :title="appStore.sidebarCollapsed ? 'توسيع القائمة' : 'طَي القائمة'"
+        >
+          <i class="pi pi-chevron-right" :class="{ rotated: appStore.sidebarCollapsed }"></i>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -289,7 +298,7 @@ function handleLogout() {
 .search-input {
   width: 100%;
   padding: 8px 34px 8px 24px;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-sm, 8px);
   color: var(--text-primary, #0F172A);
@@ -299,7 +308,7 @@ function handleLogout() {
   transition: all 0.2s ease;
 }
 .search-input:focus {
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border-color: var(--accent, #4F46E5);
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
@@ -342,15 +351,16 @@ function handleLogout() {
   white-space: nowrap;
   position: relative;
   font-weight: 500;
+  text-decoration: none;
 }
 
 .menu-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   color: var(--text-primary, #0F172A);
 }
 
 .menu-item.active {
-  background: #EEF2FF;
+  background: var(--primary-50, #EEF2FF);
   color: var(--accent, #4F46E5);
   font-weight: 700;
   border-right: 3px solid var(--accent, #4F46E5);
@@ -394,7 +404,7 @@ function handleLogout() {
   flex-direction: column;
   gap: 8px;
   position: relative;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
 }
 
 .user-profile-card {
@@ -402,7 +412,7 @@ function handleLogout() {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-sm, 8px);
   position: relative;
@@ -461,7 +471,7 @@ function handleLogout() {
   right: 14px;
   left: 14px;
   margin-bottom: 8px;
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-sm, 8px);
   box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
@@ -488,14 +498,14 @@ function handleLogout() {
   font-weight: 500;
 }
 .dropdown-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   color: var(--accent, #4F46E5);
 }
 .dropdown-item.logout {
-  color: #EF4444;
+  color: var(--danger, #EF4444);
 }
 .dropdown-item.logout:hover {
-  background: #FEF2F2;
+  background: var(--danger-bg, #FEF2F2);
   color: #DC2626;
 }
 
@@ -505,10 +515,32 @@ function handleLogout() {
   margin: 4px 0;
 }
 
-.collapse-btn {
-  width: 100%;
+.footer-actions {
+  display: flex;
+  gap: 8px;
+}
+.footer-btn {
+  flex: 1;
   padding: 8px;
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text-secondary, #64748B);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+.footer-btn:hover {
+  background: var(--bg-subtle, #F1F5F9);
+  color: var(--text-primary, #0F172A);
+}
+.collapse-btn {
+  flex: 2;
+  padding: 8px;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-sm, 8px);
   color: var(--text-secondary, #64748B);
@@ -519,7 +551,7 @@ function handleLogout() {
   justify-content: center;
 }
 .collapse-btn:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   color: var(--text-primary, #0F172A);
 }
 .collapse-btn i {

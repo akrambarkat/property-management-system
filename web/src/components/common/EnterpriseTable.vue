@@ -389,7 +389,7 @@ onBeforeUnmount(() => {
   left: 0;
   z-index: 1000;
   width: 200px;
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-md, 8px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
@@ -417,7 +417,7 @@ onBeforeUnmount(() => {
 }
 
 .column-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
 }
 
 .table-surface-card {
@@ -440,7 +440,7 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 16px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #F1F5F9;
+  border-bottom: 2px solid var(--border-light, #F1F5F9);
 }
 
 .skeleton-row {
@@ -483,7 +483,7 @@ onBeforeUnmount(() => {
   width: 54px;
   height: 54px;
   border-radius: 50%;
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   display: flex;
   align-items: center;
   justify-content: center;

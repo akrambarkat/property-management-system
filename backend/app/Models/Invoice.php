@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
+    protected $appends = ['balance'];
+
     protected $fillable = [
         'contract_id', 'invoice_number', 'issue_date', 'due_date',
         'rent_amount', 'electricity_amount', 'water_amount', 'internet_amount',

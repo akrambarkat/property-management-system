@@ -72,25 +72,31 @@
 
         <div class="command-results" v-if="commandQuery.trim()">
           <div class="results-group-title">نتائج البحث الفوري</div>
-          <div
-            v-for="res in filteredCommands"
-            :key="res.id"
-            class="command-item"
-            @click="navigateToCommand(res.to)"
-          >
-            <div class="item-icon-box" :class="res.category">
-              <i :class="res.icon"></i>
-            </div>
-            <div class="item-details">
-              <span class="item-title">{{ res.title }}</span>
-              <span class="item-subtitle">{{ res.subtitle }}</span>
-            </div>
-            <span class="category-badge">{{ res.categoryLabel }}</span>
+          <div v-if="searchLoading" class="loading-box">
+            <i class="pi pi-spin pi-spinner"></i>
+            <p>جاري البحث...</p>
           </div>
-          <div v-if="!filteredCommands.length" class="no-results-box">
-            <i class="pi pi-search-minus"></i>
-            <p>لم يتم العثور على أي نتائج تطابق "{{ commandQuery }}"</p>
-          </div>
+          <template v-else>
+            <div
+              v-for="res in filteredCommands"
+              :key="res.id"
+              class="command-item"
+              @click="navigateToCommand(res.to)"
+            >
+              <div class="item-icon-box" :class="res.category">
+                <i :class="res.icon"></i>
+              </div>
+              <div class="item-details">
+                <span class="item-title">{{ res.title }}</span>
+                <span class="item-subtitle">{{ res.subtitle }}</span>
+              </div>
+              <span class="category-badge">{{ res.categoryLabel }}</span>
+            </div>
+            <div v-if="!filteredCommands.length" class="no-results-box">
+              <i class="pi pi-search-minus"></i>
+              <p>لم يتم العثور على أي نتائج تطابق "{{ commandQuery }}"</p>
+            </div>
+          </template>
         </div>
 
         <div class="command-shortcuts-footer">
@@ -104,7 +110,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import api from '@/services/api'
 import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
@@ -118,7 +125,17 @@ const appStore = useAppStore()
 const showCommandPalette = ref(false)
 const commandQuery = ref('')
 const commandInputRef = ref(null)
+const searchResults = ref([])
+const searchLoading = ref(false)
 const currentTime = ref('')
+
+watch(showCommandPalette, (val) => {
+  if (val) {
+    commandQuery.value = ''
+    searchResults.value = []
+    setTimeout(() => commandInputRef.value?.focus(), 100)
+  }
+})
 
 const routeNamesMap = {
   Dashboard: 'لوحة التحكم القيادية',
@@ -159,20 +176,70 @@ const breadcrumbs = computed(() => {
   return [{ label: routeNamesMap[currentName] || currentName }]
 })
 
-const mockDatabase = [
-  { id: 1, title: 'خالد إبراهيم العلي', subtitle: 'مستأجر - شقة 401 (برج الصفوة)', category: 'tenant', categoryLabel: 'مستأجر', icon: 'pi pi-user', to: '/tenants' },
-  { id: 2, title: 'شركة الأمل للتجارة', subtitle: 'مستأجر - محل 102 (مجمع الهدى)', category: 'tenant', categoryLabel: 'مستأجر', icon: 'pi pi-building', to: '/tenants' },
-  { id: 3, title: 'عقد رقم #CNT-2024-089', subtitle: 'عقد مؤجر - تنتهي الصلاحية قريباً', category: 'contract', categoryLabel: 'عقد', icon: 'pi pi-file', to: '/contracts' },
-  { id: 4, title: 'فاتورة #INV-1094', subtitle: 'مبلغ 2,500 ₪ - غير مدفوعة', category: 'invoice', categoryLabel: 'فاتورة', icon: 'pi pi-receipt', to: '/invoices' },
-  { id: 5, title: 'طلب صيانة: إصلاح التكييف', subtitle: 'برج الأمل - شقة 203', category: 'maintenance', categoryLabel: 'صيانة', icon: 'pi pi-wrench', to: '/maintenance' }
-]
+let searchTimer
+
+watch(commandQuery, (val) => {
+  clearTimeout(searchTimer)
+  if (!val.trim()) {
+    searchResults.value = []
+    return
+  }
+  searchLoading.value = true
+  searchTimer = setTimeout(() => performSearch(val.trim()), 300)
+})
+
+async function performSearch(q) {
+  try {
+    const [tenantsRes, contractsRes, invoicesRes, maintRes] = await Promise.all([
+      api.get('/tenants', { params: { search: q } }),
+      api.get('/contracts', { params: { status: 'active' } }),
+      api.get('/invoices'),
+      api.get('/maintenance'),
+    ])
+    const results = []
+    ;(tenantsRes.data?.data || []).slice(0, 5).forEach(t => {
+      results.push({
+        id: `t-${t.id}`, title: `${t.first_name} ${t.last_name}`,
+        subtitle: `مستأجر - ${t.id_number || t.phone || ''}`,
+        category: 'tenant', categoryLabel: 'مستأجر', icon: 'pi pi-user', to: `/tenants/${t.id}`
+      })
+    })
+    ;(contractsRes.data?.data || []).slice(0, 5).forEach(c => {
+      if (!`${c.contract_number} ${c.tenant?.first_name || ''} ${c.unit?.unit_number || ''}`.toLowerCase().includes(q.toLowerCase())) return
+      results.push({
+        id: `c-${c.id}`, title: `عقد رقم ${c.contract_number}`,
+        subtitle: `${c.tenant?.first_name || ''} ${c.tenant?.last_name || ''} - وحدة #${c.unit?.unit_number || ''}`,
+        category: 'contract', categoryLabel: 'عقد', icon: 'pi pi-file', to: '/contracts'
+      })
+    })
+    ;(invoicesRes.data?.data || []).slice(0, 5).forEach(inv => {
+      if (!`${inv.invoice_number} ${inv.contract?.tenant?.first_name || ''}`.toLowerCase().includes(q.toLowerCase())) return
+      results.push({
+        id: `i-${inv.id}`, title: `فاتورة ${inv.invoice_number}`,
+        subtitle: `${Number(inv.total_amount).toLocaleString('ar-EG')} ₪ - ${inv.status === 'paid' ? 'مدفوعة' : 'غير مدفوعة'}`,
+        category: 'invoice', categoryLabel: 'فاتورة', icon: 'pi pi-receipt', to: '/invoices'
+      })
+    })
+    ;(maintRes.data?.data || []).slice(0, 5).forEach(m => {
+      if (!m.description?.toLowerCase().includes(q.toLowerCase())) return
+      results.push({
+        id: `m-${m.id}`, title: m.description,
+        subtitle: `صيانة - وحدة #${m.unit?.unit_number || ''}`,
+        category: 'maintenance', categoryLabel: 'صيانة', icon: 'pi pi-wrench', to: '/maintenance'
+      })
+    })
+    searchResults.value = results
+  } catch (err) {
+    console.error(err)
+    searchResults.value = []
+  } finally {
+    searchLoading.value = false
+  }
+}
 
 const filteredCommands = computed(() => {
-  if (!commandQuery.value.trim()) return mockDatabase
-  const q = commandQuery.value.toLowerCase().trim()
-  return mockDatabase.filter(
-    item => item.title.toLowerCase().includes(q) || item.subtitle.toLowerCase().includes(q)
-  )
+  if (!commandQuery.value.trim()) return []
+  return searchResults.value
 })
 
 function navigateToCommand(path) {
@@ -330,7 +397,7 @@ onUnmounted(() => {
   color: var(--text-primary);
 }
 .esc-kbd {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   border: 1px solid var(--border);
   padding: 2px 6px;
   border-radius: 4px;
@@ -362,7 +429,7 @@ onUnmounted(() => {
   transition: background 0.15s ease;
 }
 .command-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
 }
 
 .item-icon-box {
@@ -374,9 +441,9 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 1.1rem;
 }
-.item-icon-box.tenant { background: #EFF6FF; color: #2563EB; }
-.item-icon-box.contract { background: #FEF3C7; color: #D97706; }
-.item-icon-box.invoice { background: #FEF2F2; color: #DC2626; }
+.item-icon-box.tenant { background: var(--info-bg, #EFF6FF); color: var(--info, #2563EB); }
+.item-icon-box.contract { background: var(--warning-bg, #FEF3C7); color: var(--warning, #D97706); }
+.item-icon-box.invoice { background: var(--danger-bg, #FEF2F2); color: var(--danger, #DC2626); }
 .item-icon-box.maintenance { background: #F3E8FF; color: #9333EA; }
 
 .item-details {
@@ -396,7 +463,7 @@ onUnmounted(() => {
 
 .category-badge {
   font-size: 11px;
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   color: var(--text-secondary);
   padding: 2px 8px;
   border-radius: var(--radius-full);
@@ -407,19 +474,24 @@ onUnmounted(() => {
   padding: 32px 16px;
   color: var(--text-muted);
 }
+.loading-box {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+}
 
 .command-shortcuts-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--text-secondary);
 }
 .command-shortcuts-footer kbd {
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border);
   padding: 1px 5px;
   border-radius: 4px;

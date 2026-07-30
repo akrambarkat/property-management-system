@@ -8,7 +8,8 @@ class Unit extends Model
 {
     protected $fillable = [
         'building_id', 'unit_number', 'unit_type', 'floor',
-        'area', 'rent_amount', 'status', 'notes', 'is_active'
+        'area', 'rent_amount', 'electricity_amount', 'water_amount',
+        'internet_amount', 'services_amount', 'status', 'notes', 'is_active'
     ];
 
     protected function casts(): array
@@ -18,6 +19,10 @@ class Unit extends Model
             'floor' => 'integer',
             'area' => 'decimal:2',
             'rent_amount' => 'decimal:2',
+            'electricity_amount' => 'decimal:2',
+            'water_amount' => 'decimal:2',
+            'internet_amount' => 'decimal:2',
+            'services_amount' => 'decimal:2',
         ];
     }
 

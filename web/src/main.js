@@ -24,6 +24,13 @@ import RadioButton from 'primevue/radiobutton'
 import './assets/styles/main.css'
 import 'primeicons/primeicons.css'
 
+// Initialize dark mode BEFORE app mounts so PrimeVue picks it up
+const savedTheme = localStorage.getItem('theme')
+if (savedTheme === 'dark') {
+  document.documentElement.classList.add('p-dark')
+  document.documentElement.setAttribute('data-theme', 'dark')
+}
+
 const app = createApp(App)
 
 app.component('DataTable', DataTable)
@@ -49,7 +56,7 @@ app.use(PrimeVue, {
     preset: Aura,
     options: {
       prefix: 'p',
-      darkModeSelector: false,
+      darkModeSelector: '.p-dark',
       cssLayer: false
     }
   }

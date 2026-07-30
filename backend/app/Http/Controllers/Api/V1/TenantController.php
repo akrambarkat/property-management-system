@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class TenantController extends Controller
 {
@@ -34,7 +35,11 @@ class TenantController extends Controller
             'email' => 'nullable|email|max:191',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
+            'id_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+        if ($request->hasFile('id_photo')) {
+            $validated['id_photo_path'] = $request->file('id_photo')->store('tenants', 'public');
+        }
         $validated['is_active'] = true;
         $tenant = Tenant::create($validated);
         return response()->json(['success' => true, 'message' => 'تم إضافة المستأجر', 'data' => $tenant], 201);
@@ -42,7 +47,10 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant): JsonResponse
     {
-        $tenant->load('contracts.unit.building');
+        $tenant->load([
+            'contracts.unit.building',
+            'contracts.invoices.payments',
+        ]);
         return response()->json(['success' => true, 'data' => $tenant]);
     }
 
@@ -57,8 +65,16 @@ class TenantController extends Controller
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'is_active' => 'boolean',
+            'id_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+        if ($request->hasFile('id_photo')) {
+            if ($tenant->id_photo_path) {
+                Storage::disk('public')->delete($tenant->id_photo_path);
+            }
+            $validated['id_photo_path'] = $request->file('id_photo')->store('tenants', 'public');
+        }
         $tenant->update($validated);
+        $tenant->load('contracts.unit.building');
         return response()->json(['success' => true, 'message' => 'تم تحديث المستأجر', 'data' => $tenant]);
     }
 

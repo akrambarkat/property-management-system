@@ -17,7 +17,7 @@
 
       <div class="confirm-text-content">
         <h3 v-if="subtitle" class="confirm-subtitle">{{ subtitle }}</h3>
-        <p class="confirm-message">{{ message }}</p>
+        <p class="confirm-message" v-html="message"></p>
         <span v-if="details" class="confirm-details">{{ details }}</span>
       </div>
 
@@ -106,7 +106,7 @@ function onCancel() {
 }
 
 .confirm-icon-wrapper.icon-info {
-  background: #EFF6FF;
+  background: var(--info-bg, #EFF6FF);
   color: #2563EB;
 }
 

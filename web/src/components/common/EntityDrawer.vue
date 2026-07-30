@@ -239,7 +239,7 @@ function onClose() {
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
-  background: #EFF6FF;
+  background: var(--info-bg, #EFF6FF);
   color: var(--accent);
 }
 .entity-badge-avatar.unit {
@@ -311,7 +311,7 @@ function onClose() {
 }
 
 .info-section {
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 16px;
@@ -365,7 +365,7 @@ function onClose() {
   gap: 10px;
 }
 .history-card {
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border);
   padding: 12px 14px;
   border-radius: var(--radius-sm);

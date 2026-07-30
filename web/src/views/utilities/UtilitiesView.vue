@@ -115,6 +115,7 @@
               optionValue="id"
               placeholder="اختر الوحدة المستهدفة"
               class="w-full"
+              filter
               @change="clearFieldError('unit_id')"
             />
           </FormField>
@@ -131,6 +132,7 @@
                 optionLabel="label"
                 optionValue="value"
                 class="w-full"
+                filter
               />
             </FormField>
 

@@ -78,7 +78,7 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -104,23 +104,82 @@
           </div>
 
           <FormField
-            label="العقد المرتبط"
+            label="العقد"
             required
             forId="inv-contract"
             :errorMessage="errors.contract_id"
-            helpText="اختر عقد الإيجار المراد إصدار الفاتورة له"
+            helpText="اختر العقد مباشرة، أو استخدم الفلاتر أدناه لتضييق النتائج"
           >
             <Select
               id="inv-contract"
               v-model="form.contract_id"
-              :options="contracts"
+              :options="filteredContracts"
               optionLabel="label"
               optionValue="id"
               placeholder="اختر العقد"
               class="w-full"
+              filter
               @change="onContractChange"
             />
           </FormField>
+
+          <!-- Selected Contract Details -->
+          <div v-if="selectedContractInfo" class="contract-details-card">
+            <div class="cd-row">
+              <span class="cd-label">الموقع</span>
+              <span class="cd-value">{{ selectedContractInfo.location }}</span>
+            </div>
+            <div class="cd-row">
+              <span class="cd-label">العمارة</span>
+              <span class="cd-value">{{ selectedContractInfo.building }}</span>
+            </div>
+            <div class="cd-row">
+              <span class="cd-label">الوحدة</span>
+              <span class="cd-value">{{ selectedContractInfo.unit }}</span>
+            </div>
+            <div class="cd-row">
+              <span class="cd-label">المستأجر</span>
+              <span class="cd-value">{{ selectedContractInfo.tenant }}</span>
+            </div>
+          </div>
+
+          <!-- Optional Location / Building Filters -->
+          <div class="form-grid-3 mt-3">
+            <FormField
+              label="تصفية بالموقع"
+              forId="inv-location"
+            >
+              <Select
+                id="inv-location"
+                v-model="selectedLocation"
+                :options="locations"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر الموقع للتصفية"
+                class="w-full"
+                filter
+                @change="onLocationChange"
+              />
+            </FormField>
+
+            <FormField
+              label="تصفية بالعمارة"
+              forId="inv-building"
+            >
+              <Select
+                id="inv-building"
+                v-model="selectedBuilding"
+                :options="buildings"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر العمارة للتصفية"
+                class="w-full"
+                :disabled="!selectedLocation"
+                filter
+                @change="onBuildingChange"
+              />
+            </FormField>
+          </div>
 
           <div class="form-grid-2">
             <FormField
@@ -248,6 +307,10 @@ import { useToastStore } from '@/stores/toast'
 
 const items = ref([])
 const contracts = ref([])
+const locations = ref([])
+const buildings = ref([])
+const selectedLocation = ref(null)
+const selectedBuilding = ref(null)
 const loading = ref(false)
 const toast = useToastStore()
 const saving = ref(false)
@@ -343,7 +406,51 @@ function formatCurrency(amount) {
   return `${Number(amount).toLocaleString('ar-EG')} ₪`
 }
 
-onMounted(() => { fetchContracts(); fetchItems() })
+const selectedContractInfo = computed(() => {
+  if (!form.contract_id) return null
+  const c = contracts.value.find(c => c.id === form.contract_id)
+  if (!c) return null
+  const loc = locations.value.find(l => l.id === c.unit?.building?.location_id)
+  return {
+    location: loc?.name || c.unit?.building?.location?.name || '—',
+    building: c.unit?.building?.name || '—',
+    unit: `#${c.unit?.unit_number || '—'}`,
+    tenant: c.tenant ? `${c.tenant.first_name} ${c.tenant.last_name}` : '—'
+  }
+})
+
+const filteredContracts = computed(() => {
+  if (!selectedBuilding.value) return contracts.value
+  return contracts.value.filter(c => c.unit?.building_id === selectedBuilding.value)
+})
+
+onMounted(() => { fetchLocations(); fetchContracts(); fetchItems() })
+
+async function fetchLocations() {
+  try {
+    const { data } = await api.get('/locations')
+    locations.value = data.data || []
+  } catch (err) { console.error(err) }
+}
+
+async function onLocationChange() {
+  selectedBuilding.value = null
+  buildings.value = []
+  if (!selectedLocation.value) return
+  try {
+    const { data } = await api.get('/buildings', { params: { location_id: selectedLocation.value } })
+    buildings.value = data.data || []
+  } catch (err) { console.error(err) }
+}
+
+async function onBuildingChange() {
+  if (form.contract_id) {
+    const c = contracts.value.find(c => c.id === form.contract_id)
+    if (c && c.unit?.building_id !== selectedBuilding.value) {
+      form.contract_id = null
+    }
+  }
+}
 
 async function fetchContracts() {
   try {
@@ -392,6 +499,9 @@ function editItem(item) {
 
 function resetForm() {
   isEditing.value = false
+  selectedLocation.value = null
+  selectedBuilding.value = null
+  buildings.value = []
   Object.assign(form, {
     id: null, contract_id: null, issue_date: null, due_date: null,
     rent_amount: 0, electricity_amount: 0, water_amount: 0,
@@ -512,5 +622,32 @@ function printInvoice(invoice) {
 
 .filter-select {
   width: 180px !important;
+}
+
+.contract-details-card {
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+.cd-row {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+}
+.cd-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.cd-value {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.mt-3 {
+  margin-top: 12px;
 }
 </style>

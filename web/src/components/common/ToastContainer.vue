@@ -93,7 +93,7 @@ const toastStore = useToastStore()
 }
 .toast-card.toast-success .toast-icon-box {
   color: var(--success);
-  background: #F0FDF4;
+  background: var(--success-bg, #F0FDF4);
 }
 
 .toast-card.toast-error {
@@ -101,7 +101,7 @@ const toastStore = useToastStore()
 }
 .toast-card.toast-error .toast-icon-box {
   color: var(--danger);
-  background: #FEF2F2;
+  background: var(--danger-bg, #FEF2F2);
 }
 
 .toast-card.toast-warning {
@@ -109,7 +109,7 @@ const toastStore = useToastStore()
 }
 .toast-card.toast-warning .toast-icon-box {
   color: var(--warning);
-  background: #FEF3C7;
+  background: var(--warning-bg, #FEF3C7);
 }
 
 .toast-card.toast-info {
@@ -117,7 +117,7 @@ const toastStore = useToastStore()
 }
 .toast-card.toast-info .toast-icon-box {
   color: var(--accent);
-  background: #EFF6FF;
+  background: var(--info-bg, #EFF6FF);
 }
 
 .toast-icon-box {
@@ -158,7 +158,7 @@ const toastStore = useToastStore()
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #EEF2FF;
+  background: var(--primary-50, #EEF2FF);
   color: var(--accent);
   border: 1px solid #C7D2FE;
   padding: 6px 12px;
@@ -196,7 +196,7 @@ const toastStore = useToastStore()
 }
 .toast-close-btn:hover {
   color: var(--text-primary);
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
 }
 
 .toast-progress-bar {

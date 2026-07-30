@@ -11,10 +11,10 @@
               <i class="pi pi-home"></i>
             </div>
             <div>
-              <h2 class="profile-title">شقة 401 - سكني</h2>
+              <h2 class="profile-title">{{ unit ? `وحدة #${unit.unit_number} - ${arabicUnitTypes[unit.unit_type] || unit.unit_type}` : 'جاري التحميل...' }}</h2>
               <span class="profile-subtitle">
                 <i class="pi pi-building text-muted"></i>
-                برج السلام التنموي | الطابق الرابع
+                {{ unit?.building?.name || '—' }}{{ unit?.floor ? ` | الطابق ${unit.floor}` : '' }}
               </span>
             </div>
           </div>
@@ -32,34 +32,34 @@
       <div class="kpi-card highlight-card">
         <div class="kpi-top">
           <span class="kpi-label">حالة الوحدة</span>
-          <i class="pi pi-check-circle text-success"></i>
+          <i :class="unit?.status === 'occupied' ? 'pi pi-check-circle text-success' : unit?.status === 'maintenance' ? 'pi pi-exclamation-triangle text-danger' : 'pi pi-home text-warning'"></i>
         </div>
         <div class="kpi-content">
-          <span class="kpi-value text-success">مؤجرة</span>
+          <span class="kpi-value" :class="statusClass">{{ statusText }}</span>
         </div>
-        <span class="kpi-footer">تدر عائد استثماري منتظم</span>
-      </div>
-      
-      <div class="kpi-card">
-        <div class="kpi-top">
-          <span class="kpi-label">قيمة الإيجار السنوي</span>
-          <i class="pi pi-money-bill text-accent"></i>
-        </div>
-        <div class="kpi-content">
-          <span class="kpi-value">18,500 ₪</span>
-        </div>
-        <span class="kpi-footer">متوسط سعر السوق: 19,000 ₪</span>
+        <span class="kpi-footer">{{ unit?.status === 'occupied' ? 'تدر عائد استثماري منتظم' : unit?.status === 'maintenance' ? 'قيد الصيانة حالياً' : 'متاحة للتأجير' }}</span>
       </div>
 
       <div class="kpi-card">
         <div class="kpi-top">
-          <span class="kpi-label">تكلفة الصيانة السنوية</span>
+          <span class="kpi-label">قيمة الإيجار</span>
+          <i class="pi pi-money-bill text-accent"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-value">{{ unit ? format(unit.rent_amount) : '—' }}</span>
+        </div>
+        <span class="kpi-footer">مساحة الوحدة: {{ unit?.area || '—' }} م²</span>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">تكلفة الصيانة (آخر 6 أشهر)</span>
           <i class="pi pi-wrench text-danger"></i>
         </div>
         <div class="kpi-content">
-          <span class="kpi-value text-danger">1,250 ₪</span>
+          <span class="kpi-value text-danger">{{ format(totalMaintenanceCost) }}</span>
         </div>
-        <span class="kpi-footer">2 طلبات صيانة هذا العام</span>
+        <span class="kpi-footer">{{ maintenanceItems.length }} طلب{{ maintenanceItems.length !== 1 ? 'ات' : '' }} صيانة</span>
       </div>
     </div>
 
@@ -72,7 +72,7 @@
             <h3>تحليل تكلفة الصيانة للوحدة</h3>
           </div>
           <div class="chart-wrapper">
-            <Bar :data="maintenanceData" :options="chartOptions" />
+            <Bar :data="maintenanceChartData" :options="chartOptions" />
           </div>
         </div>
 
@@ -81,18 +81,14 @@
             <h3>تاريخ طلبات الصيانة</h3>
           </div>
           <div class="widget-list">
-            <div class="widget-list-item hover-lift">
-              <div class="item-icon bg-warning-light"><i class="pi pi-exclamation-triangle text-warning"></i></div>
-              <div class="item-info">
-                <span class="item-title">تسرب مياه في الحمام الرئيسي</span>
-                <span class="item-sub">اكتمل | التكلفة: 450 ₪ | قبل شهرين</span>
+            <div v-if="maintenanceItems.length === 0" class="text-muted" style="padding: 20px; text-align: center;">لا توجد طلبات صيانة سابقة</div>
+            <div v-for="m in maintenanceItems" :key="m.id" class="widget-list-item hover-lift">
+              <div class="item-icon" :class="m.status === 'completed' ? 'bg-info-light' : 'bg-warning-light'">
+                <i :class="m.status === 'completed' ? 'pi pi-check-circle text-info' : 'pi pi-cog text-warning'"></i>
               </div>
-            </div>
-            <div class="widget-list-item hover-lift">
-              <div class="item-icon bg-info-light"><i class="pi pi-cog text-info"></i></div>
               <div class="item-info">
-                <span class="item-title">تغيير فلاتر التكييف</span>
-                <span class="item-sub">اكتمل | التكلفة: 150 ₪ | قبل 6 أشهر</span>
+                <span class="item-title">{{ m.description }}</span>
+                <span class="item-sub">{{ m.status === 'completed' ? 'اكتمل' : m.status === 'in_progress' ? 'قيد التنفيذ' : 'معلق' }}{{ m.cost ? ` | التكلفة: ${format(m.cost)}` : '' }}{{ m.completed_at ? ` | ${m.completed_at}` : '' }}</span>
               </div>
             </div>
           </div>
@@ -107,13 +103,20 @@
             <h3>المستأجر الحالي</h3>
             <i class="pi pi-user text-indigo"></i>
           </div>
-          <div class="tenant-mini-card">
+          <div v-if="contracts.length > 0 && contracts[0].tenant" class="tenant-mini-card">
             <div class="t-avatar"><i class="pi pi-user"></i></div>
             <div class="t-details">
-              <h4>محمد إبراهيم الزهراني</h4>
-              <span>رقم العقد: CNT-2025-103</span>
+              <h4>{{ contracts[0].tenant.first_name }} {{ contracts[0].tenant.last_name }}</h4>
+              <span>رقم العقد: {{ contracts[0].contract_number }}</span>
             </div>
-            <router-link to="/tenants/205" class="btn-xs-primary ml-auto">ملف المستأجر</router-link>
+            <router-link :to="`/tenants/${contracts[0].tenant_id}`" class="btn-xs-primary ml-auto">ملف المستأجر</router-link>
+          </div>
+          <div v-else class="tenant-mini-card">
+            <div class="t-avatar"><i class="pi pi-user"></i></div>
+            <div class="t-details">
+              <h4>لا يوجد مستأجر حالي</h4>
+              <span>الوحدة شاغرة حالياً</span>
+            </div>
           </div>
         </div>
 
@@ -124,17 +127,17 @@
           </div>
           <div class="yield-stats">
             <div class="y-row">
-              <span class="y-label">الإيرادات المحصلة (سنة)</span>
-              <span class="y-val text-success">18,500 ₪</span>
+              <span class="y-label">الإيجار الشهري</span>
+              <span class="y-val text-success">{{ unit ? format(unit.rent_amount) : '—' }}</span>
             </div>
             <div class="y-row">
               <span class="y-label">المصروفات والصيانة</span>
-              <span class="y-val text-danger">1,250 ₪</span>
+              <span class="y-val text-danger">{{ format(totalMaintenanceCost) }}</span>
             </div>
             <div class="y-divider"></div>
             <div class="y-row">
-              <span class="y-label font-bold text-primary">العائد الصافي للوحدة</span>
-              <span class="y-val font-bold text-primary">17,250 ₪</span>
+              <span class="y-label font-bold text-primary">العائد السنوي التقديري</span>
+              <span class="y-val font-bold text-primary">{{ unit ? format(unit.rent_amount * 12 - totalMaintenanceCost) : '—' }}</span>
             </div>
           </div>
         </div>
@@ -144,21 +147,58 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import api from '@/services/api'
+import { formatCurrency } from '@/utils/currency'
+import { useAppStore } from '@/stores/app'
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
 import { Bar } from 'vue-chartjs'
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 const router = useRouter()
+const route = useRoute()
+const appStore = useAppStore()
 
-const maintenanceData = computed(() => ({
-  labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
-  datasets: [
-    { label: 'تكلفة الصيانة (₪)', backgroundColor: '#F59E0B', borderRadius: 4, data: [0, 450, 0, 0, 0, 150] }
-  ]
-}))
+const unit = ref(null)
+const contracts = ref([])
+const maintenanceItems = ref([])
+const loading = ref(true)
+
+const arabicUnitTypes = { apartment: 'سكني', shop: 'تجاري', warehouse: 'مستودع' }
+const statusLabels = { available: 'شاغرة', occupied: 'مؤجرة', maintenance: 'صيانة' }
+const statusColors = { available: 'text-warning', occupied: 'text-success', maintenance: 'text-danger' }
+
+function format(val) {
+  return formatCurrency(val || 0, appStore.selectedCurrency)
+}
+
+const maintenanceChartData = computed(() => {
+  if (!maintenanceItems.value.length) {
+    return { labels: [], datasets: [] }
+  }
+  const monthly = {}
+  const now = new Date()
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    monthly[key] = 0
+  }
+  maintenanceItems.value.forEach(m => {
+    if (!m.completed_at && !m.created_at) return
+    const date = new Date(m.completed_at || m.created_at)
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    if (monthly[key] !== undefined) monthly[key] += Number(m.cost || 0)
+  })
+  const arabicMonths = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+  return {
+    labels: Object.keys(monthly).map(k => arabicMonths[parseInt(k.split('-')[1]) - 1]),
+    datasets: [
+      { label: 'تكلفة الصيانة (₪)', backgroundColor: '#F59E0B', borderRadius: 4, data: Object.values(monthly) }
+    ]
+  }
+})
 
 const chartOptions = {
   responsive: true,
@@ -166,6 +206,31 @@ const chartOptions = {
   plugins: { legend: { display: false } },
   scales: { x: { grid: { display: false } }, y: { grid: { color: '#F1F5F9' } } }
 }
+
+const totalMaintenanceCost = computed(() =>
+  maintenanceItems.value.reduce((s, m) => s + Number(m.cost || 0), 0)
+)
+
+const statusClass = computed(() => statusColors[unit.value?.status] || 'text-muted')
+const statusText = computed(() => statusLabels[unit.value?.status] || unit.value?.status || '—')
+
+onMounted(async () => {
+  try {
+    const unitId = route.params.id
+    const [unitRes, maintRes, contractRes] = await Promise.all([
+      api.get(`/units/${unitId}`),
+      api.get('/maintenance', { params: { unit_id: unitId } }),
+      api.get('/contracts', { params: { unit_id: unitId, status: 'active' } })
+    ])
+    unit.value = unitRes.data?.data || null
+    maintenanceItems.value = maintRes.data?.data || []
+    contracts.value = contractRes.data?.data || []
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>

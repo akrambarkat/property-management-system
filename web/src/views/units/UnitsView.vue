@@ -98,7 +98,7 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -139,6 +139,7 @@
                 optionValue="id"
                 placeholder="اختر المبنى"
                 class="w-full"
+                filter
                 @change="clearFieldError('building_id')"
               />
             </FormField>
@@ -182,6 +183,7 @@
                 optionLabel="label"
                 optionValue="value"
                 class="w-full"
+                filter
               />
             </FormField>
 
@@ -242,8 +244,59 @@
               optionLabel="label"
               optionValue="value"
               class="w-full"
+              filter
             />
           </FormField>
+        </div>
+
+        <!-- Section 3: Service Fees (Default Values) -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-bolt"></i>
+            <span>رسوم الخدمات الافتراضية (تعبأ تلقائيًا في العقد)</span>
+          </div>
+
+          <div class="form-grid-3">
+            <FormField label="الكهرباء (₪)" forId="unit-electricity">
+              <InputNumber
+                id="unit-electricity"
+                v-model="form.electricity_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
+              />
+            </FormField>
+
+            <FormField label="المياه (₪)" forId="unit-water">
+              <InputNumber
+                id="unit-water"
+                v-model="form.water_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
+              />
+            </FormField>
+
+            <FormField label="الإنترنت (₪)" forId="unit-internet">
+              <InputNumber
+                id="unit-internet"
+                v-model="form.internet_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
+              />
+            </FormField>
+
+            <FormField label="خدمات أخرى (₪)" forId="unit-services">
+              <InputNumber
+                id="unit-services"
+                v-model="form.services_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
+              />
+            </FormField>
+          </div>
         </div>
 
         <div class="form-actions">
@@ -294,7 +347,9 @@ const filters = reactive({ status: null, building_id: null })
 
 const form = reactive({
   id: null, building_id: null, unit_number: '', unit_type: 'apartment',
-  floor: 0, area: null, rent_amount: null, status: 'available'
+  floor: 0, area: null, rent_amount: null,
+  electricity_amount: 0, water_amount: 0, internet_amount: 0, services_amount: 0,
+  status: 'available'
 })
 
 const errors = reactive({
@@ -443,7 +498,9 @@ function resetForm() {
   isEditing.value = false
   Object.assign(form, {
     id: null, building_id: null, unit_number: '', unit_type: 'apartment',
-    floor: 0, area: null, rent_amount: null, status: 'available'
+    floor: 0, area: null, rent_amount: null,
+    electricity_amount: 0, water_amount: 0, internet_amount: 0, services_amount: 0,
+    status: 'available'
   })
   Object.keys(errors).forEach(key => errors[key] = '')
 }
@@ -540,7 +597,7 @@ async function deleteItemConfirmed() {
 }
 
 .type-badge {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;

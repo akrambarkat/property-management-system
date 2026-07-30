@@ -33,15 +33,16 @@
               forId="set-pref-currency"
               helpText="العملة الافتراضية لعرض الإحصائيات باللوحة"
             >
-              <Select
-                id="set-pref-currency"
-                v-model="preferredCurrency"
-                :options="currencies"
-                optionLabel="name"
-                optionValue="code"
-                class="w-full"
-                @change="updatePreferredCurrency"
-              />
+            <Select
+              id="set-pref-currency"
+              v-model="preferredCurrency"
+              :options="currencies"
+              optionLabel="name"
+              optionValue="code"
+              class="w-full"
+              filter
+              @change="updatePreferredCurrency"
+            />
             </FormField>
           </div>
 

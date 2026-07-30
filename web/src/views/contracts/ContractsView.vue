@@ -89,7 +89,7 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -114,7 +114,44 @@
             <span>أطراف العقد والوحدة</span>
           </div>
 
-          <div class="form-grid-2">
+          <div class="form-grid-3">
+            <FormField
+              label="الموقع"
+              required
+              forId="contract-location"
+            >
+              <Select
+                id="contract-location"
+                v-model="selectedLocation"
+                :options="locations"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر الموقع"
+                class="w-full"
+                filter
+                @change="onLocationChange"
+              />
+            </FormField>
+
+            <FormField
+              label="العمارة"
+              required
+              forId="contract-building"
+            >
+              <Select
+                id="contract-building"
+                v-model="selectedBuilding"
+                :options="buildings"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر العمارة"
+                class="w-full"
+                :disabled="!selectedLocation"
+                filter
+                @change="onBuildingChange"
+              />
+            </FormField>
+
             <FormField
               label="الوحدة العقارية"
               required
@@ -125,12 +162,14 @@
               <Select
                 id="contract-unit"
                 v-model="form.unit_id"
-                :options="units"
+                :options="filteredUnits"
                 optionLabel="label"
                 optionValue="id"
                 placeholder="اختر الوحدة"
                 class="w-full"
-                @change="clearFieldError('unit_id')"
+                :disabled="!selectedBuilding"
+                filter
+                @change="onUnitChange"
               />
             </FormField>
 
@@ -149,6 +188,7 @@
                 optionValue="id"
                 placeholder="اختر المستأجر"
                 class="w-full"
+                filter
                 @change="clearFieldError('tenant_id')"
               />
             </FormField>
@@ -222,6 +262,57 @@
                 optionLabel="label"
                 optionValue="value"
                 class="w-full"
+                filter
+              />
+            </FormField>
+          </div>
+        </div>
+
+        <!-- Section 3: Service Fees (Second Invoice) -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-bolt"></i>
+            <span>رسوم الخدمات (فاتورة خدمات منفصلة)</span>
+          </div>
+
+          <div class="form-grid-3">
+            <FormField label="الكهرباء (₪)" forId="contract-electricity">
+              <InputNumber
+                id="contract-electricity"
+                v-model="form.electricity_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
+              />
+            </FormField>
+
+            <FormField label="المياه (₪)" forId="contract-water">
+              <InputNumber
+                id="contract-water"
+                v-model="form.water_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
+              />
+            </FormField>
+
+            <FormField label="الإنترنت (₪)" forId="contract-internet">
+              <InputNumber
+                id="contract-internet"
+                v-model="form.internet_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
+              />
+            </FormField>
+
+            <FormField label="خدمات أخرى (₪)" forId="contract-services">
+              <InputNumber
+                id="contract-services"
+                v-model="form.services_amount"
+                class="w-full"
+                :min="0"
+                placeholder="0"
               />
             </FormField>
           </div>
@@ -240,7 +331,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import api from '@/services/api'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
 import TableActionMenu from '@/components/common/TableActionMenu.vue'
@@ -249,8 +340,12 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { useToastStore } from '@/stores/toast'
 
 const items = ref([])
-const units = ref([])
 const tenants = ref([])
+const locations = ref([])
+const buildings = ref([])
+const filteredUnits = ref([])
+const selectedLocation = ref(null)
+const selectedBuilding = ref(null)
 const loading = ref(false)
 const toast = useToastStore()
 const saving = ref(false)
@@ -261,7 +356,8 @@ const filters = reactive({ status: null })
 
 const form = reactive({
   id: null, unit_id: null, tenant_id: null,
-  start_date: null, end_date: null, rent_amount: null, contract_type: 'monthly'
+  start_date: null, end_date: null, rent_amount: null, contract_type: 'monthly',
+  electricity_amount: 0, water_amount: 0, internet_amount: 0, services_amount: 0
 })
 
 const errors = reactive({
@@ -367,13 +463,53 @@ function formatCurrency(amount) {
   return `${Number(amount).toLocaleString('ar-EG')} ₪`
 }
 
-onMounted(() => { fetchUnits(); fetchTenants(); fetchItems() })
+onMounted(() => { fetchLocations(); fetchTenants(); fetchItems() })
 
-async function fetchUnits() {
+async function fetchLocations() {
   try {
-    const { data } = await api.get('/units')
-    units.value = data.data.map(u => ({ ...u, label: `وحدة #${u.unit_number} - ${u.building?.name || ''}` }))
+    const { data } = await api.get('/locations')
+    locations.value = data.data || []
   } catch (err) { console.error(err) }
+}
+
+async function onLocationChange() {
+  selectedBuilding.value = null
+  form.unit_id = null
+  buildings.value = []
+  filteredUnits.value = []
+  if (!selectedLocation.value) return
+  try {
+    const { data } = await api.get('/buildings', { params: { location_id: selectedLocation.value } })
+    buildings.value = data.data || []
+  } catch (err) { console.error(err) }
+}
+
+async function onBuildingChange() {
+  form.unit_id = null
+  filteredUnits.value = []
+  if (!selectedBuilding.value) return
+  try {
+    const params = { building_id: selectedBuilding.value }
+    if (!isEditing.value) params.status = 'available'
+    const { data } = await api.get('/units', { params })
+    filteredUnits.value = (data.data || []).map(u => ({
+      ...u,
+      label: `وحدة #${u.unit_number} - ${u.unit_type === 'apartment' ? 'شقة' : u.unit_type === 'shop' ? 'محل' : 'مستودع'}`
+    }))
+  } catch (err) { console.error(err) }
+}
+
+function onUnitChange() {
+  clearFieldError('unit_id')
+  if (!isEditing.value && form.unit_id) {
+    const unit = filteredUnits.value.find(u => u.id === form.unit_id)
+    if (!unit) return
+    if (unit.rent_amount) form.rent_amount = Number(unit.rent_amount)
+    if (unit.electricity_amount) form.electricity_amount = Number(unit.electricity_amount)
+    if (unit.water_amount) form.water_amount = Number(unit.water_amount)
+    if (unit.internet_amount) form.internet_amount = Number(unit.internet_amount)
+    if (unit.services_amount) form.services_amount = Number(unit.services_amount)
+  }
 }
 
 async function fetchTenants() {
@@ -408,13 +544,34 @@ function editItem(item) {
   Object.assign(form, item)
   isEditing.value = true
   showDialog.value = true
+
+  if (item.unit?.building) {
+    selectedLocation.value = item.unit.building.location_id
+    fetchBuildingsForEdit(item.unit.building_id, item.unit_id)
+  }
+}
+
+async function fetchBuildingsForEdit(buildingId, unitId) {
+  try {
+    const { data } = await api.get('/buildings', { params: { location_id: selectedLocation.value } })
+    buildings.value = data.data || []
+    selectedBuilding.value = buildingId
+    const params = { building_id: buildingId }
+    const res = await api.get('/units', { params })
+    filteredUnits.value = (res.data.data || []).map(u => ({
+      ...u,
+      label: `وحدة #${u.unit_number} - ${u.unit_type === 'apartment' ? 'شقة' : u.unit_type === 'shop' ? 'محل' : 'مستودع'}`
+    }))
+    form.unit_id = unitId
+  } catch (err) { console.error(err) }
 }
 
 function resetForm() {
   isEditing.value = false
   Object.assign(form, {
     id: null, unit_id: null, tenant_id: null,
-    start_date: null, end_date: null, rent_amount: null, contract_type: 'monthly'
+    start_date: null, end_date: null, rent_amount: null, contract_type: 'monthly',
+    electricity_amount: 0, water_amount: 0, internet_amount: 0, services_amount: 0
   })
   Object.keys(errors).forEach(key => errors[key] = '')
 }

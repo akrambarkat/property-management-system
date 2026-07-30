@@ -60,7 +60,7 @@
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -100,6 +100,7 @@
               optionValue="id"
               placeholder="اختر الفاتورة المراد سدادها"
               class="w-full"
+              filter
               @change="clearFieldError('invoice_id')"
             />
           </FormField>
@@ -146,14 +147,15 @@
               label="طريقة الدفع"
               forId="pay-method"
             >
-              <Select
-                id="pay-method"
-                v-model="form.payment_method"
-                :options="methodOptions"
-                optionLabel="label"
-                optionValue="value"
-                class="w-full"
-              />
+            <Select
+              id="pay-method"
+              v-model="form.payment_method"
+              :options="methodOptions"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+              filter
+            />
             </FormField>
           </div>
 

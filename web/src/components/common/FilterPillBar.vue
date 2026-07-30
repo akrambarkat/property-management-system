@@ -148,7 +148,7 @@ function selectFilterKey(opt) {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #FFFFFF;
+  background: var(--bg-surface, #FFFFFF);
   border: 1px dashed var(--border);
   border-radius: var(--radius-full);
   font-family: var(--font-family);
@@ -158,7 +158,7 @@ function selectFilterKey(opt) {
   transition: all 0.15s ease;
 }
 .btn-add-filter:hover {
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -182,7 +182,7 @@ function selectFilterKey(opt) {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #F8FAFC;
+  background: var(--bg-subtle, #F8FAFC);
   border-bottom: 1px solid var(--border);
   font-size: 12px;
   font-weight: 600;
@@ -211,7 +211,7 @@ function selectFilterKey(opt) {
   cursor: pointer;
 }
 .popover-option:hover {
-  background: #F1F5F9;
+  background: var(--bg-subtle, #F1F5F9);
 }
 
 .batch-action-toolbar {

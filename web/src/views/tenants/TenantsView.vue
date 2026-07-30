@@ -55,9 +55,9 @@
 
         <Column v-if="!hiddenColumns.includes('current_unit')" field="current_unit" header="الوحدة المأجورة">
           <template #body="slotProps">
-            <span v-if="slotProps.data.active_contracts && slotProps.data.active_contracts.length" class="unit-pill">
+            <span v-if="slotProps.data.current_unit" class="unit-pill">
               <i class="pi pi-home text-blue"></i>
-              وحدة #{{ slotProps.data.active_contracts[0]?.unit?.unit_number }}
+              وحدة #{{ slotProps.data.current_unit?.unit_number }}
             </span>
             <span v-else class="text-muted font-italic">لا يوجد عقد نشط</span>
           </template>
@@ -67,15 +67,15 @@
           <template #body="slotProps">
             <span
               class="status-badge"
-              :class="slotProps.data.active_contracts && slotProps.data.active_contracts.length ? 'status-occupied' : 'status-available'"
+              :class="slotProps.data.current_unit ? 'status-occupied' : 'status-available'"
             >
-              {{ slotProps.data.active_contracts && slotProps.data.active_contracts.length ? 'مستأجر حالي' : 'مستأجر سابق' }}
+              {{ slotProps.data.current_unit ? 'مستأجر حالي' : 'مستأجر سابق' }}
             </span>
           </template>
         </Column>
 
         <!-- Actions -->
-        <Column header="الإجراءات" style="width: 80px; text-align: center;">
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
           <template #body="slotProps">
             <TableActionMenu :items="getRowActions(slotProps.data)" />
           </template>
@@ -154,6 +154,36 @@
               @input="clearFieldError('id_number')"
             />
           </FormField>
+        </div>
+
+        <!-- Section: ID Photo Upload -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <i class="pi pi-id-card"></i>
+            <span>صورة الهوية</span>
+          </div>
+
+          <div class="photo-upload-wrapper">
+            <div class="photo-preview" v-if="idPhotoPreview" @click="$refs.idPhotoInput.click()">
+              <img :src="idPhotoPreview" alt="صورة الهوية" />
+              <div class="photo-overlay"><i class="pi pi-camera"></i> تغيير</div>
+            </div>
+            <div class="photo-placeholder" v-else @click="$refs.idPhotoInput.click()">
+              <i class="pi pi-id-card"></i>
+              <span>إضافة صورة الهوية (اختياري)</span>
+              <span class="photo-hint">jpg, png - حد أقصى 2MB</span>
+            </div>
+            <input
+              ref="idPhotoInput"
+              type="file"
+              accept="image/jpeg,image/png,image/jpg,image/gif"
+              @change="onIdPhotoChange"
+              style="display: none"
+            />
+            <button v-if="idPhotoFile" class="btn-xs-text mt-2" @click="removeIdPhoto">
+              <i class="pi pi-trash"></i> إزالة الصورة
+            </button>
+          </div>
         </div>
 
         <!-- Section 2: Contact Info -->
@@ -257,6 +287,8 @@ const selectedTenantId = ref(null)
 
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
+const idPhotoFile = ref(null)
+const idPhotoPreview = ref(null)
 
 const tableColumns = [
   { field: 'first_name', header: 'اسم المستأجر' },
@@ -363,9 +395,25 @@ function openCreateDialog() {
   showDialog.value = true
 }
 
+function onIdPhotoChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  idPhotoFile.value = file
+  const reader = new FileReader()
+  reader.onload = (e) => { idPhotoPreview.value = e.target.result }
+  reader.readAsDataURL(file)
+}
+
+function removeIdPhoto() {
+  idPhotoFile.value = null
+  idPhotoPreview.value = null
+  if (form.id_photo_url) form.id_photo_url = null
+}
+
 function editItem(item) {
   resetForm()
   Object.assign(form, item)
+  if (item.id_photo_url) idPhotoPreview.value = item.id_photo_url
   isEditing.value = true
   showDialog.value = true
 }
@@ -374,6 +422,8 @@ function resetForm() {
   isEditing.value = false
   Object.assign(form, { id: null, first_name: '', last_name: '', id_number: '', phone: '', email: '', address: '' })
   Object.keys(errors).forEach(key => errors[key] = '')
+  idPhotoFile.value = null
+  idPhotoPreview.value = null
 }
 
 function closeDialog() {
@@ -388,18 +438,37 @@ function handleDialogHide() {
   resetForm()
 }
 
+function buildFormData() {
+  const fd = new FormData()
+  fd.append('first_name', form.first_name)
+  fd.append('last_name', form.last_name)
+  fd.append('id_number', form.id_number)
+  fd.append('phone', form.phone || '')
+  fd.append('email', form.email || '')
+  fd.append('address', form.address || '')
+  if (idPhotoFile.value) fd.append('id_photo', idPhotoFile.value)
+  return fd
+}
+
 async function saveItem() {
   if (!validateForm()) return
 
   saving.value = true
   try {
     if (isEditing.value) {
-      const { data } = await api.put(`/tenants/${form.id}`, form)
+      const fd = buildFormData()
+      fd.append('_method', 'PUT')
+      const { data } = await api.post(`/tenants/${form.id}`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
       const idx = items.value.findIndex(i => i.id === form.id)
       if (idx > -1) items.value[idx] = data.data
       toast.success('تم تعديل بيانات المستأجر بنجاح')
     } else {
-      const { data } = await api.post('/tenants', form)
+      const fd = buildFormData()
+      const { data } = await api.post('/tenants', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
       items.value.unshift(data.data)
       toast.success('تم إضافة المستأجر بنجاح')
     }
@@ -487,6 +556,91 @@ async function deleteItemConfirmed() {
 
 .text-blue {
   color: #2563EB;
+}
+
+.photo-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.photo-placeholder {
+  width: 180px;
+  height: 180px;
+  border: 2px dashed var(--border, #E2E8F0);
+  border-radius: var(--radius-md, 10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-muted, #94A3B8);
+  background: var(--bg-subtle, #F8FAFC);
+}
+.photo-placeholder:hover {
+  border-color: var(--accent, #2563EB);
+  color: var(--accent, #2563EB);
+  background: #EFF6FF;
+}
+.photo-placeholder i {
+  font-size: 2.5rem;
+}
+.photo-placeholder span {
+  font-size: 13px;
+  font-weight: 600;
+}
+.photo-hint {
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  color: var(--text-muted, #94A3B8);
+}
+.photo-preview {
+  width: 180px;
+  height: 180px;
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  border: 2px solid var(--border, #E2E8F0);
+}
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.photo-preview:hover .photo-overlay {
+  opacity: 1;
+}
+.btn-xs-text {
+  background: none;
+  border: none;
+  color: var(--danger, #EF4444);
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-xs-text:hover {
+  text-decoration: underline;
+}
+.mt-2 {
+  margin-top: 8px;
 }
 
 .text-center {
