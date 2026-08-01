@@ -115,20 +115,6 @@
         </transition>
       </div>
 
-      <!-- User Profile Header & Logout -->
-      <div class="user-header-menu">
-        <div class="avatar-circle">
-          <span>{{ userInitial }}</span>
-        </div>
-        <div class="user-text">
-          <span class="name">{{ authStore.currentUser?.name || 'مدير النظام' }}</span>
-          <span class="role">{{ roleTitle }}</span>
-        </div>
-
-        <button class="logout-icon-btn" @click="handleLogout" title="تسجيل الخروج">
-          <i class="pi pi-sign-out"></i>
-        </button>
-      </div>
     </div>
   </header>
 </template>
