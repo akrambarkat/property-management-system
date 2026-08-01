@@ -20,6 +20,8 @@ import Tag from 'primevue/tag'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import RadioButton from 'primevue/radiobutton'
+import InputSwitch from 'primevue/inputswitch'
+import Drawer from 'primevue/drawer'
 
 import './assets/styles/main.css'
 import 'primeicons/primeicons.css'
@@ -48,6 +50,8 @@ app.component('Tag', Tag)
 app.component('IconField', IconField)
 app.component('InputIcon', InputIcon)
 app.component('RadioButton', RadioButton)
+app.component('InputSwitch', InputSwitch)
+app.component('Drawer', Drawer)
 
 app.use(createPinia())
 app.use(router)

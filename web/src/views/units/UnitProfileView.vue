@@ -204,7 +204,7 @@ const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
-  scales: { x: { grid: { display: false } }, y: { grid: { color: '#F1F5F9' } } }
+  scales: { x: { grid: { display: false } }, y: { grid: { color: 'var(--border)' } } }
 }
 
 const totalMaintenanceCost = computed(() =>
@@ -262,8 +262,8 @@ onMounted(async () => {
   justify-content: center;
   font-size: 1.5rem;
 }
-.bg-indigo-light { background: #EEF2FF; border: 1px solid #C7D2FE; }
-.text-indigo { color: #4F46E5; }
+.bg-indigo-light { background: var(--accent-light); border: 1px solid var(--info-border); }
+.text-indigo { color: var(--accent-hover); }
 
 .profile-title {
   font-size: 20px;
@@ -314,7 +314,7 @@ onMounted(async () => {
 .kpi-value { font-size: 24px; font-weight: 800; color: var(--text-primary); }
 .kpi-footer { font-size: 11.5px; color: var(--text-muted); }
 .text-success { color: var(--success); }
-.text-accent { color: var(--accent); }
+.text-accent { color: var(--accent-hover); }
 .text-danger { color: var(--danger); }
 .font-bold { font-weight: 700; }
 
@@ -348,7 +348,7 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: #F8FAFC;
+  background: var(--bg-subtle);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   transition: all 0.2s ease;
@@ -362,10 +362,10 @@ onMounted(async () => {
   justify-content: center;
   font-size: 1.1rem;
 }
-.bg-warning-light { background: #FEF3C7; }
-.text-warning { color: #D97706; }
-.bg-info-light { background: #E0F2FE; }
-.text-info { color: #0284C7; }
+.bg-warning-light { background: var(--warning-bg); }
+.text-warning { color: var(--warning-contrast); }
+.bg-info-light { background: var(--info-bg); }
+.text-info { color: var(--info-contrast); }
 
 .item-info { flex: 1; display: flex; flex-direction: column; }
 .item-title { font-size: 13.5px; font-weight: 700; color: var(--text-primary); }
@@ -376,17 +376,17 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #FFFFFF;
+  background: var(--bg-surface);
   padding: 12px;
   border-radius: var(--radius-sm);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-sm);
 }
 .t-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #EFF6FF;
-  color: #3B82F6;
+  background: var(--info-bg);
+  color: var(--info-contrast);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -397,7 +397,7 @@ onMounted(async () => {
 .ml-auto { margin-right: auto; margin-left: 0; }
 .btn-xs-primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-on-accent);
   border: none;
   padding: 4px 10px;
   border-radius: 4px;

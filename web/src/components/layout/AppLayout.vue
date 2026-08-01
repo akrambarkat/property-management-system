@@ -3,6 +3,14 @@
     <!-- Global Toast Container -->
     <ToastContainer />
 
+    <!-- Mobile Sidebar Backdrop -->
+    <div
+      v-if="isMobile && !appStore.sidebarCollapsed"
+      class="sidebar-backdrop"
+      @click="appStore.toggleSidebar"
+      aria-hidden="true"
+    ></div>
+
     <!-- Fixed Sidebar -->
     <AppSidebar />
 
@@ -128,6 +136,7 @@ const commandInputRef = ref(null)
 const searchResults = ref([])
 const searchLoading = ref(false)
 const currentTime = ref('')
+const isMobile = ref(false)
 
 watch(showCommandPalette, (val) => {
   if (val) {
@@ -152,7 +161,12 @@ const routeNamesMap = {
   Reports: 'التقارير التحليلية',
   Notifications: 'مركز الإشعارات',
   Users: 'إدارة المستخدمين',
-  Settings: 'إعدادات النظام'
+  Settings: 'إعدادات النظام',
+  SmsOverview: 'مركز الرسائل SMS',
+  SmsLogs: 'سجل الرسائل',
+  SmsTemplates: 'قوالب الرسائل',
+  SmsBulk: 'الإرسال الجماعي',
+  SmsScheduler: 'الإرسال التلقائي'
 }
 
 const breadcrumbs = computed(() => {
@@ -169,6 +183,13 @@ const breadcrumbs = computed(() => {
   if (['Invoices', 'Payments', 'Utilities', 'Expenses'].includes(currentName)) {
     return [
       { label: 'المالية والحسابات', to: '/invoices' },
+      { label: routeNamesMap[currentName] || currentName }
+    ]
+  }
+
+  if (['SmsLogs', 'SmsTemplates', 'SmsBulk', 'SmsScheduler'].includes(currentName)) {
+    return [
+      { label: 'الرسائل SMS', to: '/sms' },
       { label: routeNamesMap[currentName] || currentName }
     ]
   }
@@ -261,8 +282,17 @@ function handleGlobalKeydown(e) {
 }
 
 let timer
+function updateIsMobile() {
+  const wasMobile = isMobile.value
+  isMobile.value = window.innerWidth <= 768
+  if (isMobile.value && !wasMobile) {
+    appStore.sidebarCollapsed = true
+  }
+}
 onMounted(() => {
   document.body.style.direction = 'rtl'
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
   updateTime()
   timer = setInterval(updateTime, 30000)
   window.addEventListener('keydown', handleGlobalKeydown)
@@ -270,6 +300,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearInterval(timer)
+  window.removeEventListener('resize', updateIsMobile)
   window.removeEventListener('keydown', handleGlobalKeydown)
 })
 </script>
@@ -297,6 +328,14 @@ onUnmounted(() => {
   margin-right: 80px;
 }
 
+/* Mobile Sidebar Backdrop */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-backdrop);
+  z-index: 999;
+}
+
 /* Sub-Navbar Breadcrumb Area - Positioned Directly Below Sticky Header */
 .sub-navbar-breadcrumb {
   background: var(--bg-surface);
@@ -305,7 +344,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm);
   flex-shrink: 0;
 }
 
@@ -333,7 +372,7 @@ onUnmounted(() => {
   transition: color 0.15s ease;
 }
 .breadcrumb-link:hover {
-  color: var(--accent);
+  color: var(--text-primary);
 }
 .breadcrumb-separator {
   font-size: 9px;
@@ -441,10 +480,10 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 1.1rem;
 }
-.item-icon-box.tenant { background: var(--info-bg, #EFF6FF); color: var(--info, #2563EB); }
-.item-icon-box.contract { background: var(--warning-bg, #FEF3C7); color: var(--warning, #D97706); }
-.item-icon-box.invoice { background: var(--danger-bg, #FEF2F2); color: var(--danger, #DC2626); }
-.item-icon-box.maintenance { background: #F3E8FF; color: #9333EA; }
+.item-icon-box.tenant { background: var(--info-bg); color: var(--info-contrast); }
+.item-icon-box.contract { background: var(--warning-bg); color: var(--warning-contrast); }
+.item-icon-box.invoice { background: var(--danger-bg); color: var(--danger-contrast); }
+.item-icon-box.maintenance { background: var(--bg-subtle); color: var(--text-secondary); }
 
 .item-details {
   flex: 1;
@@ -485,13 +524,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 16px;
-  background: var(--bg-subtle, #F8FAFC);
+  background: var(--bg-subtle);
   border-top: 1px solid var(--border);
   font-size: 12px;
   color: var(--text-secondary);
 }
 .command-shortcuts-footer kbd {
-  background: var(--bg-surface, #FFFFFF);
+  background: var(--bg-surface-elevated);
   border: 1px solid var(--border);
   padding: 1px 5px;
   border-radius: 4px;
@@ -513,7 +552,8 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .layout-main {
+  .layout-main,
+  .sidebar-collapsed .layout-main {
     margin-right: 0;
   }
   .layout-content {

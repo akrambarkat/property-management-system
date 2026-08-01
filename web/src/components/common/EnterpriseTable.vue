@@ -285,18 +285,18 @@ onBeforeUnmount(() => {
 .search-input {
   padding: 8px 36px 8px 30px !important;
   width: 280px !important;
-  background: var(--bg-surface, #FFFFFF) !important;
-  border: 1px solid var(--border, #E2E8F0) !important;
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
   border-radius: var(--radius-sm, 6px) !important;
   font-size: 13px !important;
-  color: var(--text-primary, #0F172A) !important;
+  color: var(--text-primary) !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-input:focus {
   outline: none;
-  border-color: var(--primary, #2563EB) !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  border-color: var(--border-active) !important;
+  box-shadow: var(--shadow-focus) !important;
 }
 
 .clear-search-btn {
@@ -332,26 +332,27 @@ onBeforeUnmount(() => {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-toolbar:hover {
-  background: var(--bg-subtle, #F8FAFC);
-  border-color: var(--border-hover, #CBD5E1);
-  color: var(--primary, #2563EB);
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
 }
 
 .bulk-actions-pill {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #0F172A;
-  color: #FFFFFF;
+  background: var(--bg-active);
+  color: var(--text-primary);
+  border: 1px solid var(--border-hover);
   padding: 4px 14px;
   border-radius: var(--radius-full, 9999px);
   font-size: 12.5px;
   font-weight: 500;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  box-shadow: var(--shadow-sm);
 }
 
 .bulk-count {
@@ -361,8 +362,8 @@ onBeforeUnmount(() => {
 }
 
 .btn-bulk-action {
-  background: var(--primary, #2563EB);
-  color: #FFFFFF;
+  background: var(--accent);
+  color: var(--accent-contrast);
   border: none;
   padding: 4px 10px;
   border-radius: 4px;
@@ -376,7 +377,7 @@ onBeforeUnmount(() => {
 }
 
 .btn-bulk-action:hover {
-  background: #1D4ED8;
+  background: var(--accent-hover);
 }
 
 .column-visibility-dropdown {
@@ -392,7 +393,7 @@ onBeforeUnmount(() => {
   background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-md, 8px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
   padding: 8px;
 }
 
@@ -451,7 +452,7 @@ onBeforeUnmount(() => {
 
 .skeleton-cell {
   height: 18px;
-  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background: linear-gradient(90deg, var(--bg-skeleton-base) 25%, var(--bg-skeleton-highlight) 50%, var(--bg-skeleton-base) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
@@ -459,7 +460,7 @@ onBeforeUnmount(() => {
 
 .skeleton-cell.header-cell {
   height: 22px;
-  background: #E2E8F0;
+  background: var(--bg-skeleton-highlight);
   flex: 1;
 }
 

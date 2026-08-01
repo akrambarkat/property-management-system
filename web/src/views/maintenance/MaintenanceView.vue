@@ -201,6 +201,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
 import TableActionMenu from '@/components/common/TableActionMenu.vue'
@@ -215,6 +216,8 @@ const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
+const route = useRoute()
+const router = useRouter()
 
 const filters = reactive({ status: null, priority: null })
 
@@ -298,7 +301,14 @@ function getRowActions(row) {
   ]
 }
 
-onMounted(() => { fetchUnits(); fetchItems() })
+onMounted(async () => {
+  fetchUnits(); fetchItems()
+  if (route.query.new === '1') {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    openCreateDialog()
+    router.replace({ path: route.path, query: {} })
+  }
+})
 
 async function fetchUnits() {
   try {
@@ -389,7 +399,7 @@ async function saveItem() {
 .icon-avatar {
   width: 36px;
   height: 36px;
-  background: #EFF6FF;
+  background: var(--info-bg);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -425,15 +435,15 @@ async function saveItem() {
   font-size: 11.5px;
   font-weight: 600;
 }
-.priority-low { background: #F1F5F9; color: #475569; }
-.priority-medium { background: #FEF3C7; color: #D97706; }
-.priority-high { background: #FEE2E2; color: #DC2626; }
+.priority-low { background: var(--bg-subtle); color: var(--text-secondary); }
+.priority-medium { background: var(--warning-bg); color: var(--warning-contrast); }
+.priority-high { background: var(--danger-bg); color: var(--danger-contrast); }
 
 .filter-select {
   width: 170px !important;
 }
 
 .text-blue {
-  color: #2563EB;
+  color: var(--info-contrast);
 }
 </style>

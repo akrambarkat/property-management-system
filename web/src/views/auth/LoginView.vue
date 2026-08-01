@@ -208,11 +208,9 @@ function handleForgotPassword() {
   width: min(100%, 460px);
   padding: clamp(24px, 4vw, 40px);
   border-radius: 24px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 
-    0 4px 30px rgba(0, 0, 0, 0.05),
-    0 20px 50px rgba(27, 42, 74, 0.3);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -220,9 +218,7 @@ function handleForgotPassword() {
 
 .form-card:hover {
   transform: translateY(-2px);
-  box-shadow: 
-    0 8px 40px rgba(0, 0, 0, 0.08),
-    0 24px 60px rgba(27, 42, 74, 0.35);
+  box-shadow: var(--shadow-xl);
 }
 
 .form-header {
@@ -249,7 +245,7 @@ function handleForgotPassword() {
 
 .system-name {
   margin-bottom: 6px;
-  color: #1B2A4A;
+  color: var(--text-primary);
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -258,14 +254,14 @@ function handleForgotPassword() {
 
 .form-header h2 {
   margin: 0 0 8px;
-  color: #1A1A2E;
+  color: var(--text-primary);
   font-size: clamp(1.4rem, 2vw, 1.75rem);
   font-weight: 700;
   line-height: 1.25;
 }
 
 .tagline {
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -283,7 +279,7 @@ function handleForgotPassword() {
 }
 
 .field label {
-  color: #1B2A4A;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 600;
   padding-inline-start: 4px;
@@ -295,20 +291,20 @@ function handleForgotPassword() {
   gap: 12px;
   min-height: 52px;
   padding: 0 16px;
-  border: 1px solid rgba(27, 42, 74, 0.15);
+  border: 1px solid var(--input-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--input-bg);
   transition: all 0.25s ease;
 }
 
 .input-shell:focus-within {
-  border-color: #1B2A4A;
-  box-shadow: 0 0 0 4px rgba(27, 42, 74, 0.08);
-  background: #ffffff;
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-focus);
+  background: var(--input-bg);
 }
 
 .input-icon {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -319,12 +315,12 @@ function handleForgotPassword() {
   outline: none;
   background: transparent;
   font: inherit;
-  color: #1A1A2E;
+  color: var(--text-primary);
   font-size: 0.95rem;
 }
 
 .input-shell input::placeholder {
-  color: #94a3b8;
+  color: var(--input-placeholder);
 }
 
 .icon-button {
@@ -337,14 +333,14 @@ function handleForgotPassword() {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #64748b;
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .icon-button:hover {
-  background: #f1f5f9;
-  color: #1A1A2E;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .form-meta {
@@ -363,21 +359,21 @@ function handleForgotPassword() {
   align-items: center;
   gap: 8px;
   direction: rtl;
-  color: #475569;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .remember-wrap input {
   width: 15px;
   height: 15px;
-  accent-color: #1B2A4A;
+  accent-color: var(--accent);
   cursor: pointer;
 }
 
 .forgot-link {
   border: none;
   background: transparent;
-  color: #C9A84C;
+  color: var(--accent);
   cursor: pointer;
   font: inherit;
   font-weight: 600;
@@ -387,7 +383,7 @@ function handleForgotPassword() {
 }
 
 .forgot-link:hover {
-  color: #b0913b;
+  color: var(--accent-hover);
   text-decoration: underline;
 }
 
@@ -423,16 +419,16 @@ function handleForgotPassword() {
   align-items: center;
   gap: 8px;
   margin-top: 4px;
-  color: #ef4444;
+  color: var(--danger-contrast);
   font-size: 0.88rem;
-  background: rgba(239, 68, 68, 0.08);
+  background: var(--danger-bg);
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--danger-border);
 }
 
 .field-error {
-  color: #ef4444;
+  color: var(--danger-contrast);
   font-size: 0.82rem;
   margin-top: 4px;
   padding-inline-start: 4px;
@@ -440,13 +436,13 @@ function handleForgotPassword() {
 }
 
 .input-shell.input-error-border {
-  border-color: rgba(239, 68, 68, 0.5);
-  background: rgba(239, 68, 68, 0.02);
+  border-color: var(--danger);
+  background: var(--danger-bg);
 }
 
 .input-shell.input-error-border:focus-within {
-  border-color: #ef4444;
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+  box-shadow: var(--shadow-focus);
 }
 
 @media (max-width: 480px) {

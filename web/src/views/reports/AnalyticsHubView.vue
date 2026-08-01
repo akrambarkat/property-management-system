@@ -89,9 +89,9 @@
           <Doughnut :data="expenseData" :options="doughnutOptions" />
         </div>
         <div class="occupancy-stats-footer mt-4">
-          <div class="occ-stat"><span class="dot" style="background:#EF4444"></span> صيانة عامة (45%)</div>
-          <div class="occ-stat"><span class="dot" style="background:#F59E0B"></span> فواتير ومرافق (35%)</div>
-          <div class="occ-stat"><span class="dot" style="background:#3B82F6"></span> مصاريف إدارية (20%)</div>
+          <div class="occ-stat"><span class="dot" style="background:var(--danger)"></span> صيانة عامة (45%)</div>
+          <div class="occ-stat"><span class="dot" style="background:var(--warning)"></span> فواتير ومرافق (35%)</div>
+          <div class="occ-stat"><span class="dot" style="background:var(--info)"></span> مصاريف إدارية (20%)</div>
         </div>
       </div>
     </div>
@@ -123,7 +123,7 @@ const barChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { position: 'top' } },
-  scales: { x: { grid: { display: false } }, y: { grid: { color: '#F1F5F9' } } }
+  scales: { x: { grid: { display: false } }, y: { grid: { color: 'var(--border)' } } }
 }
 
 const doughnutOptions = {
@@ -163,8 +163,8 @@ const doughnutOptions = {
   justify-content: center;
   font-size: 1.5rem;
 }
-.bg-success-light { background: #DCFCE7; border: 1px solid #86EFAC; }
-.text-success { color: #10B981; }
+.bg-success-light { background: var(--success-bg); border: 1px solid var(--success-border); }
+.text-success { color: var(--success); }
 
 .profile-title {
   font-size: 20px;
@@ -189,7 +189,7 @@ const doughnutOptions = {
 .time-horizon-selector {
   display: flex;
   gap: 4px;
-  background: #F1F5F9;
+  background: var(--bg-subtle);
   padding: 3px;
   border-radius: var(--radius-sm);
 }
@@ -203,7 +203,7 @@ const doughnutOptions = {
   color: var(--text-secondary);
 }
 .horizon-btn.active {
-  background: #FFFFFF;
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-weight: 600;
   box-shadow: var(--shadow-xs);
@@ -239,7 +239,7 @@ const doughnutOptions = {
 .kpi-value { font-size: 24px; font-weight: 800; color: var(--text-primary); }
 .kpi-footer { font-size: 11.5px; color: var(--text-muted); }
 .text-success { color: var(--success); }
-.text-accent { color: var(--accent); }
+.text-accent { color: var(--accent-hover); }
 .text-danger { color: var(--danger); }
 .ml-1 { margin-left: 4px; }
 .ml-2 { margin-left: 12px; }
@@ -247,7 +247,7 @@ const doughnutOptions = {
 .progress-bar-container {
   width: 100%;
   height: 6px;
-  background: #F1F5F9;
+  background: var(--bg-subtle);
   border-radius: 4px;
   overflow: hidden;
   margin: 4px 0;

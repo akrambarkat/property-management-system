@@ -1,8 +1,8 @@
 <template>
-  <div class="sidebar" :class="{ collapsed: appStore.sidebarCollapsed }">
-    <!-- Header / Brand -->
+  <aside id="sidebar" class="sidebar" :class="{ collapsed: appStore.sidebarCollapsed }" aria-label="القائمة الجانبية">
+    <!-- Section 1: Fixed Logo Header (never scrolls) -->
     <div class="sidebar-header">
-      <div class="brand">
+      <router-link to="/" class="brand" :title="appStore.sidebarCollapsed ? 'EMAARPlus' : ''">
         <div class="logo-icon">
           <i class="pi pi-building-columns"></i>
         </div>
@@ -10,26 +10,12 @@
           <span class="brand-name">EMAAR<span class="brand-plus">Plus</span></span>
           <span class="brand-sub">إدارة العقارات SaaS</span>
         </div>
-      </div>
+      </router-link>
     </div>
 
-    <!-- Quick Search Input -->
-    <div class="sidebar-search" v-show="!appStore.sidebarCollapsed">
-      <div class="search-box">
-        <i class="pi pi-search search-icon"></i>
-        <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="بحث سريع بالصفحات..."
-          class="search-input"
-        />
-        <span v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">×</span>
-      </div>
-    </div>
-
-    <!-- Navigation Menu -->
-    <div class="sidebar-menu">
-      <template v-for="(group, gIdx) in filteredMenuGroups" :key="gIdx">
+    <!-- Section 2: Scrollable Navigation Menu (only this section scrolls) -->
+    <nav class="sidebar-menu" aria-label="التنقل الرئيسي">
+      <template v-for="(group, gIdx) in menuGroups" :key="gIdx">
         <div
           v-if="group.title && !appStore.sidebarCollapsed && group.items.length"
           class="menu-group-title"
@@ -43,6 +29,7 @@
           class="menu-item"
           :class="{ active: isActive(item.to) }"
           :title="appStore.sidebarCollapsed ? item.label : ''"
+          :aria-current="isActive(item.to) ? 'page' : null"
         >
           <div class="item-icon-wrapper">
             <i :class="item.icon"></i>
@@ -57,90 +44,21 @@
           </span>
         </router-link>
       </template>
-      <div v-if="filteredMenuGroups.every(g => !g.items.length)" class="no-results">
-        لا توجد نتائج بحث
-      </div>
-    </div>
-
-    <!-- User Profile Area Footer -->
-    <div class="sidebar-footer">
-      <div class="user-profile-card" v-show="!appStore.sidebarCollapsed">
-        <div class="user-avatar">
-          <span>{{ userInitials }}</span>
-        </div>
-        <div class="user-info">
-          <span class="user-name">{{ authStore.currentUser?.name || 'مدير النظام' }}</span>
-          <span class="user-role">{{ roleLabel }}</span>
-        </div>
-        <button class="user-menu-btn" @click="toggleUserDropdown" title="خيارات الحساب">
-          <i class="pi pi-ellipsis-v"></i>
-        </button>
-
-        <!-- Context Menu Dropdown -->
-        <transition name="fade">
-          <div v-if="showUserDropdown" class="user-dropdown-menu">
-            <router-link to="/settings" class="dropdown-item" @click="showUserDropdown = false">
-              <i class="pi pi-user"></i>
-              <span>الملف الشخصي</span>
-            </router-link>
-            <router-link to="/settings" class="dropdown-item" @click="showUserDropdown = false">
-              <i class="pi pi-sliders-h"></i>
-              <span>الإعدادات</span>
-            </router-link>
-            <div class="dropdown-divider"></div>
-            <button class="dropdown-item logout" @click="handleLogout">
-              <i class="pi pi-sign-out"></i>
-              <span>تسجيل الخروج</span>
-            </button>
-          </div>
-        </transition>
-      </div>
-
-      <div class="footer-actions">
-        <button
-          class="footer-btn theme-btn"
-          @click="appStore.toggleDarkMode"
-          :title="appStore.isDarkMode ? 'الوضع النهاري' : 'الوضع الليلي'"
-        >
-          <i :class="appStore.isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
-        </button>
-        <button
-          class="collapse-btn"
-          @click="appStore.toggleSidebar"
-          :title="appStore.sidebarCollapsed ? 'توسيع القائمة' : 'طَي القائمة'"
-        >
-          <i class="pi pi-chevron-right" :class="{ rotated: appStore.sidebarCollapsed }"></i>
-        </button>
-      </div>
-    </div>
-  </div>
+    </nav>
+  </aside>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
-const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 
-const searchQuery = ref('')
-const showUserDropdown = ref(false)
-
-const userInitials = computed(() => {
-  const name = authStore.currentUser?.name || 'م'
-  return name.charAt(0).toUpperCase()
-})
-
-const roleLabel = computed(() => {
-  const labels = { super_admin: 'مدير النظام', employee: 'موظف', guard: 'حارس' }
-  return labels[authStore.currentUser?.role] || 'مدير النظام'
-})
-
-const rawMenuGroups = computed(() => {
+const menuGroups = computed(() => {
   const groups = [
     {
       title: 'الرئيسية',
@@ -177,6 +95,16 @@ const rawMenuGroups = computed(() => {
       ]
     },
     {
+      title: 'الرسائل SMS',
+      items: [
+        { to: '/sms', label: 'نظرة عامة', icon: 'pi pi-send' },
+        { to: '/sms/bulk', label: 'إرسال جماعي', icon: 'pi pi-megaphone' },
+        { to: '/sms/templates', label: 'القوالب', icon: 'pi pi-file-edit' },
+        { to: '/sms/scheduler', label: 'الإرسال التلقائي', icon: 'pi pi-calendar-clock' },
+        { to: '/sms/logs', label: 'سجل الرسائل', icon: 'pi pi-list' }
+      ]
+    },
+    {
       title: 'النظام والإعدادات',
       items: []
     }
@@ -190,29 +118,9 @@ const rawMenuGroups = computed(() => {
   return groups
 })
 
-const filteredMenuGroups = computed(() => {
-  if (!searchQuery.value.trim()) return rawMenuGroups.value
-
-  const q = searchQuery.value.toLowerCase().trim()
-  return rawMenuGroups.value.map(group => {
-    const filteredItems = group.items.filter(item => item.label.toLowerCase().includes(q))
-    return { ...group, items: filteredItems }
-  })
-})
-
 function isActive(to) {
   if (to === '/') return route.path === '/'
   return route.path.startsWith(to)
-}
-
-function toggleUserDropdown() {
-  showUserDropdown.value = !showUserDropdown.value
-}
-
-function handleLogout() {
-  showUserDropdown.value = false
-  authStore.logout()
-  router.push({ name: 'Login' })
 }
 </script>
 
@@ -227,25 +135,33 @@ function handleLogout() {
   color: var(--text-primary, #0F172A);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   z-index: 1000;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 1px solid var(--border, #E2E8F0);
-  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--shadow-sm);
 }
 
 .sidebar.collapsed {
   width: 80px;
 }
 
-/* Header & Logo */
+/* Section 1: Fixed Logo Header */
 .sidebar-header {
-  padding: 20px 18px;
+  flex-shrink: 0;
+  padding: 18px;
   border-bottom: 1px solid var(--border, #E2E8F0);
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar.collapsed .brand {
+  justify-content: center;
 }
 .logo-icon {
   width: 40px;
@@ -264,6 +180,7 @@ function handleLogout() {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  min-width: 0;
 }
 .brand-name {
   font-size: 18px;
@@ -272,7 +189,7 @@ function handleLogout() {
   color: var(--text-primary, #0F172A);
 }
 .brand-plus {
-  color: var(--accent, #4F46E5);
+  color: var(--accent-hover);
 }
 .brand-sub {
   font-size: 11px;
@@ -280,51 +197,13 @@ function handleLogout() {
   font-weight: 500;
 }
 
-/* Search Box */
-.sidebar-search {
-  padding: 14px 16px 6px 16px;
-}
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-.search-icon {
-  position: absolute;
-  right: 12px;
-  color: #94A3B8;
-  font-size: 0.85rem;
-}
-.search-input {
-  width: 100%;
-  padding: 8px 34px 8px 24px;
-  background: var(--bg-subtle, #F8FAFC);
-  border: 1px solid var(--border, #E2E8F0);
-  border-radius: var(--radius-sm, 8px);
-  color: var(--text-primary, #0F172A);
-  font-family: var(--font-family);
-  font-size: 13px;
-  outline: none;
-  transition: all 0.2s ease;
-}
-.search-input:focus {
-  background: var(--bg-surface, #FFFFFF);
-  border-color: var(--accent, #4F46E5);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-.clear-btn {
-  position: absolute;
-  left: 10px;
-  color: #94A3B8;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-/* Menu */
+/* Section 2: Scrollable Navigation Menu (flex:1 + overflow-y only here) */
 .sidebar-menu {
   flex: 1;
+  min-height: 0;
   padding: 12px 14px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -334,7 +213,7 @@ function handleLogout() {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #94A3B8;
+  color: var(--text-muted);
   margin: 14px 8px 6px 8px;
   letter-spacing: 0.5px;
 }
@@ -354,16 +233,21 @@ function handleLogout() {
   text-decoration: none;
 }
 
+.sidebar.collapsed .menu-item {
+  justify-content: center;
+  padding: 9px 0;
+}
+
 .menu-item:hover {
   background: var(--bg-subtle, #F1F5F9);
   color: var(--text-primary, #0F172A);
 }
 
 .menu-item.active {
-  background: var(--primary-50, #EEF2FF);
-  color: var(--accent, #4F46E5);
+  background: var(--accent-light);
+  color: var(--accent-hover);
   font-weight: 700;
-  border-right: 3px solid var(--accent, #4F46E5);
+  border-right: 3px solid var(--accent);
 }
 
 .item-icon-wrapper {
@@ -371,6 +255,7 @@ function handleLogout() {
   display: flex;
   justify-content: center;
   font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .menu-label {
@@ -385,179 +270,23 @@ function handleLogout() {
   font-weight: 700;
 }
 .badge-warning {
-  background: #F59E0B;
-  color: #FFFFFF;
+  background: var(--warning);
+  color: var(--text-on-fill);
 }
 
-.no-results {
-  font-size: 13px;
-  color: #94A3B8;
-  text-align: center;
-  padding: 20px 0;
-}
-
-/* Footer & User Profile */
-.sidebar-footer {
-  padding: 12px 14px;
-  border-top: 1px solid var(--border, #E2E8F0);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-  background: var(--bg-subtle, #F8FAFC);
-}
-
-.user-profile-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  background: var(--bg-surface, #FFFFFF);
-  border: 1px solid var(--border, #E2E8F0);
-  border-radius: var(--radius-sm, 8px);
-  position: relative;
-}
-
-.user-avatar {
-  width: 34px;
-  height: 34px;
-  background: linear-gradient(135deg, var(--accent, #4F46E5) 0%, #3730A3 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
-  color: #FFFFFF;
-}
-
-.user-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.user-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary, #0F172A);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-
-.user-role {
-  font-size: 11px;
-  color: var(--text-secondary, #64748B);
-}
-
-.user-menu-btn {
-  background: none;
-  border: none;
-  color: #94A3B8;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-}
-.user-menu-btn:hover {
-  color: var(--text-primary, #0F172A);
-  background: #F1F5F9;
-}
-
-.user-dropdown-menu {
-  position: absolute;
-  bottom: 100%;
-  right: 14px;
-  left: 14px;
-  margin-bottom: 8px;
-  background: var(--bg-surface, #FFFFFF);
-  border: 1px solid var(--border, #E2E8F0);
-  border-radius: var(--radius-sm, 8px);
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
-  padding: 6px;
-  z-index: 1010;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  color: var(--text-primary, #0F172A);
-  font-size: 13px;
-  border-radius: 6px;
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: right;
-  cursor: pointer;
-  font-weight: 500;
-}
-.dropdown-item:hover {
-  background: var(--bg-subtle, #F1F5F9);
-  color: var(--accent, #4F46E5);
-}
-.dropdown-item.logout {
-  color: var(--danger, #EF4444);
-}
-.dropdown-item.logout:hover {
-  background: var(--danger-bg, #FEF2F2);
-  color: #DC2626;
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: var(--border, #E2E8F0);
-  margin: 4px 0;
-}
-
-.footer-actions {
-  display: flex;
-  gap: 8px;
-}
-.footer-btn {
-  flex: 1;
-  padding: 8px;
-  background: var(--bg-surface, #FFFFFF);
-  border: 1px solid var(--border, #E2E8F0);
-  border-radius: var(--radius-sm, 8px);
-  color: var(--text-secondary, #64748B);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-}
-.footer-btn:hover {
-  background: var(--bg-subtle, #F1F5F9);
-  color: var(--text-primary, #0F172A);
-}
-.collapse-btn {
-  flex: 2;
-  padding: 8px;
-  background: var(--bg-surface, #FFFFFF);
-  border: 1px solid var(--border, #E2E8F0);
-  border-radius: var(--radius-sm, 8px);
-  color: var(--text-secondary, #64748B);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.collapse-btn:hover {
-  background: var(--bg-subtle, #F1F5F9);
-  color: var(--text-primary, #0F172A);
-}
-.collapse-btn i {
-  transition: transform 0.25s ease;
-}
-.collapse-btn i.rotated {
-  transform: rotate(180deg);
+@media (max-width: 768px) {
+  .sidebar,
+  .sidebar.collapsed {
+    width: var(--sidebar-width);
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar:not(.collapsed) {
+    transform: translateX(0);
+  }
+  .sidebar-header {
+    padding: 14px;
+  }
 }
 </style>

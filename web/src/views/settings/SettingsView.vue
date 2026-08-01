@@ -1,299 +1,261 @@
 <template>
-  <div class="settings-page page-view">
-    <!-- Feedback Toasts / Banners -->
-            <Card class="saas-card">
-      <template #title>
-        <div class="card-header-title">
-          <i class="pi pi-cog text-blue"></i>
-          <div>
-            <h3>الإعدادات العامة للنظام</h3>
-            <span class="card-sub-title">تخصيص الاسم والعملة الرئيسية للتطبيق</span>
+  <div class="page-view settings-center">
+    <!-- Loading skeletons -->
+    <div v-if="store.loading" class="settings-center-layout">
+      <div class="settings-center-skeleton">
+        <div class="settings-center-layout">
+          <aside class="settings-nav skeleton-side">
+            <div v-for="i in 8" :key="i" class="skeleton-cell" style="height: 40px; margin-bottom: 8px;"></div>
+          </aside>
+          <div class="settings-panel" style="flex: 1;">
+            <div v-for="i in 5" :key="i" class="skeleton-cell" style="height: 90px; margin-bottom: 14px;"></div>
           </div>
         </div>
-      </template>
-      <template #content>
-        <div class="settings-form form-section">
-          <div class="form-grid-2">
-            <FormField
-              label="اسم التطبيق / المنظومة"
-              required
-              forId="set-app-name"
-              helpText="الاسم الذي يظهر في العناوين والتقارير المطبوعة"
-            >
-              <InputText
-                id="set-app-name"
-                v-model="settings.app_name"
-                class="w-full"
-                placeholder="أدخل اسم المنظومة"
-              />
-            </FormField>
+      </div>
+    </div>
 
-            <FormField
-              label="العملة المفضلة للعرض"
-              forId="set-pref-currency"
-              helpText="العملة الافتراضية لعرض الإحصائيات باللوحة"
+    <template v-else>
+      <div class="settings-center-layout">
+        <!-- Category navigation -->
+        <aside class="settings-nav">
+          <div class="settings-nav-header">
+            <h2>مركز الإعدادات</h2>
+            <p>إدارة إعدادات النظام والشركة</p>
+          </div>
+          <nav>
+            <button
+              v-for="cat in categories"
+              :key="cat.key"
+              class="settings-nav-item"
+              :class="{ active: activeCategory === cat.key, 'has-dirty': dirtyGroups.includes(cat.key) }"
+              @click="activeCategory = cat.key"
             >
-            <Select
-              id="set-pref-currency"
-              v-model="preferredCurrency"
-              :options="currencies"
-              optionLabel="name"
-              optionValue="code"
-              class="w-full"
-              filter
-              @change="updatePreferredCurrency"
+              <i :class="cat.icon"></i>
+              <span>{{ cat.label }}</span>
+              <span v-if="dirtyGroups.includes(cat.key)" class="dirty-dot" title="تغييرات غير محفوظة"></span>
+            </button>
+          </nav>
+        </aside>
+
+        <!-- Active panel -->
+        <section class="settings-panel">
+          <transition name="fade-slide" mode="out-in">
+            <component
+              :is="activeComponent"
+              :key="activeCategory"
+              :settings="store.groups[activeCategory]"
+              :dirty="store.isDirty(activeCategory)"
+              :saving="store.savingGroup === activeCategory"
+              @save="store.saveGroup(activeCategory)"
             />
-            </FormField>
-          </div>
+          </transition>
+        </section>
+      </div>
+    </template>
 
-          <div class="form-actions align-start">
-            <button class="btn-primary" @click="saveSettings" :disabled="saving">
-              <i v-if="saving" class="pi pi-spin pi-spinner"></i>
-              <i v-else class="pi pi-save"></i>
-              <span>{{ saving ? 'جاري الحفظ...' : 'حفظ الإعدادات العامة' }}</span>
-            </button>
-          </div>
-        </div>
-      </template>
-    </Card>
-
-    <Card class="saas-card">
-      <template #title>
-        <div class="card-header-title">
-          <i class="pi pi-dollar text-green"></i>
-          <div>
-            <h3>إدارة العملات وأسعار الصرف</h3>
-            <span class="card-sub-title">ضبط أسعار التحويل بين العملات بالنسبة للعملة الرئيسية</span>
-          </div>
-        </div>
-      </template>
-      <template #content>
-        <EnterpriseTable
-          :value="currencies"
-          :loading="loadingCurrencies"
-          searchPlaceholder="بحث في العملات..."
-          emptyTitle="لا توجد عملات"
-          emptySubtitle="لم يتم العثور على أي عملات مسجلة"
-          :columns="currencyColumns"
-          @refresh="fetchCurrencies"
-        >
-          <template #default="{ hiddenColumns }">
-            <Column v-if="!hiddenColumns.includes('code')" field="code" header="الكود" sortable>
-              <template #body="s">
-                <span class="code-badge">{{ s.data.code }}</span>
-              </template>
-            </Column>
-            <Column v-if="!hiddenColumns.includes('name')" field="name" header="الاسم" sortable></Column>
-            <Column v-if="!hiddenColumns.includes('symbol')" field="symbol" header="الرمز">
-              <template #body="s">
-                <span class="symbol-badge">{{ s.data.symbol }}</span>
-              </template>
-            </Column>
-            <Column v-if="!hiddenColumns.includes('exchange_rate')" field="exchange_rate" header="سعر الصرف (مقابل الشيكل)">
-              <template #body="s">
-                <InputNumber v-model="s.data.exchange_rate" :min="0.0001" :maxFractionDigits="4" @blur="updateCurrency(s.data)" class="rate-input" />
-              </template>
-            </Column>
-            <Column header="افتراضي" style="width: 100px; text-align: center;">
-              <template #body="s">
-                <RadioButton v-model="defaultCurrency" :inputId="'cur_' + s.data.code" :value="s.data.code" @change="setDefault(s.data)" />
-              </template>
-            </Column>
-          </template>
-        </EnterpriseTable>
-      </template>
-    </Card>
-
-    <Card class="saas-card">
-      <template #title>
-        <div class="card-header-title">
-          <i class="pi pi-bolt text-amber"></i>
-          <div>
-            <h3>أسعار التعرفة والخدمات</h3>
-            <span class="card-sub-title">تعرفة حساب تكاليف استهلاك العدادات التلقائي</span>
-          </div>
-        </div>
-      </template>
-      <template #content>
-        <div class="settings-form form-section">
-          <div class="form-grid-2">
-            <FormField
-              label="سعر وحدة الكهرباء (₪)"
-              forId="set-elec-price"
-              helpText="التكلفة بالسنتم/شيكل لكل كيلوواط"
-            >
-              <InputNumber
-                id="set-elec-price"
-                v-model="settings.electricity_unit_price"
-                class="w-full"
-                :min="0"
-                :maxFractionDigits="3"
-              />
-            </FormField>
-
-            <FormField
-              label="سعر وحدة الماء (₪)"
-              forId="set-water-price"
-              helpText="التكلفة لكل متر مكعب من المياه"
-            >
-              <InputNumber
-                id="set-water-price"
-                v-model="settings.water_unit_price"
-                class="w-full"
-                :min="0"
-                :maxFractionDigits="3"
-              />
-            </FormField>
-          </div>
-          <div class="form-actions align-start">
-            <button class="btn-primary" @click="saveSettings" :disabled="saving">
-              <i v-if="saving" class="pi pi-spin pi-spinner"></i>
-              <i v-else class="pi pi-save"></i>
-              <span>{{ saving ? 'جاري الحفظ...' : 'حفظ تعرفة الخدمات' }}</span>
-            </button>
-          </div>
-        </div>
-      </template>
-    </Card>
+    <!-- Unsaved changes guard on leave -->
+    <ConfirmModal
+      v-model:visible="showLeaveConfirm"
+      title="تغييرات غير محفوظة"
+      message="لديك تغييرات غير محفوظة في الإعدادات. هل تريد مغادرتها؟"
+      variant="warning"
+      confirmText="مغادرة"
+      cancelText="البقاء"
+      @confirm="proceedLeave"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import api from '@/services/api'
-import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
-import FormField from '@/components/common/FormField.vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
+import { useSettingsStore } from '@/stores/settings'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
-import { useToastStore } from '@/stores/toast'
 
-const settings = ref({ app_name: 'EMAARPlus', electricity_unit_price: 0.50, water_unit_price: 3.00 })
-const currencies = ref([])
-const loadingCurrencies = ref(false)
-const saving = ref(false)
-const defaultCurrency = ref('ILS')
-const preferredCurrency = ref(localStorage.getItem('preferred_currency') || 'ILS')
+import GeneralPanel from './panels/GeneralPanel.vue'
+import CompanyPanel from './panels/CompanyPanel.vue'
+import SmsPanel from './panels/SmsPanel.vue'
+import NotificationsPanel from './panels/NotificationsPanel.vue'
+import InvoicesPanel from './panels/InvoicesPanel.vue'
+import ContractsPanel from './panels/ContractsPanel.vue'
+import AppearancePanel from './panels/AppearancePanel.vue'
+import SecurityPanel from './panels/SecurityPanel.vue'
+import BackupPanel from './panels/BackupPanel.vue'
+import SystemPanel from './panels/SystemPanel.vue'
+import UsersPanel from './panels/UsersPanel.vue'
 
-const currencyColumns = [
-  { field: 'code', header: 'الكود' },
-  { field: 'name', header: 'الاسم' },
-  { field: 'symbol', header: 'الرمز' },
-  { field: 'exchange_rate', header: 'سعر الصرف' }
+const store = useSettingsStore()
+
+const activeCategory = ref('general')
+const showLeaveConfirm = ref(false)
+let pendingLeave = null
+
+const categories = [
+  { key: 'general', label: 'عام', icon: 'pi pi-sliders-h', component: GeneralPanel },
+  { key: 'company', label: 'بيانات الشركة', icon: 'pi pi-building', component: CompanyPanel },
+  { key: 'sms', label: 'بوابة الرسائل SMS', icon: 'pi pi-send', component: SmsPanel },
+  { key: 'notifications', label: 'الإشعارات', icon: 'pi pi-bell', component: NotificationsPanel },
+  { key: 'users', label: 'المستخدمون والصلاحيات', icon: 'pi pi-users', component: UsersPanel },
+  { key: 'invoices', label: 'الفواتير', icon: 'pi pi-file-invoice', component: InvoicesPanel },
+  { key: 'contracts', label: 'العقود', icon: 'pi pi-file-edit', component: ContractsPanel },
+  { key: 'appearance', label: 'المظهر', icon: 'pi pi-palette', component: AppearancePanel },
+  { key: 'security', label: 'الأمان', icon: 'pi pi-shield', component: SecurityPanel },
+  { key: 'backup', label: 'النسخ الاحتياطي', icon: 'pi pi-database', component: BackupPanel },
+  { key: 'system', label: 'النظام', icon: 'pi pi-cog', component: SystemPanel }
 ]
 
-onMounted(() => { fetchSettings(); fetchCurrencies() })
+const activeComponent = computed(() => {
+  return categories.find(c => c.key === activeCategory.value)?.component
+})
 
+const dirtyGroups = computed(() => store.dirtyGroups)
 
-async function fetchSettings() {
-  try {
-    const { data } = await api.get('/settings')
-    settings.value = { ...settings.value, ...data.data }
-  } catch (err) {
-    console.error(err)
+function switchCategory(key) {
+  if (key !== activeCategory.value && store.dirtyGroups.length > 0) {
+    showLeaveConfirm.value = true
+    pendingLeave = key
+    return
+  }
+  activeCategory.value = key
+}
+
+function proceedLeave() {
+  showLeaveConfirm.value = false
+  if (pendingLeave) {
+    activeCategory.value = pendingLeave
+    pendingLeave = null
   }
 }
 
-async function fetchCurrencies() {
-  loadingCurrencies.value = true
-  try {
-    const { data } = await api.get('/currencies')
-    currencies.value = data.data
-    const def = data.data.find(c => c.is_default)
-    if (def) defaultCurrency.value = def.code
-  } catch (err) {
-    console.error(err)
-  } finally {
-    loadingCurrencies.value = false
+onBeforeRouteLeave(() => {
+  if (store.dirtyGroups.length > 0) {
+    showLeaveConfirm.value = true
+    return false
   }
-}
+  return true
+})
 
-async function saveSettings() {
-  saving.value = true
-  try {
-    await api.put('/settings', settings.value)
-    toast.success('تم حفظ إعدادات المنظومة بنجاح')
-  } catch (err) {
-    toast.error(err.response?.data?.message || 'تعذر حفظ الإعدادات')
-  } finally {
-    saving.value = false
-  }
-}
+watch(showLeaveConfirm, (val) => {
+  if (!val) pendingLeave = null
+})
 
-async function updateCurrency(currency) {
-  try {
-    await api.put(`/currencies/${currency.id}`, { exchange_rate: currency.exchange_rate })
-    toast.success(`تم التعديل: ${currency.name}`)
-  } catch (err) {
-    toast.error('تعذر تحديث سعر الصرف')
-  }
-}
-
-async function setDefault(currency) {
-  try {
-    await api.patch(`/currencies/${currency.id}/default`)
-    await fetchCurrencies()
-    toast.success(`تم تعيين ${currency.name} كعملة افتراضية`)
-  } catch (err) {
-    toast.error('تعذر تعيين العملة الافتراضية')
-  }
-}
-
-function updatePreferredCurrency() {
-  localStorage.setItem('preferred_currency', preferredCurrency.value)
-  toast.success('تم تغيير عملة العرض المفضلة')
-  setTimeout(() => { window.location.reload() }, 800)
-}
+onMounted(() => {
+  if (!store.loaded) store.fetchAll()
+})
 </script>
 
 <style scoped>
-.settings-page {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.settings-center {
+  min-height: calc(100vh - 160px);
 }
-
-.saas-card {
-  border-radius: var(--radius-md);
+.settings-center-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.settings-nav {
+  background: var(--bg-surface);
   border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+  padding: 16px;
+  position: sticky;
+  top: calc(var(--header-height) + 20px);
+  max-height: calc(100vh - var(--header-height) - 40px);
+  overflow-y: auto;
 }
-
-.card-header-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.card-header-title i {
-  font-size: 1.5rem;
-}
-.card-header-title h3 {
+.settings-nav-header h2 {
+  margin: 0;
   font-size: 16px;
   font-weight: 700;
-  margin: 0;
+  color: var(--text-primary);
 }
-.card-sub-title {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  font-weight: 400;
-}
-
-.code-badge, .symbol-badge {
-  background: #F1F5F9;
-  padding: 3px 8px;
-  border-radius: var(--radius-xs);
+.settings-nav-header p {
+  margin: 4px 0 14px;
   font-size: 12px;
+  color: var(--text-secondary);
+}
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
   font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  margin-bottom: 2px;
+  text-align: right;
+  position: relative;
+}
+.settings-nav-item i {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+.settings-nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.settings-nav-item.active {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.settings-nav-item.active::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.dirty-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  margin-right: auto;
+}
+.settings-panel {
+  min-width: 0;
+  min-height: 400px;
+}
+.skeleton-side {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
 }
 
-.rate-input {
-  max-width: 140px;
+@media (max-width: 900px) {
+  .settings-center-layout {
+    grid-template-columns: 1fr;
+  }
+  .settings-nav {
+    position: static;
+    max-height: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px;
+  }
+  .settings-nav-header {
+    width: 100%;
+  }
+  .settings-nav-item {
+    width: auto;
+    flex: 1 1 45%;
+  }
+  .settings-nav-item.active::before {
+    display: none;
+  }
 }
-
-.align-start {
-  justify-content: flex-start !important;
-  margin-top: 16px !important;
-}
-
-.text-blue { color: #2563EB; }
-.text-green { color: #10B981; }
-.text-amber { color: #F59E0B; }
 </style>

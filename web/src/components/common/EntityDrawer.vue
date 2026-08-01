@@ -239,12 +239,12 @@ function onClose() {
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
-  background: var(--info-bg, #EFF6FF);
-  color: var(--accent);
+  background: var(--info-bg);
+  color: var(--info-contrast);
 }
 .entity-badge-avatar.unit {
-  background: #FEF3C7;
-  color: #D97706;
+  background: var(--warning-bg);
+  color: var(--warning-contrast);
 }
 .entity-title-meta {
   display: flex;
@@ -299,7 +299,7 @@ function onClose() {
   transition: all 0.2s ease;
 }
 .tab-btn.active {
-  color: var(--accent);
+  color: var(--accent-hover);
   border-bottom-color: var(--accent);
   font-weight: 600;
 }

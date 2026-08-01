@@ -78,11 +78,11 @@ const toastStore = useToastStore()
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--overlay-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: var(--radius-md);
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-lg);
   border: 1px solid var(--border);
   overflow: hidden;
   direction: rtl;
@@ -93,7 +93,7 @@ const toastStore = useToastStore()
 }
 .toast-card.toast-success .toast-icon-box {
   color: var(--success);
-  background: var(--success-bg, #F0FDF4);
+  background: var(--success-bg);
 }
 
 .toast-card.toast-error {
@@ -101,7 +101,7 @@ const toastStore = useToastStore()
 }
 .toast-card.toast-error .toast-icon-box {
   color: var(--danger);
-  background: var(--danger-bg, #FEF2F2);
+  background: var(--danger-bg);
 }
 
 .toast-card.toast-warning {
@@ -109,15 +109,15 @@ const toastStore = useToastStore()
 }
 .toast-card.toast-warning .toast-icon-box {
   color: var(--warning);
-  background: var(--warning-bg, #FEF3C7);
+  background: var(--warning-bg);
 }
 
 .toast-card.toast-info {
   border-right: 4px solid var(--accent);
 }
 .toast-card.toast-info .toast-icon-box {
-  color: var(--accent);
-  background: var(--info-bg, #EFF6FF);
+  color: var(--info-contrast);
+  background: var(--info-bg);
 }
 
 .toast-icon-box {
@@ -158,9 +158,9 @@ const toastStore = useToastStore()
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--primary-50, #EEF2FF);
-  color: var(--accent);
-  border: 1px solid #C7D2FE;
+  background: var(--accent-light);
+  color: var(--accent-hover);
+  border: 1px solid var(--border-hover);
   padding: 6px 12px;
   border-radius: var(--radius-sm);
   font-size: 12.5px;
@@ -205,7 +205,7 @@ const toastStore = useToastStore()
   left: 0;
   right: 0;
   height: 3px;
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--border);
   animation: toastProgress linear forwards;
   transform-origin: right;
 }

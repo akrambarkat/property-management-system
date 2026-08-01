@@ -10,6 +10,12 @@ use App\Http\Controllers\Api\V1\MaintenanceController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SettingController;
+use App\Http\Controllers\Api\V1\SmsController;
+use App\Http\Controllers\Api\V1\SmsJobController;
+use App\Http\Controllers\Api\V1\SmsLogController;
+use App\Http\Controllers\Api\V1\SmsProviderController;
+use App\Http\Controllers\Api\V1\SmsStatisticController;
+use App\Http\Controllers\Api\V1\SmsTemplateController;
 use App\Http\Controllers\Api\V1\TenantController;
 use App\Http\Controllers\Api\V1\UnitController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -74,9 +80,47 @@ Route::prefix('v1')->group(function () {
 
         // Settings
         Route::get('settings', [SettingController::class, 'index']);
-        Route::put('settings', [SettingController::class, 'update']);
-        Route::get('currencies', [SettingController::class, 'currencies']);
+        Route::put('settings', [SettingController::class, 'update'])->middleware('permission:edit-settings');
+        Route::get('currencies', [SettingController::class, 'listCurrencies']);
         Route::put('currencies/{currency}', [SettingController::class, 'updateCurrency']);
         Route::patch('currencies/{currency}/default', [SettingController::class, 'setDefaultCurrency']);
+
+        // SMS
+        Route::middleware('permission:view-sms')->group(function () {
+            Route::get('sms/providers', [SmsProviderController::class, 'index']);
+            Route::get('sms/providers/{provider}', [SmsProviderController::class, 'show']);
+            Route::put('sms/providers/{provider}', [SmsProviderController::class, 'update'])->middleware('permission:manage-providers');
+            Route::post('sms/providers/{provider}/test', [SmsProviderController::class, 'testConnection'])->middleware('permission:edit-sms-settings');
+            Route::post('sms/providers/{provider}/test-send', [SmsProviderController::class, 'sendTestSms'])->middleware('permission:send-sms');
+
+            Route::get('sms/templates', [SmsTemplateController::class, 'index']);
+            Route::post('sms/templates', [SmsTemplateController::class, 'store']);
+            Route::get('sms/templates/{template}', [SmsTemplateController::class, 'show']);
+            Route::put('sms/templates/{template}', [SmsTemplateController::class, 'update']);
+            Route::delete('sms/templates/{template}', [SmsTemplateController::class, 'destroy']);
+            Route::patch('sms/templates/{template}/toggle', [SmsTemplateController::class, 'toggle']);
+            Route::post('sms/templates/preview', [SmsTemplateController::class, 'preview']);
+
+            Route::get('sms/logs', [SmsLogController::class, 'index'])->middleware('permission:view-sms-logs');
+            Route::get('sms/logs/export', [SmsLogController::class, 'export'])->middleware('permission:export-logs');
+            Route::get('sms/logs/{log}', [SmsLogController::class, 'show'])->middleware('permission:view-sms-logs');
+            Route::post('sms/logs/{log}/retry', [SmsLogController::class, 'retry']);
+
+            Route::get('sms/recipients', [SmsController::class, 'recipients']);
+            Route::post('sms/send', [SmsController::class, 'send']);
+            Route::post('sms/bulk', [SmsController::class, 'bulk']);
+
+            Route::get('sms/jobs', [SmsJobController::class, 'index']);
+            Route::post('sms/jobs', [SmsJobController::class, 'store']);
+            Route::put('sms/jobs/{job}', [SmsJobController::class, 'update']);
+            Route::delete('sms/jobs/{job}', [SmsJobController::class, 'destroy']);
+            Route::patch('sms/jobs/{job}/toggle', [SmsJobController::class, 'toggle']);
+
+            Route::get('sms/statistics/overview', [SmsStatisticController::class, 'overview']);
+            Route::get('sms/statistics/daily', [SmsStatisticController::class, 'daily']);
+            Route::get('sms/statistics/monthly', [SmsStatisticController::class, 'monthly']);
+            Route::get('sms/statistics/failures', [SmsStatisticController::class, 'failureReasons']);
+            Route::get('sms/statistics/providers', [SmsStatisticController::class, 'providerComparison']);
+        });
     });
 });

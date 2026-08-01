@@ -434,7 +434,7 @@ async function deleteItemConfirmed() {
 }
 
 .category-badge {
-  background: #F1F5F9;
+  background: var(--bg-subtle);
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;
@@ -480,6 +480,6 @@ async function deleteItemConfirmed() {
   background: var(--danger) !important;
 }
 .btn-danger-action:hover {
-  background: #DC2626 !important;
+  background: var(--danger-hover) !important;
 }
 </style>

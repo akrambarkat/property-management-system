@@ -116,9 +116,9 @@ function selectFilterKey(opt) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #EFF6FF;
-  border: 1px solid #BFDBFE;
-  color: var(--accent);
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  color: var(--accent-hover);
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12.5px;
@@ -133,7 +133,7 @@ function selectFilterKey(opt) {
 .pill-remove-btn {
   background: transparent;
   border: none;
-  color: var(--accent);
+  color: var(--accent-hover);
   cursor: pointer;
   font-size: 14px;
   font-weight: 700;
@@ -160,7 +160,7 @@ function selectFilterKey(opt) {
 .btn-add-filter:hover {
   background: var(--bg-subtle, #F8FAFC);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--text-primary);
 }
 
 .filter-popover {
@@ -218,8 +218,9 @@ function selectFilterKey(opt) {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #0F172A;
-  color: #FFFFFF;
+  background: var(--bg-active);
+  color: var(--text-primary);
+  border: 1px solid var(--border-hover);
   padding: 6px 14px;
   border-radius: var(--radius-full);
 }

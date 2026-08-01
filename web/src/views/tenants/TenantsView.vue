@@ -265,7 +265,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import api from '@/services/api'
 import EntityDrawer from '@/components/common/EntityDrawer.vue'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
@@ -278,6 +278,7 @@ const items = ref([])
 const loading = ref(false)
 const toast = useToastStore()
 const router = useRouter()
+const route = useRoute()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
@@ -369,7 +370,14 @@ function getRowActions(row) {
   ]
 }
 
-onMounted(() => fetchItems())
+onMounted(async () => {
+  fetchItems()
+  if (route.query.new === '1') {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    openCreateDialog()
+    router.replace({ path: route.path, query: {} })
+  }
+})
 
 function onRowClick(event) {
   if (event.data?.id) {
@@ -509,8 +517,8 @@ async function deleteItemConfirmed() {
 .user-avatar-circle {
   width: 36px;
   height: 36px;
-  background: #EFF6FF;
-  color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent-hover);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -542,7 +550,7 @@ async function deleteItemConfirmed() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #F1F5F9;
+  background: var(--bg-subtle);
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;
@@ -555,7 +563,7 @@ async function deleteItemConfirmed() {
 }
 
 .text-blue {
-  color: #2563EB;
+  color: var(--info-contrast);
 }
 
 .photo-upload-wrapper {
@@ -567,7 +575,7 @@ async function deleteItemConfirmed() {
 .photo-placeholder {
   width: 180px;
   height: 180px;
-  border: 2px dashed var(--border, #E2E8F0);
+  border: 2px dashed var(--border);
   border-radius: var(--radius-md, 10px);
   display: flex;
   flex-direction: column;
@@ -576,13 +584,13 @@ async function deleteItemConfirmed() {
   gap: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--text-muted, #94A3B8);
-  background: var(--bg-subtle, #F8FAFC);
+  color: var(--text-muted);
+  background: var(--bg-subtle);
 }
 .photo-placeholder:hover {
-  border-color: var(--accent, #2563EB);
-  color: var(--accent, #2563EB);
-  background: #EFF6FF;
+  border-color: var(--accent);
+  color: var(--accent-hover);
+  background: var(--accent-light);
 }
 .photo-placeholder i {
   font-size: 2.5rem;
@@ -594,7 +602,7 @@ async function deleteItemConfirmed() {
 .photo-hint {
   font-size: 11px !important;
   font-weight: 400 !important;
-  color: var(--text-muted, #94A3B8);
+  color: var(--text-muted);
 }
 .photo-preview {
   width: 180px;
@@ -603,7 +611,7 @@ async function deleteItemConfirmed() {
   overflow: hidden;
   position: relative;
   cursor: pointer;
-  border: 2px solid var(--border, #E2E8F0);
+  border: 2px solid var(--border);
 }
 .photo-preview img {
   width: 100%;
@@ -614,7 +622,7 @@ async function deleteItemConfirmed() {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  color: #fff;
+  color: var(--text-on-fill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -629,7 +637,7 @@ async function deleteItemConfirmed() {
 .btn-xs-text {
   background: none;
   border: none;
-  color: var(--danger, #EF4444);
+  color: var(--danger);
   font-size: 12px;
   cursor: pointer;
   display: inline-flex;
@@ -669,6 +677,6 @@ async function deleteItemConfirmed() {
   background: var(--danger) !important;
 }
 .btn-danger-action:hover {
-  background: #DC2626 !important;
+  background: var(--danger-hover) !important;
 }
 </style>

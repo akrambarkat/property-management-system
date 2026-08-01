@@ -80,6 +80,31 @@ const routes = [
         component: () => import('@/views/notifications/NotificationsView.vue')
       },
       {
+        path: 'sms',
+        name: 'SmsOverview',
+        component: () => import('@/views/sms/SmsOverviewView.vue')
+      },
+      {
+        path: 'sms/logs',
+        name: 'SmsLogs',
+        component: () => import('@/views/sms/SmsLogsView.vue')
+      },
+      {
+        path: 'sms/templates',
+        name: 'SmsTemplates',
+        component: () => import('@/views/sms/SmsTemplatesView.vue')
+      },
+      {
+        path: 'sms/bulk',
+        name: 'SmsBulk',
+        component: () => import('@/views/sms/BulkSmsView.vue')
+      },
+      {
+        path: 'sms/scheduler',
+        name: 'SmsScheduler',
+        component: () => import('@/views/sms/SmsSchedulerView.vue')
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('@/views/users/UsersView.vue')

@@ -216,13 +216,13 @@ function exportExcel() { window.open(api.defaults.baseURL + '/reports/profit-los
   justify-content: center;
   font-size: 1.5rem;
 }
-.success-bg { background: #ECFDF5; color: #10B981; }
-.danger-bg { background: #FEF2F2; color: #EF4444; }
+.success-bg { background: var(--success-bg); color: var(--success-contrast); }
+.danger-bg { background: var(--danger-bg); color: var(--danger-contrast); }
 
 .pl-label { display: block; font-size: 13px; color: var(--text-secondary); }
 .pl-item strong { font-size: 24px; font-weight: 700; }
-.positive strong { color: #10B981; }
-.negative strong { color: #EF4444; }
+.positive strong { color: var(--success); }
+.negative strong { color: var(--danger); }
 
 .amount-val { font-size: 13.5px; color: var(--text-secondary); }
 .font-bold { font-weight: 700; }
@@ -231,9 +231,9 @@ function exportExcel() { window.open(api.defaults.baseURL + '/reports/profit-los
 .filter-select { width: 180px !important; }
 .filter-datepicker { width: 150px !important; }
 
-.text-blue { color: #2563EB; }
-.text-red { color: #EF4444; }
-.text-green { color: #10B981; }
+.text-blue { color: var(--info-contrast); }
+.text-red { color: var(--danger); }
+.text-green { color: var(--success); }
 
 @media (max-width: 1024px) { .reports-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 768px) { .reports-grid { grid-template-columns: 1fr; } }

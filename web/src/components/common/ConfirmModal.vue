@@ -96,18 +96,18 @@ function onCancel() {
 }
 
 .confirm-icon-wrapper.icon-danger {
-  background: #FEE2E2;
-  color: #DC2626;
+  background: var(--danger-bg);
+  color: var(--danger-contrast);
 }
 
 .confirm-icon-wrapper.icon-warning {
-  background: #FEF3C7;
-  color: #D97706;
+  background: var(--warning-bg);
+  color: var(--warning-contrast);
 }
 
 .confirm-icon-wrapper.icon-info {
-  background: var(--info-bg, #EFF6FF);
-  color: #2563EB;
+  background: var(--info-bg);
+  color: var(--info-contrast);
 }
 
 .confirm-text-content {
@@ -151,8 +151,10 @@ function onCancel() {
 
 .btn-danger-action {
   background: var(--danger) !important;
+  border-color: var(--danger) !important;
 }
 .btn-danger-action:hover {
-  background: #DC2626 !important;
+  background: var(--danger-hover) !important;
+  border-color: var(--danger-hover) !important;
 }
 </style>

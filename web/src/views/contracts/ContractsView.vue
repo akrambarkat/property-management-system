@@ -332,6 +332,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
 import TableActionMenu from '@/components/common/TableActionMenu.vue'
@@ -463,7 +464,17 @@ function formatCurrency(amount) {
   return `${Number(amount).toLocaleString('ar-EG')} ₪`
 }
 
-onMounted(() => { fetchLocations(); fetchTenants(); fetchItems() })
+const route = useRoute()
+const router = useRouter()
+
+onMounted(async () => {
+  fetchLocations(); fetchTenants(); fetchItems()
+  if (route.query.new === '1') {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    openCreateDialog()
+    router.replace({ path: route.path, query: {} })
+  }
+})
 
 async function fetchLocations() {
   try {
@@ -628,8 +639,8 @@ async function terminateContract(contract) {
 .contract-code {
   font-family: monospace;
   font-weight: 700;
-  color: var(--accent);
-  background: #EFF6FF;
+  color: var(--accent-hover);
+  background: var(--accent-light);
   padding: 3px 8px;
   border-radius: var(--radius-xs);
 }
@@ -642,7 +653,7 @@ async function terminateContract(contract) {
 .icon-avatar {
   width: 36px;
   height: 36px;
-  background: #EFF6FF;
+  background: var(--accent-light);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -687,6 +698,6 @@ async function terminateContract(contract) {
 }
 
 .text-blue {
-  color: #2563EB;
+  color: var(--info-contrast);
 }
 </style>

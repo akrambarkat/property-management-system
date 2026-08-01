@@ -151,6 +151,28 @@
         </div>
       </div>
     </div>
+
+    <!-- SMS Communication & Campaigns Widget -->
+    <div class="command-card sms-widget">
+      <div class="card-header">
+        <div class="title-with-icon">
+          <i class="pi pi-send text-sky"></i>
+          <h3>الرسائل النصية SMS</h3>
+        </div>
+        <router-link to="/sms" class="card-action">مركز الرسائل</router-link>
+      </div>
+      <div class="sms-widget-grid">
+        <div class="sms-widget-stat" v-for="stat in smsWidgetStats" :key="stat.label">
+          <span class="sms-widget-value" :class="stat.class">{{ stat.value }}</span>
+          <span class="sms-widget-label">{{ stat.label }}</span>
+        </div>
+      </div>
+      <div class="sms-widget-actions">
+        <router-link to="/sms/bulk" class="btn-xs-primary"><i class="pi pi-megaphone"></i> إرسال جماعي</router-link>
+        <router-link to="/sms/templates" class="btn-xs-secondary"><i class="pi pi-file-edit"></i> القوالب</router-link>
+        <router-link to="/sms/logs" class="btn-xs-secondary"><i class="pi pi-list"></i> السجل</router-link>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -206,7 +228,7 @@ const executiveKpis = computed(() => {
     { label: 'الإيراد الشهري الإجمالي', value: format(d.monthly_income), icon: 'pi pi-wallet', iconBg: 'var(--success-bg)', iconColor: 'var(--success)', trend: d.monthly_income > 0 ? 'محصل' : '-', trendClass: 'text-success', trendIcon: 'pi pi-check', subtext: 'تحصيلات الدفعات الإيجارية' },
     { label: 'المصروفات التشغيلية', value: format(d.monthly_expenses), icon: 'pi pi-minus-circle', iconBg: 'var(--warning-bg)', iconColor: 'var(--warning)', trend: 'شهري', trendClass: 'text-muted', trendIcon: 'pi pi-minus', subtext: 'صيانة وفواتير ومرافق' },
     { label: 'صافي الأرباح التشغيلية', value: format(netProfit), icon: 'pi pi-dollar', iconBg: 'var(--primary-50)', iconColor: 'var(--accent)', trend: d.monthly_income > 0 ? `${profitMargin}%` : '-', trendClass: profitMargin >= 50 ? 'text-success' : 'text-warning', trendIcon: profitMargin >= 50 ? 'pi pi-arrow-up' : 'pi pi-minus', subtext: `هامش ربح ${profitMargin}%` },
-    { label: 'معدل التحصيل الفعلي', value: `${d.collection_rate}%`, icon: 'pi pi-percentage', iconBg: '#F3E8FF', iconColor: '#9333EA', trend: d.collection_rate >= 90 ? 'ممتاز' : d.collection_rate >= 70 ? 'جيد' : 'بحاجة تحسين', trendClass: d.collection_rate >= 90 ? 'text-success' : d.collection_rate >= 70 ? 'text-warning' : 'text-danger', trendIcon: 'pi pi-minus', subtext: 'من إجمالي الفواتير' },
+    { label: 'معدل التحصيل الفعلي', value: `${d.collection_rate}%`, icon: 'pi pi-percentage', iconBg: 'var(--bg-subtle)', iconColor: 'var(--text-secondary)', trend: d.collection_rate >= 90 ? 'ممتاز' : d.collection_rate >= 70 ? 'جيد' : 'بحاجة تحسين', trendClass: d.collection_rate >= 90 ? 'text-success' : d.collection_rate >= 70 ? 'text-warning' : 'text-danger', trendIcon: 'pi pi-minus', subtext: 'من إجمالي الفواتير' },
     { label: 'المبالغ غير المحصلة', value: format(d.outstanding_amount), icon: 'pi pi-exclamation-circle', iconBg: 'var(--danger-bg)', iconColor: 'var(--danger)', trend: `${d.late_payments.length} فواتير`, trendClass: d.late_payments.length > 0 ? 'text-danger' : 'text-success', trendIcon: d.late_payments.length > 0 ? 'pi pi-exclamation-triangle' : 'pi pi-check', subtext: 'بحاجة لمتابعة' },
     { label: 'طلبات الصيانة المفتوحة', value: `${d.open_maintenance_count} طلبات`, icon: 'pi pi-wrench', iconBg: 'var(--warning-bg)', iconColor: 'var(--warning)', trend: d.urgent_maintenance_count > 0 ? `${d.urgent_maintenance_count} طارئة` : 'لا يوجد', trendClass: d.urgent_maintenance_count > 0 ? 'text-danger' : 'text-success', trendIcon: d.urgent_maintenance_count > 0 ? 'pi pi-clock' : 'pi pi-check', subtext: 'قيد التنفيذ' }
   ]
@@ -287,7 +309,7 @@ const barChartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { position: 'top' } },
-  scales: { x: { grid: { display: false } }, y: { grid: { color: '#F1F5F9' } } }
+  scales: { x: { grid: { display: false } }, y: { grid: { color: 'var(--border)' } } }
 }
 
 const doughnutOptions = {
@@ -299,6 +321,13 @@ const doughnutOptions = {
 const latePayments = computed(() => dashboardData.value.late_payments || [])
 const maintenanceRequestsList = computed(() => dashboardData.value.maintenance_requests || [])
 const upcomingRenewals = computed(() => dashboardData.value.upcoming_renewals || [])
+
+const smsWidgetStats = ref([
+  { label: 'رسائل الشهر', value: '—', class: '' },
+  { label: 'معدل التسليم', value: '—', class: '' },
+  { label: 'فاشلة', value: '—', class: 'text-rose' },
+  { label: 'بانتظار الإرسال', value: '—', class: 'text-amber' }
+])
 
 function sendReminder(item) {
   alert(`تم إرسال تذكير الدفع للمستأجر: ${item.tenant}`)
@@ -317,6 +346,19 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+
+  try {
+    const { data } = await api.get('/sms/statistics/overview')
+    const ov = data?.data?.month || {}
+    smsWidgetStats.value = [
+      { label: 'رسائل الشهر', value: ov.total ?? '—', class: '' },
+      { label: 'معدل التسليم', value: ov.delivery_rate != null ? ov.delivery_rate + '٪' : '—', class: '' },
+      { label: 'فاشلة', value: ov.failed ?? '—', class: 'text-rose' },
+      { label: 'بانتظار الإرسال', value: ov.pending ?? '—', class: 'text-amber' }
+    ]
+  } catch {
+    // بيانات الرسائل غير متاحة
+  }
 })
 </script>
 
@@ -328,8 +370,8 @@ onMounted(async () => {
 }
 
 .executive-hero-banner {
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--bg-active) 0%, var(--bg-surface) 100%);
+  color: var(--text-primary);
   padding: 24px 28px;
   border-radius: var(--radius-md);
   display: flex;
@@ -341,11 +383,11 @@ onMounted(async () => {
 .hero-title {
   font-size: 1.3rem;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--text-primary);
 }
 .hero-subtitle {
   font-size: 13px;
-  color: #94A3B8;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -365,14 +407,14 @@ onMounted(async () => {
   font-weight: 500;
 }
 .insight-pill.warning {
-  background: rgba(245, 158, 11, 0.15);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--warning-bg);
+  color: var(--warning-contrast);
+  border: 1px solid var(--warning-border);
 }
 .insight-pill.info {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: var(--info-bg);
+  color: var(--info-contrast);
+  border: 1px solid var(--info-border);
 }
 
 .kpi-grid {
@@ -417,9 +459,9 @@ onMounted(async () => {
   gap: 4px;
 }
 .text-success { color: var(--success); }
-.text-warning { color: var(--warning, #D97706); }
+.text-warning { color: var(--warning); }
 .text-danger { color: var(--danger); }
-.text-muted { color: var(--text-muted, #94A3B8); }
+.text-muted { color: var(--text-muted); }
 
 .kpi-value {
   font-size: 22px;
@@ -468,7 +510,7 @@ onMounted(async () => {
 .time-horizon-selector {
   display: flex;
   gap: 4px;
-  background: var(--bg-subtle, #F1F5F9);
+  background: var(--bg-subtle);
   padding: 3px;
   border-radius: var(--radius-sm);
 }
@@ -482,7 +524,7 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 .horizon-btn.active {
-  background: var(--bg-surface, #FFFFFF);
+  background: var(--bg-surface);
   color: var(--text-primary);
   font-weight: 600;
   box-shadow: var(--shadow-xs);
@@ -547,7 +589,7 @@ onMounted(async () => {
 }
 .card-action {
   font-size: 12px;
-  color: var(--accent);
+  color: var(--accent-hover);
   text-decoration: none;
   font-weight: 600;
 }
@@ -562,7 +604,7 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: var(--bg-subtle, #F8FAFC);
+  background: var(--bg-subtle);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
 }
@@ -575,9 +617,9 @@ onMounted(async () => {
   justify-content: center;
   font-size: 0.9rem;
 }
-.item-status-icon.danger { background: var(--danger-bg, #FEF2F2); color: var(--danger, #EF4444); }
-.item-status-icon.warning { background: var(--warning-bg, #FFFBEB); color: var(--warning, #D97706); }
-.item-status-icon.info { background: var(--info-bg, #EFF6FF); color: var(--info, #2563EB); }
+.item-status-icon.danger { background: var(--danger-bg); color: var(--danger-contrast); }
+.item-status-icon.warning { background: var(--warning-bg); color: var(--warning-contrast); }
+.item-status-icon.info { background: var(--info-bg); color: var(--info-contrast); }
 
 .item-details {
   flex: 1;
@@ -605,7 +647,7 @@ onMounted(async () => {
 
 .btn-xs-primary {
   background: var(--accent);
-  color: #FFFFFF;
+  color: var(--text-on-accent);
   border: none;
   padding: 3px 8px;
   border-radius: 4px;
@@ -613,7 +655,7 @@ onMounted(async () => {
   cursor: pointer;
 }
 .btn-xs-secondary {
-  background: var(--bg-surface, #FFFFFF);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   padding: 3px 8px;
   border-radius: 4px;
@@ -627,8 +669,46 @@ onMounted(async () => {
   font-size: 11px;
   font-weight: 600;
 }
-.p-danger { background: var(--danger-bg, #FEF2F2); color: var(--danger, #EF4444); }
-.p-warning { background: var(--warning-bg, #FFFBEB); color: var(--warning, #D97706); }
+.p-danger { background: var(--danger-bg); color: var(--danger-contrast); }
+.p-warning { background: var(--warning-bg); color: var(--warning-contrast); }
+
+.sms-widget {
+  grid-column: 1 / -1;
+}
+.sms-widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  padding: 14px 4px;
+}
+.sms-widget-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+}
+.sms-widget-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.sms-widget-value.text-rose { color: var(--danger-contrast); }
+.sms-widget-value.text-amber { color: var(--warning-contrast); }
+.sms-widget-label {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+.sms-widget-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.text-sky { color: #0EA5E9; }
 
 @media (max-width: 1024px) {
   .analytics-grid {

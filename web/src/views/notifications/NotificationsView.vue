@@ -114,10 +114,10 @@ function markAllAsRead() {
   border-bottom: none;
 }
 .notification-item.unread {
-  background: #F8FAFC;
+  background: var(--bg-subtle);
 }
 .notification-item:hover {
-  background: #F1F5F9;
+  background: var(--bg-hover);
 }
 
 .icon-box {
@@ -133,17 +133,17 @@ function markAllAsRead() {
 .icon-box.danger {
   background: var(--danger-bg);
   color: var(--danger);
-  border: 1px solid #FECACA;
+  border: 1px solid var(--danger-border);
 }
 .icon-box.warning {
   background: var(--warning-bg);
   color: var(--warning);
-  border: 1px solid #FDE68A;
+  border: 1px solid var(--warning-border);
 }
 .icon-box.info {
   background: var(--info-bg);
   color: var(--info);
-  border: 1px solid #BAE6FD;
+  border: 1px solid var(--info-border);
 }
 
 .content {
@@ -178,7 +178,7 @@ function markAllAsRead() {
   font-size: 12.5px;
   padding: 6px 14px;
   background: var(--accent);
-  color: #FFFFFF;
+  color: var(--text-on-accent);
   border-radius: var(--radius-sm);
   font-weight: 500;
   text-decoration: none;

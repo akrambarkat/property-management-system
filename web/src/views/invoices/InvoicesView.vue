@@ -555,8 +555,8 @@ function printInvoice(invoice) {
 .invoice-code {
   font-family: monospace;
   font-weight: 700;
-  color: var(--accent);
-  background: #EFF6FF;
+  color: var(--info-contrast);
+  background: var(--info-bg);
   padding: 3px 8px;
   border-radius: var(--radius-xs);
 }
@@ -569,8 +569,8 @@ function printInvoice(invoice) {
 .user-avatar-circle {
   width: 36px;
   height: 36px;
-  background: #EFF6FF;
-  color: var(--accent);
+  background: var(--info-bg);
+  color: var(--info-contrast);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -606,8 +606,8 @@ function printInvoice(invoice) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #EEF2FF;
-  border: 1px solid #C7D2FE;
+  background: var(--accent-light);
+  border: 1px solid var(--info-border);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   margin-top: 4px;
@@ -617,7 +617,7 @@ function printInvoice(invoice) {
 .calculated-sum {
   font-size: 16px;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-hover);
 }
 
 .filter-select {
@@ -625,7 +625,7 @@ function printInvoice(invoice) {
 }
 
 .contract-details-card {
-  background: #F8FAFC;
+  background: var(--bg-subtle);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   padding: 12px 16px;

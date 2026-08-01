@@ -1,12 +1,26 @@
 <template>
   <header class="app-header">
+    <!-- Left: sidebar toggle + global search (fixed) -->
     <div class="header-left">
-      <button class="mobile-menu-btn" @click="appStore.toggleSidebar">
+      <button
+        class="sidebar-toggle-btn"
+        @click="appStore.toggleSidebar"
+        :title="appStore.sidebarCollapsed ? 'توسيع القائمة' : 'طي القائمة'"
+        :aria-label="appStore.sidebarCollapsed ? 'توسيع القائمة الجانبية' : 'طي القائمة الجانبية'"
+        :aria-expanded="!appStore.sidebarCollapsed"
+        aria-controls="sidebar"
+      >
         <i class="pi pi-bars"></i>
       </button>
 
       <!-- Global Command Search Input (Stripe / Linear / Vercel style) -->
-      <div class="global-search-trigger" @click="$emit('open-command-palette')">
+      <div
+        class="global-search-trigger"
+        @click="$emit('open-command-palette')"
+        role="button"
+        tabindex="0"
+        @keydown.enter="$emit('open-command-palette')"
+      >
         <i class="pi pi-search search-icon"></i>
         <span class="search-placeholder">بحث في العُقود، المستأجرين، الفواتير...</span>
         <div class="search-shortcut">
@@ -16,33 +30,42 @@
       </div>
     </div>
 
+    <!-- Right: global controls (fixed) -->
     <div class="header-right">
       <!-- Quick Add Dropdown Button -->
       <div class="quick-add-wrapper">
-        <button class="btn-primary quick-add-btn" @click="toggleQuickAdd">
+        <button class="btn-primary quick-add-btn" @click="toggleQuickAdd" :aria-expanded="showQuickAddMenu">
           <i class="pi pi-plus"></i>
           <span>إضافة جديدة</span>
           <i class="pi pi-chevron-down text-xs"></i>
         </button>
-        
+
         <transition name="fade">
           <div v-if="showQuickAddMenu" class="quick-add-dropdown">
-            <router-link to="/contracts" class="dropdown-item" @click="showQuickAddMenu = false">
+            <button class="dropdown-item" @click="handleQuickAdd('/contracts')">
               <i class="pi pi-file text-amber"></i>
               <span>عقد إيجار جديد</span>
-            </router-link>
-            <router-link to="/tenants" class="dropdown-item" @click="showQuickAddMenu = false">
+            </button>
+            <button class="dropdown-item" @click="handleQuickAdd('/tenants')">
               <i class="pi pi-user-plus text-blue"></i>
               <span>مستأجر جديد</span>
-            </router-link>
-            <router-link to="/payments" class="dropdown-item" @click="showQuickAddMenu = false">
+            </button>
+            <button class="dropdown-item" @click="handleQuickAdd('/payments')">
               <i class="pi pi-wallet text-green"></i>
               <span>تسجيل دفعة جديدة</span>
-            </router-link>
-            <router-link to="/maintenance" class="dropdown-item" @click="showQuickAddMenu = false">
+            </button>
+            <button class="dropdown-item" @click="handleQuickAdd('/maintenance')">
               <i class="pi pi-wrench text-purple"></i>
               <span>طلب صيانة جديد</span>
-            </router-link>
+            </button>
+            <button class="dropdown-item" @click="handleQuickAdd('/sms/bulk')">
+              <i class="pi pi-megaphone text-sky"></i>
+              <span>إرسال رسالة SMS</span>
+            </button>
+            <button class="dropdown-item" @click="handleQuickAdd('/sms/templates')">
+              <i class="pi pi-file-edit text-indigo"></i>
+              <span>قالب رسالة جديد</span>
+            </button>
           </div>
         </transition>
       </div>
@@ -53,12 +76,24 @@
         <span>شيكل (₪)</span>
       </div>
 
+      <!-- Dark / Light Mode Toggle -->
+      <button
+        class="icon-btn theme-toggle-btn"
+        @click="appStore.toggleDarkMode"
+        :title="appStore.isDarkMode ? 'الوضع النهاري' : 'الوضع الليلي'"
+        :aria-label="appStore.isDarkMode ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'"
+      >
+        <i :class="appStore.isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
+      </button>
+
       <!-- Notifications Bell Icon with Dropdown Overlay -->
       <div class="notification-wrapper">
         <button
           class="icon-btn notification-btn"
           @click="toggleNotifications"
           title="مركز الإشعارات والتنبيهات"
+          :aria-label="'مركز الإشعارات والتنبيهات'"
+          :aria-expanded="showNotificationsDropdown"
         >
           <i class="pi pi-bell"></i>
           <span class="badge-dot">3</span>
@@ -70,7 +105,7 @@
               <span class="dropdown-title">التنبيهات الفورية</span>
               <span class="unread-count">3 غير مقروءة</span>
             </div>
-            
+
             <div class="notifications-dropdown-list">
               <div class="notif-item unread">
                 <div class="notif-icon danger">
@@ -115,12 +150,52 @@
         </transition>
       </div>
 
+      <!-- User Profile Dropdown (fixed) -->
+      <div class="profile-wrapper">
+        <button
+          class="profile-trigger"
+          @click="toggleProfileMenu"
+          :aria-expanded="showProfileMenu"
+          aria-haspopup="true"
+          :aria-label="'قائمة الحساب'"
+        >
+          <span class="avatar-circle">{{ userInitial }}</span>
+          <span class="profile-name">{{ userName }}</span>
+          <i class="pi pi-chevron-down profile-chevron"></i>
+        </button>
+
+        <transition name="fade">
+          <div v-if="showProfileMenu" class="profile-dropdown">
+            <div class="profile-dropdown-header">
+              <span class="avatar-circle">{{ userInitial }}</span>
+              <div class="profile-dropdown-user">
+                <span class="name">{{ userName }}</span>
+                <span class="role">{{ roleTitle }}</span>
+              </div>
+            </div>
+            <div class="dropdown-divider"></div>
+            <router-link to="/settings" class="dropdown-item" @click="showProfileMenu = false">
+              <i class="pi pi-user"></i>
+              <span>الملف الشخصي</span>
+            </router-link>
+            <router-link to="/settings" class="dropdown-item" @click="showProfileMenu = false">
+              <i class="pi pi-sliders-h"></i>
+              <span>الإعدادات</span>
+            </router-link>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout" @click="handleLogout">
+              <i class="pi pi-sign-out"></i>
+              <span>تسجيل الخروج</span>
+            </button>
+          </div>
+        </transition>
+      </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
@@ -133,6 +208,9 @@ const appStore = useAppStore()
 
 const showQuickAddMenu = ref(false)
 const showNotificationsDropdown = ref(false)
+const showProfileMenu = ref(false)
+
+const userName = computed(() => authStore.currentUser?.name || 'مدير النظام')
 
 const userInitial = computed(() => {
   const name = authStore.currentUser?.name || 'م'
@@ -147,12 +225,52 @@ const roleTitle = computed(() => {
 function toggleQuickAdd() {
   showQuickAddMenu.value = !showQuickAddMenu.value
   showNotificationsDropdown.value = false
+  showProfileMenu.value = false
+}
+
+function handleQuickAdd(path) {
+  closeAllMenus()
+  router.push({ path, query: { new: '1' } })
 }
 
 function toggleNotifications() {
   showNotificationsDropdown.value = !showNotificationsDropdown.value
   showQuickAddMenu.value = false
+  showProfileMenu.value = false
 }
+
+function toggleProfileMenu() {
+  showProfileMenu.value = !showProfileMenu.value
+  showQuickAddMenu.value = false
+  showNotificationsDropdown.value = false
+}
+
+function closeAllMenus() {
+  showQuickAddMenu.value = false
+  showNotificationsDropdown.value = false
+  showProfileMenu.value = false
+}
+
+function handleClickOutside(e) {
+  const header = document.querySelector('.app-header')
+  if (header && !header.contains(e.target)) {
+    closeAllMenus()
+  }
+}
+
+function handleEscape(e) {
+  if (e.key === 'Escape') closeAllMenus()
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleEscape)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleEscape)
+})
 
 function handleLogout() {
   authStore.logout()
@@ -168,29 +286,42 @@ function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-sm);
+  gap: 16px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+  flex: 1;
 }
 
-.mobile-menu-btn {
-  display: none;
-  background: none;
+/* Sidebar collapse / expand toggle (hamburger) - always visible */
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--bg-subtle, #F8FAFC);
   border: 1px solid var(--border);
-  width: 36px;
-  height: 36px;
   border-radius: var(--radius-sm);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: var(--text-primary);
   cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.sidebar-toggle-btn:hover {
+  background: var(--bg-hover, #F1F5F9);
+  color: var(--accent);
+  border-color: var(--border-hover);
 }
 
 /* Command Search Input Bar */
@@ -202,7 +333,8 @@ function handleLogout() {
   border: 1px solid var(--border);
   padding: 8px 14px;
   border-radius: var(--radius-full);
-  width: 340px;
+  width: 360px;
+  max-width: 50vw;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -241,7 +373,8 @@ function handleLogout() {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .quick-add-wrapper {
@@ -283,9 +416,27 @@ function handleLogout() {
   border-radius: var(--radius-sm);
   text-decoration: none;
   transition: background 0.15s ease;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: right;
+  cursor: pointer;
+  font-weight: 500;
 }
 .dropdown-item:hover {
   background: var(--bg-subtle, #F1F5F9);
+}
+.dropdown-item.logout {
+  color: var(--danger);
+}
+.dropdown-item.logout:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
 }
 
 .currency-badge {
@@ -301,7 +452,7 @@ function handleLogout() {
   color: var(--text-secondary);
 }
 .currency-badge i {
-  color: var(--secondary);
+  color: var(--text-muted);
 }
 
 .notification-wrapper {
@@ -320,10 +471,17 @@ function handleLogout() {
   position: relative;
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 .icon-btn:hover {
-  background: var(--bg-subtle, #F1F5F9);
+  background: var(--bg-hover, #F1F5F9);
   color: var(--text-primary);
+}
+.theme-toggle-btn {
+  border-radius: var(--radius-sm);
+}
+.theme-toggle-btn i {
+  font-size: 1rem;
 }
 
 .badge-dot {
@@ -375,7 +533,7 @@ function handleLogout() {
 }
 .unread-count {
   font-size: 11.5px;
-  color: var(--accent);
+  color: var(--accent-hover);
   font-weight: 600;
 }
 
@@ -400,7 +558,7 @@ function handleLogout() {
   background: var(--bg-subtle, #F8FAFC);
 }
 .notif-item:hover {
-  background: var(--bg-subtle, #F1F5F9);
+  background: var(--bg-hover, #F1F5F9);
 }
 
 .notif-icon {
@@ -447,63 +605,91 @@ function handleLogout() {
 .view-all-link {
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-hover);
   text-decoration: none;
 }
 
-/* User Header Menu */
-.user-header-menu {
+/* User Profile Dropdown */
+.profile-wrapper {
+  position: relative;
+}
+.profile-trigger {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-right: 12px;
-  border-right: 1px solid var(--border);
+  gap: 10px;
+  padding: 4px 10px 4px 6px;
+  background: var(--bg-subtle, #F8FAFC);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.profile-trigger:hover {
+  background: var(--bg-surface, #FFFFFF);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-xs);
 }
 .avatar-circle {
-  width: 36px;
-  height: 36px;
-  background: var(--accent-light);
-  color: var(--accent);
-  border: 1px solid var(--info-border, #BFDBFE);
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent) 0%, #3730A3 100%);
+  color: #FFFFFF;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 14px;
+  flex-shrink: 0;
 }
-.user-text {
+.profile-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.profile-chevron {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 230px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1030;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.profile-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 4px;
+}
+.profile-dropdown-user {
   display: flex;
   flex-direction: column;
   line-height: 1.25;
 }
-.name {
+.profile-dropdown-user .name {
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
 }
-.role {
+.profile-dropdown-user .role {
   font-size: 11.5px;
   color: var(--text-secondary);
-}
-
-.logout-icon-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.logout-icon-btn:hover {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border-color: var(--danger-border, #FECACA);
 }
 
 @media (max-width: 900px) {
@@ -513,16 +699,29 @@ function handleLogout() {
 }
 
 @media (max-width: 768px) {
-  .mobile-menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .app-header {
+    padding: 0 14px;
   }
   .global-search-trigger {
     display: none;
   }
-  .user-text {
+  .currency-badge {
     display: none;
+  }
+  .quick-add-btn span,
+  .quick-add-btn .text-xs {
+    display: none;
+  }
+  .quick-add-btn {
+    width: 38px !important;
+    padding: 0 !important;
+    justify-content: center;
+  }
+  .profile-name {
+    display: none;
+  }
+  .profile-trigger {
+    padding: 4px;
   }
 }
 </style>

@@ -414,7 +414,7 @@ async function deleteItemConfirmed() {
 .icon-avatar {
   width: 36px;
   height: 36px;
-  background: #EFF6FF;
+  background: var(--info-bg);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -447,7 +447,7 @@ async function deleteItemConfirmed() {
 }
 
 .units-count-pill {
-  background: #F1F5F9;
+  background: var(--bg-subtle);
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;
@@ -455,7 +455,7 @@ async function deleteItemConfirmed() {
 }
 
 .text-blue {
-  color: #2563EB;
+  color: var(--info-contrast);
 }
 
 .filter-select {
@@ -488,6 +488,6 @@ async function deleteItemConfirmed() {
   background: var(--danger) !important;
 }
 .btn-danger-action:hover {
-  background: #DC2626 !important;
+  background: var(--danger-hover) !important;
 }
 </style>

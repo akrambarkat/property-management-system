@@ -187,6 +187,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
 import TableActionMenu from '@/components/common/TableActionMenu.vue'
@@ -200,6 +201,8 @@ const loading = ref(false)
 const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
+const route = useRoute()
+const router = useRouter()
 
 const form = reactive({ invoice_id: null, amount: null, payment_date: null, payment_method: 'cash', reference_number: '' })
 
@@ -264,7 +267,14 @@ function formatCurrency(amount) {
   return `${Number(amount).toLocaleString('ar-EG')} ₪`
 }
 
-onMounted(() => { fetchInvoices(); fetchItems() })
+onMounted(async () => {
+  fetchInvoices(); fetchItems()
+  if (route.query.new === '1') {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    openCreateDialog()
+    router.replace({ path: route.path, query: {} })
+  }
+})
 
 async function fetchInvoices() {
   try {
@@ -339,8 +349,8 @@ function printReceipt(payment) {
 .receipt-code {
   font-family: monospace;
   font-weight: 700;
-  color: var(--accent);
-  background: #EFF6FF;
+  color: var(--info-contrast);
+  background: var(--info-bg);
   padding: 3px 8px;
   border-radius: var(--radius-xs);
 }
@@ -353,8 +363,8 @@ function printReceipt(payment) {
 .user-avatar-circle {
   width: 36px;
   height: 36px;
-  background: #EFF6FF;
-  color: var(--accent);
+  background: var(--info-bg);
+  color: var(--info-contrast);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -389,7 +399,7 @@ function printReceipt(payment) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #F1F5F9;
+  background: var(--bg-subtle);
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12px;

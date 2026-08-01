@@ -9,8 +9,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            PermissionSeeder::class,
             CurrencySeeder::class,
             SettingSeeder::class,
+            SmsProviderSeeder::class,
+            SmsTemplateSeeder::class,
             UserSeeder::class,
         ]);
     }

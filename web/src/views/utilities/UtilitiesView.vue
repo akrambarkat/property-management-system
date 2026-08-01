@@ -347,7 +347,7 @@ async function saveItem() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #F1F5F9;
+  background: var(--bg-subtle);
   padding: 4px 10px;
   border-radius: var(--radius-full);
   font-size: 12.5px;
@@ -373,8 +373,8 @@ async function saveItem() {
 }
 
 .consumption-tag {
-  background: #EFF6FF;
-  color: #2563EB;
+  background: var(--info-bg);
+  color: var(--info-contrast);
   padding: 3px 8px;
   border-radius: var(--radius-xs);
   font-weight: 600;
@@ -390,6 +390,6 @@ async function saveItem() {
   width: 170px !important;
 }
 
-.text-warning { color: #F59E0B; }
-.text-info { color: #0EA5E9; }
+.text-warning { color: var(--warning); }
+.text-info { color: var(--info); }
 </style>

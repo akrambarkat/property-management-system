@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
   background: var(--bg-subtle, #F8FAFC);
   border-color: var(--border, #E2E8F0);
   color: var(--text-primary, #0F172A);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-xs);
 }
 
 .action-dropdown-menu {
@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
   background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-md, 8px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-lg);
   padding: 6px;
   display: flex;
   flex-direction: column;
@@ -142,17 +142,17 @@ onBeforeUnmount(() => {
 }
 
 .menu-item:hover {
-  background: var(--bg-subtle, #F1F5F9);
-  color: var(--primary, #2563EB);
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .menu-item.danger-item {
-  color: #EF4444;
+  color: var(--danger-contrast);
 }
 
 .menu-item.danger-item:hover {
-  background: var(--danger-bg, #FEF2F2);
-  color: #DC2626;
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 .menu-item.disabled {

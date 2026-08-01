@@ -422,8 +422,8 @@ async function deleteItemConfirmed() {
 .user-avatar-circle {
   width: 36px;
   height: 36px;
-  background: #EFF6FF;
-  color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent-hover);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -457,9 +457,9 @@ async function deleteItemConfirmed() {
   font-size: 12px;
   font-weight: 600;
 }
-.role-super_admin { background: #EEF2FF; color: #4F46E5; }
-.role-employee { background: #F1F5F9; color: #475569; }
-.role-guard { background: #FEF3C7; color: #D97706; }
+.role-super_admin { background: var(--accent-light); color: var(--accent-hover); }
+.role-employee { background: var(--bg-subtle); color: var(--text-secondary); }
+.role-guard { background: var(--warning-bg); color: var(--warning-contrast); }
 
 .filter-select {
   width: 170px !important;
@@ -485,6 +485,6 @@ async function deleteItemConfirmed() {
   background: var(--danger) !important;
 }
 .btn-danger-action:hover {
-  background: #DC2626 !important;
+  background: var(--danger-hover) !important;
 }
 </style>

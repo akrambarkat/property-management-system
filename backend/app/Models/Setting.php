@@ -6,5 +6,35 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
-    protected $fillable = ['key', 'value'];
+    protected $fillable = ['key', 'value', 'group', 'type', 'is_public'];
+
+    protected function casts(): array
+    {
+        return [
+            'is_public' => 'boolean',
+        ];
+    }
+
+    public static function supportedGroups(): array
+    {
+        return [
+            'general',
+            'company',
+            'sms',
+            'notifications',
+            'invoices',
+            'contracts',
+            'appearance',
+            'security',
+            'backup',
+            'system',
+        ];
+    }
+
+    public static function supportedTypes(): array
+    {
+        return [
+            'string', 'text', 'boolean', 'integer', 'float', 'json',
+        ];
+    }
 }
