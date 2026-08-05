@@ -66,16 +66,34 @@
           </transition>
         </div>
 
-        <!-- Export Dropdown / Button -->
-        <button class="btn-toolbar" @click="exportCSV" title="تصدير البيانات">
-          <i class="pi pi-file-excel"></i>
-          <span class="btn-label">تصدير CSV</span>
-        </button>
+        <!-- Export Dropdown (PDF / Excel / CSV) -->
+        <div class="export-dropdown" ref="exportMenuRef">
+          <button 
+            type="button" 
+            class="btn-toolbar export-trigger" 
+            @click="toggleExportMenu" 
+            title="تصدير"
+          >
+            <i class="pi pi-download"></i>
+            <span class="btn-label">تصدير</span>
+            <i class="pi pi-angle-down export-caret"></i>
+          </button>
 
-        <!-- Print Button -->
-        <button class="btn-toolbar" @click="printTable" title="طباعة">
-          <i class="pi pi-print"></i>
-        </button>
+          <transition name="dropdown-fade">
+            <div v-if="showExportMenu" class="export-menu">
+              <div class="menu-header">اختر صيغة التصدير</div>
+              <button class="menu-item" @click="downloadServer('pdf')">
+                <i class="pi pi-file-pdf"></i> <span>PDF</span>
+              </button>
+              <button class="menu-item" @click="downloadServer('excel')">
+                <i class="pi pi-file-excel"></i> <span>Excel</span>
+              </button>
+              <button class="menu-item" @click="downloadServer('csv')">
+                <i class="pi pi-file"></i> <span>CSV</span>
+              </button>
+            </div>
+          </transition>
+        </div>
 
         <!-- Refresh Button -->
         <button class="btn-toolbar" @click="$emit('refresh')" title="تحديث البيانات">
@@ -136,6 +154,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import api from '@/services/api'
+import { useToastStore } from '@/stores/toast'
+
+const toast = useToastStore()
 
 const props = defineProps({
   value: { type: Array, default: () => [] },
@@ -146,7 +168,9 @@ const props = defineProps({
   emptyTitle: { type: String, default: 'لا توجد بيانات متاحة' },
   emptySubtitle: { type: String, default: 'لم يتم العثور على أي سجلات تطابق شروط البحث الحالية' },
   columns: { type: Array, default: () => [] }, // Format: [{ field: 'name', header: 'اسم' }]
-  skeletonCols: { type: Number, default: 5 }
+  skeletonCols: { type: Number, default: 5 },
+  entity: { type: String, default: '' }, // Backend export entity key (e.g. 'buildings')
+  exportParams: { type: Object, default: () => ({}) } // Filters passed to the export endpoint
 })
 
 const emit = defineEmits(['row-click', 'export', 'bulk-export', 'refresh', 'update:selection'])
@@ -157,6 +181,9 @@ const rowsPerPage = ref(15)
 const hiddenColumns = ref([])
 const showColumnMenu = ref(false)
 const colMenuRef = ref(null)
+const showExportMenu = ref(false)
+const exportMenuRef = ref(null)
+const exporting = ref(false)
 
 const filteredValue = computed(() => {
   if (!searchQuery.value.trim() || !props.value) return props.value
@@ -222,17 +249,54 @@ function exportCSV() {
   emit('export', props.value)
 }
 
-function exportSelected() {
-  emit('bulk-export', selectedRows.value)
+function toggleExportMenu() {
+  showExportMenu.value = !showExportMenu.value
 }
 
-function printTable() {
-  window.print()
+async function downloadServer(format) {
+  if (exporting.value) return
+  showExportMenu.value = false
+  if (!props.entity) {
+    if (format === 'csv') {
+      exportCSV()
+      return
+    }
+    toast.error('التصدير PDF/Excel غير متاح لهذا الجدول')
+    return
+  }
+  exporting.value = true
+  try {
+    const params = { entity: props.entity, format }
+    for (const [key, val] of Object.entries(props.exportParams || {})) {
+      if (val !== null && val !== undefined && val !== '') params[key] = val
+    }
+    const { data } = await api.get('/reports/export', { params, responseType: 'blob' })
+    const ext = format === 'pdf' ? 'pdf' : 'csv'
+    const url = URL.createObjectURL(new Blob([data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${props.entity}_${new Date().toISOString().slice(0, 10)}.${ext}`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    toast.error('تعذر تصدير البيانات: ' + (err.response?.data?.message || err.message))
+  } finally {
+    exporting.value = false
+  }
+}
+
+function exportSelected() {
+  emit('bulk-export', selectedRows.value)
 }
 
 function handleClickOutside(event) {
   if (colMenuRef.value && !colMenuRef.value.contains(event.target)) {
     showColumnMenu.value = false
+  }
+  if (exportMenuRef.value && !exportMenuRef.value.contains(event.target)) {
+    showExportMenu.value = false
   }
 }
 
@@ -420,6 +484,54 @@ onBeforeUnmount(() => {
 .column-item:hover {
   background: var(--bg-subtle, #F1F5F9);
 }
+
+.export-dropdown {
+  position: relative;
+}
+
+.export-caret {
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 1000;
+  width: 180px;
+  background: var(--bg-surface, #FFFFFF);
+  border: 1px solid var(--border, #E2E8F0);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary, #0F172A);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: right;
+}
+
+.menu-item:hover {
+  background: var(--bg-subtle, #F1F5F9);
+}
+
+.menu-item .pi-file-pdf { color: var(--danger, #EF4444); }
+.menu-item .pi-file-excel { color: var(--success, #16A34A); }
+.menu-item .pi-file { color: var(--info-contrast, #2563EB); }
+
+.export-trigger.is-exporting { opacity: 0.6; pointer-events: none; }
 
 .table-surface-card {
   background: var(--bg-surface, #FFFFFF);

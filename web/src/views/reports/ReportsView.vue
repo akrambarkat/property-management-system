@@ -162,8 +162,36 @@ async function fetchReport() {
   }
 }
 
-function exportPDF() { window.open(api.defaults.baseURL + '/reports/profit-loss?export=pdf', '_blank') }
-function exportExcel() { window.open(api.defaults.baseURL + '/reports/profit-loss?export=excel', '_blank') }
+async function buildParams() {
+  const params = {}
+  if (filters.building_id) params.building_id = filters.building_id
+  if (filters.from) params.from = filters.from
+  if (filters.to) params.to = filters.to
+  return params
+}
+
+async function download(exportType) {
+  const params = await buildParams()
+  params.export = exportType
+  const { data } = await api.get('/reports/profit-loss', { params, responseType: 'blob' })
+  const ext = exportType === 'pdf' ? 'pdf' : 'csv'
+  const blob = new Blob([data])
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `profit_loss_${new Date().toISOString().slice(0, 10)}.${ext}`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+function exportPDF() {
+  try { download('pdf') } catch {}
+}
+function exportExcel() {
+  try { download('excel') } catch {}
+}
 </script>
 
 <style scoped>

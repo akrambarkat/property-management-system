@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="units"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="بحث برقم الوحدة أو المبنى..."
       emptyTitle="لا توجد وحدات عقارية مسجلة"

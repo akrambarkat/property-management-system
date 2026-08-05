@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="utilities"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="بحث بنوع المرافق، رقم الوحدة، أو العداد..."
       emptyTitle="لا توجد قراءات عدادات مسجلة"

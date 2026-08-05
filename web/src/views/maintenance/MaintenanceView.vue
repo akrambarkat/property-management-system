@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="maintenance"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="بحث بوصف الصيانة، رقم الوحدة، أو الأولوية..."
       emptyTitle="لا توجد بلاغات صيانة مسجلة"

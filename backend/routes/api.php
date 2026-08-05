@@ -73,6 +73,8 @@ Route::prefix('v1')->group(function () {
         Route::get('reports/income', [ReportController::class, 'income']);
         Route::get('reports/expenses', [ReportController::class, 'expenses']);
         Route::get('reports/profit-loss', [ReportController::class, 'profitLoss']);
+        Route::get('reports/export', [ReportController::class, 'exportList']);
+        Route::get('reports/tenant-statement/{tenant}', [ReportController::class, 'tenantStatement']);
 
         // Users (Super Admin only)
         Route::patch('users/{user}/toggle-status', [UserController::class, 'toggleStatus']);

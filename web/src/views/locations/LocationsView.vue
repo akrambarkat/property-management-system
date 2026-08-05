@@ -4,6 +4,7 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="locations"
       :loading="loading"
       searchPlaceholder="البحث باسم الموقع أو العنوان..."
       emptyTitle="لا توجد مواقع عقارية مسجلة"

@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="invoices"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="بحث برقم الفاتورة، المستأجر، أو الوحدة..."
       emptyTitle="لا توجد فواتير مسجلة"

@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="buildings"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="البحث باسم المبنى أو الموقع..."
       emptyTitle="لا توجد مباني مسجلة"

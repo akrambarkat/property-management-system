@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="users"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="بحث باسم المستخدم، البريد، أو الدور..."
       emptyTitle="لا يوجد مستخدمين مسجلين"

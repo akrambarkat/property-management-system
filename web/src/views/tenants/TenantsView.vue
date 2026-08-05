@@ -4,6 +4,7 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="tenants"
       :loading="loading"
       searchPlaceholder="البحث باسم المستأجر، رقم الهوية، أو الهاتف..."
       emptyTitle="لا يوجد مستأجرين مسجلين"
@@ -362,6 +363,11 @@ function getRowActions(row) {
       command: () => editItem(row)
     },
     {
+      label: 'كشف الحساب (PDF)',
+      icon: 'pi pi-file-pdf',
+      command: () => printStatement(row)
+    },
+    {
       label: 'حذف المستأجر',
       icon: 'pi pi-trash',
       danger: true,
@@ -382,6 +388,22 @@ onMounted(async () => {
 function onRowClick(event) {
   if (event.data?.id) {
     router.push(`/tenants/${event.data.id}`)
+  }
+}
+
+async function printStatement(item) {
+  try {
+    const { data } = await api.get(`/reports/tenant-statement/${item.id}`, { responseType: 'blob' })
+    const url = URL.createObjectURL(new Blob([data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `tenant_statement_${item.id}_${new Date().toISOString().slice(0, 10)}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'تعذر تحميل كشف الحساب')
   }
 }
 

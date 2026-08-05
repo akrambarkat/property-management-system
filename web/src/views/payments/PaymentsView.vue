@@ -4,6 +4,7 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="payments"
       :loading="loading"
       searchPlaceholder="بحث برقم الإيصال، المستأجر، أو الفاتورة..."
       emptyTitle="لا توجد عمليات سداد مسجلة"

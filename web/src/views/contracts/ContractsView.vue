@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="contracts"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="بحث برقم العقد، المستأجر، أو الوحدة..."
       emptyTitle="لا توجد عقود إيجار مسجلة"

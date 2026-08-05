@@ -4,6 +4,8 @@
             <!-- Enterprise SaaS Card Table Layout -->
     <EnterpriseTable
       :value="items"
+      entity="expenses"
+      :exportParams="filters"
       :loading="loading"
       searchPlaceholder="بحث ببيان المصروف، التصنيف، أو المبنى..."
       emptyTitle="لا توجد مصروفات مسجلة"

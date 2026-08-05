@@ -9,8 +9,8 @@ use App\Models\Invoice;
 use App\Models\Location;
 use App\Models\MaintenanceRequest;
 use App\Models\Payment;
+use App\Models\Tenant;
 use App\Models\Unit;
-use Carbon\Carbon;
 
 class ReportService
 {
@@ -69,9 +69,9 @@ class ReportService
             ->latest('due_date')
             ->take(10)
             ->get()
-            ->map(fn($inv) => [
+            ->map(fn ($inv) => [
                 'id' => $inv->id,
-                'tenant' => ($inv->contract?->tenant?->first_name ?? '') . ' ' . ($inv->contract?->tenant?->last_name ?? ''),
+                'tenant' => ($inv->contract?->tenant?->first_name ?? '').' '.($inv->contract?->tenant?->last_name ?? ''),
                 'unit' => $inv->contract?->unit?->unit_number ?? '',
                 'daysLate' => now()->startOfDay()->diffInDays($inv->due_date),
                 'amount' => (float) $inv->total_amount,
@@ -82,7 +82,7 @@ class ReportService
             ->latest()
             ->take(10)
             ->get()
-            ->map(fn($r) => [
+            ->map(fn ($r) => [
                 'id' => $r->id,
                 'title' => $r->description,
                 'building' => $r->unit?->building?->name ?? '',
@@ -97,9 +97,9 @@ class ReportService
             ->latest('end_date')
             ->take(10)
             ->get()
-            ->map(fn($c) => [
+            ->map(fn ($c) => [
                 'id' => $c->id,
-                'tenant' => ($c->tenant?->first_name ?? '') . ' ' . ($c->tenant?->last_name ?? ''),
+                'tenant' => ($c->tenant?->first_name ?? '').' '.($c->tenant?->last_name ?? ''),
                 'contractNumber' => $c->contract_number,
                 'expiryDate' => $c->end_date?->format('Y-m-d'),
             ]);
@@ -131,17 +131,17 @@ class ReportService
             'open_maintenance_count' => $openMaintenanceCount,
             'urgent_maintenance_count' => $urgentMaintenanceCount,
             'recent_payments' => Payment::with('invoice.contract.tenant')
-                ->latest()->take(5)->get()->map(fn($p) => [
+                ->latest()->take(5)->get()->map(fn ($p) => [
                     'receipt_number' => $p->receipt_number,
-                    'tenant' => ($p->invoice?->contract?->tenant?->first_name ?? '') . ' ' . ($p->invoice?->contract?->tenant?->last_name ?? ''),
+                    'tenant' => ($p->invoice?->contract?->tenant?->first_name ?? '').' '.($p->invoice?->contract?->tenant?->last_name ?? ''),
                     'amount' => $p->amount,
                     'payment_date' => $p->payment_date?->format('Y-m-d'),
                 ]),
             'overdue_invoices' => Invoice::whereIn('status', ['unpaid', 'overdue'])
                 ->where('due_date', '<', now())->with('contract.tenant')
-                ->latest()->take(5)->get()->map(fn($inv) => [
+                ->latest()->take(5)->get()->map(fn ($inv) => [
                     'invoice_number' => $inv->invoice_number,
-                    'tenant' => ($inv->contract?->tenant?->first_name ?? '') . ' ' . ($inv->contract?->tenant?->last_name ?? ''),
+                    'tenant' => ($inv->contract?->tenant?->first_name ?? '').' '.($inv->contract?->tenant?->last_name ?? ''),
                     'total_amount' => $inv->total_amount,
                     'due_date' => $inv->due_date?->format('Y-m-d'),
                 ]),
@@ -154,7 +154,7 @@ class ReportService
         $expenseQuery = Expense::query();
 
         if ($buildingId) {
-            $incomeQuery->whereHas('contract.unit.building', fn($q) => $q->where('id', $buildingId));
+            $incomeQuery->whereHas('contract.unit.building', fn ($q) => $q->where('id', $buildingId));
             $expenseQuery->where('building_id', $buildingId);
         }
         if ($from) {
@@ -191,18 +191,104 @@ class ReportService
     {
         $query = Invoice::with(['contract.unit.building', 'contract.tenant']);
         if ($buildingId) {
-            $query->whereHas('contract.unit.building', fn($q) => $q->where('id', $buildingId));
+            $query->whereHas('contract.unit.building', fn ($q) => $q->where('id', $buildingId));
         }
-        if ($from) $query->where('issue_date', '>=', $from);
-        if ($to) $query->where('issue_date', '<=', $to);
+        if ($from) {
+            $query->where('issue_date', '>=', $from);
+        }
+        if ($to) {
+            $query->where('issue_date', '<=', $to);
+        }
 
-        return $query->limit(50)->get()->map(fn($inv) => [
+        return $query->limit(50)->get()->map(fn ($inv) => [
             'building' => $inv->contract?->unit?->building?->name ?? '',
             'unit' => $inv->contract?->unit?->unit_number ?? '',
-            'tenant' => ($inv->contract?->tenant?->first_name ?? '') . ' ' . ($inv->contract?->tenant?->last_name ?? ''),
+            'tenant' => ($inv->contract?->tenant?->first_name ?? '').' '.($inv->contract?->tenant?->last_name ?? ''),
             'rent' => $inv->rent_amount,
             'utilities' => $inv->electricity_amount + $inv->water_amount + $inv->internet_amount,
             'total' => $inv->total_amount,
         ])->toArray();
+    }
+
+    /**
+     * Tenant statement: tenant profile + all invoices with payment totals.
+     */
+    public function getTenantStatement(int $tenantId): array
+    {
+        $tenant = Tenant::withCount('contracts')->findOrFail($tenantId);
+
+        $invoices = Invoice::whereHas('contract', fn ($q) => $q->where('tenant_id', $tenantId))
+            ->with('contract.unit.building')
+            ->orderBy('due_date')
+            ->get()
+            ->map(fn ($inv) => [
+                'invoice_number' => $inv->invoice_number,
+                'building' => $inv->contract?->unit?->building?->name ?? '',
+                'unit' => $inv->contract?->unit?->unit_number ?? '',
+                'issue_date' => $inv->issue_date?->format('Y-m-d') ?? '',
+                'due_date' => $inv->due_date?->format('Y-m-d') ?? '',
+                'total' => (float) $inv->total_amount,
+                'paid' => (float) $inv->paid_amount,
+                'balance' => (float) $inv->balance,
+                'status' => $this->invoiceStatusLabel($inv->status),
+            ]);
+
+        $payments = Payment::whereHas('invoice.contract', fn ($q) => $q->where('tenant_id', $tenantId))
+            ->with('invoice.contract.unit.building')
+            ->orderBy('payment_date', 'desc')
+            ->get()
+            ->map(fn ($p) => [
+                'receipt_number' => $p->receipt_number ?? '',
+                'invoice_number' => $p->invoice?->invoice_number ?? '',
+                'building' => $p->invoice?->contract?->unit?->building?->name ?? '',
+                'unit' => $p->invoice?->contract?->unit?->unit_number ?? '',
+                'amount' => (float) $p->amount,
+                'payment_date' => $p->payment_date?->format('Y-m-d') ?? '',
+                'method' => $this->paymentMethodLabel($p->payment_method),
+            ]);
+
+        $totalInvoiced = (float) $invoices->sum('total');
+        $totalPaid = (float) $invoices->sum('paid');
+        $totalBalance = $totalInvoiced - $totalPaid;
+
+        return [
+            'tenant' => [
+                'name' => ($tenant->first_name).' '.($tenant->last_name),
+                'phone' => $tenant->phone,
+                'email' => $tenant->email,
+                'id_number' => $tenant->id_number,
+                'address' => $tenant->address,
+                'contracts_count' => $tenant->contracts_count,
+            ],
+            'invoices' => $invoices,
+            'payments' => $payments,
+            'totals' => [
+                'invoiced' => $totalInvoiced,
+                'paid' => $totalPaid,
+                'balance' => $totalBalance < 0 ? 0 : $totalBalance,
+            ],
+        ];
+    }
+
+    private function invoiceStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'unpaid' => 'غير مدفوعة',
+            'partial' => 'مدفوعة جزئياً',
+            'paid' => 'مدفوعة بالكامل',
+            'overdue' => 'متأخرة',
+            default => $status,
+        };
+    }
+
+    private function paymentMethodLabel(?string $method): string
+    {
+        return match ($method) {
+            'cash' => 'نقدي',
+            'bank_transfer' => 'تحويل بنكي',
+            'check' => 'شيك',
+            'credit_card' => 'بطاقة ائتمان',
+            default => $method ?: '—',
+        };
     }
 }
