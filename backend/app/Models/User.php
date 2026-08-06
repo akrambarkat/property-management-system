@@ -49,4 +49,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(MaintenanceRequest::class, 'requested_by');
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function notificationSettings()
+    {
+        return $this->hasMany(NotificationSetting::class);
+    }
 }

@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ActivityLogController;
 use App\Http\Controllers\Api\V1\BuildingController;
 use App\Http\Controllers\Api\V1\ContractController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\LocationController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\MaintenanceController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ReportController;
@@ -68,6 +70,19 @@ Route::prefix('v1')->group(function () {
         Route::patch('maintenance/{maintenance}/status', [MaintenanceController::class, 'updateStatus']);
         Route::apiResource('maintenance', MaintenanceController::class);
 
+        // Notifications
+        Route::get('notifications/latest', [NotificationController::class, 'latest']);
+        Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::post('notifications/bulk', [NotificationController::class, 'bulkAction']);
+        Route::post('notifications/check', [NotificationController::class, 'check']);
+        Route::get('notifications/settings', [NotificationController::class, 'getSettings']);
+        Route::put('notifications/settings/{type}', [NotificationController::class, 'updateSetting']);
+        Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+        Route::patch('notifications/{notification}/unread', [NotificationController::class, 'markAsUnread']);
+        Route::patch('notifications/{notification}/archive', [NotificationController::class, 'archive']);
+        Route::apiResource('notifications', NotificationController::class)->except(['store', 'show']);
+
         // Reports
         Route::get('reports/dashboard', [ReportController::class, 'dashboard']);
         Route::get('reports/income', [ReportController::class, 'income']);
@@ -86,6 +101,13 @@ Route::prefix('v1')->group(function () {
         Route::get('currencies', [SettingController::class, 'listCurrencies']);
         Route::put('currencies/{currency}', [SettingController::class, 'updateCurrency']);
         Route::patch('currencies/{currency}/default', [SettingController::class, 'setDefaultCurrency']);
+
+        // Activity Logs
+        Route::middleware('permission:view-settings')->group(function () {
+            Route::get('activity-logs', [ActivityLogController::class, 'index']);
+            Route::get('activity-logs/actions', [ActivityLogController::class, 'actions']);
+            Route::delete('activity-logs/clear', [ActivityLogController::class, 'clear'])->middleware('permission:edit-settings');
+        });
 
         // SMS
         Route::middleware('permission:view-sms')->group(function () {

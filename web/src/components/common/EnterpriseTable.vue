@@ -15,7 +15,29 @@
           <span v-if="searchQuery" class="clear-search-btn" @click="searchQuery = ''" title="مسح">×</span>
         </div>
 
-        <slot name="filters"></slot>
+        <!-- Filters: inline on desktop/tablet, docked bottom sheet on mobile -->
+        <template v-if="hasFiltersSlot">
+          <div class="filters-region" :class="{ 'mobile-open': filtersOpen }">
+            <div class="filters-region-inner">
+              <div class="filters-region-header">
+                <span class="filters-sheet-title"><i class="pi pi-filter"></i> تصفية النتائج</span>
+                <button type="button" class="filters-sheet-close" @click="filtersOpen = false" aria-label="إغلاق">×</button>
+              </div>
+              <div class="filters-region-body">
+                <slot name="filters"></slot>
+              </div>
+              <div class="filters-region-footer">
+                <button type="button" class="btn-primary filters-sheet-apply" @click="filtersOpen = false">
+                  <i class="pi pi-check"></i> عرض النتائج
+                </button>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-toolbar filters-toggle-btn" @click="filtersOpen = true">
+            <i class="pi pi-filter"></i>
+            <span class="btn-label">تصفية</span>
+          </button>
+        </template>
       </div>
 
       <!-- Actions (Bulk, Column Toggle, Export, Print, Refresh, Add) -->
@@ -36,10 +58,10 @@
 
         <!-- Column Visibility Dropdown -->
         <div v-if="columns && columns.length > 0" class="column-visibility-dropdown" ref="colMenuRef">
-          <button 
-            type="button" 
-            class="btn-toolbar" 
-            @click="showColumnMenu = !showColumnMenu" 
+          <button
+            type="button"
+            class="btn-toolbar"
+            @click="showColumnMenu = !showColumnMenu"
             title="إدارة الأعمدة"
           >
             <i class="pi pi-sliders-h"></i>
@@ -49,16 +71,16 @@
           <transition name="dropdown-fade">
             <div v-if="showColumnMenu" class="columns-menu">
               <div class="menu-header">إظهار/إخفاء الأعمدة</div>
-              <div 
-                v-for="col in columns" 
-                :key="col.field || col.header" 
+              <div
+                v-for="col in columns"
+                :key="col.field || col.header"
                 class="column-item"
                 @click="toggleColumn(col)"
               >
-                <input 
-                  type="checkbox" 
-                  :checked="!hiddenColumns.includes(col.field || col.header)" 
-                  readonly 
+                <input
+                  type="checkbox"
+                  :checked="!hiddenColumns.includes(col.field || col.header)"
+                  readonly
                 />
                 <span>{{ col.header }}</span>
               </div>
@@ -68,10 +90,10 @@
 
         <!-- Export Dropdown (PDF / Excel / CSV) -->
         <div class="export-dropdown" ref="exportMenuRef">
-          <button 
-            type="button" 
-            class="btn-toolbar export-trigger" 
-            @click="toggleExportMenu" 
+          <button
+            type="button"
+            class="btn-toolbar export-trigger"
+            @click="toggleExportMenu"
             title="تصدير"
           >
             <i class="pi pi-download"></i>
@@ -126,7 +148,8 @@
         :rows="rowsPerPage"
         :rowsPerPageOptions="[10, 20, 50, 100]"
         responsiveLayout="scroll"
-        class="enterprise-saas-table sticky-header-table"
+        :pt="responsiveTablePT"
+        class="enterprise-saas-table sticky-header-table responsive-table"
         @row-click="onRowClick"
         paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
         currentPageReportTemplate="عرض {first} إلى {last} من {totalRecords} سجل"
@@ -134,7 +157,7 @@
         <!-- Checkbox Selection Column -->
         <Column v-if="selectable" selectionMode="multiple" headerStyle="width: 3rem" />
 
-        <slot :hiddenColumns="hiddenColumns"></slot>
+        <slot :hiddenColumns="effectiveHidden"></slot>
 
         <!-- Empty State -->
         <template #empty>
@@ -153,11 +176,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, useSlots } from 'vue'
 import api from '@/services/api'
 import { useToastStore } from '@/stores/toast'
 
 const toast = useToastStore()
+const slots = useSlots()
 
 const props = defineProps({
   value: { type: Array, default: () => [] },
@@ -167,10 +191,12 @@ const props = defineProps({
   searchPlaceholder: { type: String, default: 'بحث شامل في الجدول...' },
   emptyTitle: { type: String, default: 'لا توجد بيانات متاحة' },
   emptySubtitle: { type: String, default: 'لم يتم العثور على أي سجلات تطابق شروط البحث الحالية' },
-  columns: { type: Array, default: () => [] }, // Format: [{ field: 'name', header: 'اسم' }]
+  columns: { type: Array, default: () => [] }, // Format: [{ field: 'name', header: 'اسم', tabletHidden: true }]
   skeletonCols: { type: Number, default: 5 },
   entity: { type: String, default: '' }, // Backend export entity key (e.g. 'buildings')
-  exportParams: { type: Object, default: () => ({}) } // Filters passed to the export endpoint
+  exportParams: { type: Object, default: () => ({}) }, // Filters passed to the export endpoint
+  mobileBreakpoint: { type: Number, default: 768 }, // Below this → rows become cards
+  tabletBreakpoint: { type: Number, default: 992 } // Below this → tabletHidden columns collapse
 })
 
 const emit = defineEmits(['row-click', 'export', 'bulk-export', 'refresh', 'update:selection'])
@@ -184,6 +210,11 @@ const colMenuRef = ref(null)
 const showExportMenu = ref(false)
 const exportMenuRef = ref(null)
 const exporting = ref(false)
+const filtersOpen = ref(false)
+const isMobile = ref(false)
+const isTablet = ref(false)
+
+const hasFiltersSlot = computed(() => !!slots.filters)
 
 const filteredValue = computed(() => {
   if (!searchQuery.value.trim() || !props.value) return props.value
@@ -200,6 +231,37 @@ const filteredValue = computed(() => {
     })
   })
 })
+
+/* Combine user-toggled hidden columns with responsive (tablet) hidden columns
+   so views can collapse low-priority columns automatically on tablet. */
+const effectiveHidden = computed(() => {
+  const list = [...hiddenColumns.value]
+  if (isTablet.value) {
+    ;(props.columns || []).forEach(col => {
+      if (col.tabletHidden) {
+        const key = col.field || col.header
+        if (key && !list.includes(key)) list.push(key)
+      }
+    })
+  }
+  return list
+})
+
+/* Inject the column header as data-label on every body cell so the mobile
+   "rows as cards" layout can display each field's label via CSS. */
+const responsiveTablePT = {
+  bodyCell: ({ props: colProps }) => {
+    if (!colProps || !colProps.header) return {}
+    return { 'data-label': colProps.header }
+  }
+}
+
+function updateViewport() {
+  const w = window.innerWidth
+  isMobile.value = w < props.mobileBreakpoint
+  isTablet.value = w < props.tabletBreakpoint
+  if (!isMobile.value) filtersOpen.value = false
+}
 
 function toggleColumn(col) {
   const colKey = col.field || col.header
@@ -222,11 +284,11 @@ function getSkeletonWidth(colIndex) {
 
 function exportCSV() {
   if (!props.value || !props.value.length) return
-  
-  const headers = props.columns.length 
-    ? props.columns.map(c => c.header).join(',') 
+
+  const headers = props.columns.length
+    ? props.columns.map(c => c.header).join(',')
     : Object.keys(props.value[0]).join(',')
-    
+
   const rows = props.value.map(row => {
     if (props.columns.length) {
       return props.columns.map(c => {
@@ -245,7 +307,7 @@ function exportCSV() {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  
+
   emit('export', props.value)
 }
 
@@ -301,10 +363,13 @@ function handleClickOutside(event) {
 }
 
 onMounted(() => {
+  updateViewport()
+  window.addEventListener('resize', updateViewport)
   document.addEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewport)
   document.removeEventListener('click', handleClickOutside)
 })
 </script>
@@ -331,12 +396,14 @@ onBeforeUnmount(() => {
   gap: 12px;
   flex-wrap: wrap;
   flex: 1;
+  min-width: 0;
 }
 
 .search-box {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 0 1 auto;
 }
 
 .search-icon {
@@ -344,6 +411,7 @@ onBeforeUnmount(() => {
   right: 12px;
   color: var(--text-muted, #94A3B8);
   font-size: 0.9rem;
+  pointer-events: none;
 }
 
 .search-input {
@@ -376,6 +444,28 @@ onBeforeUnmount(() => {
   color: var(--text-primary, #0F172A);
 }
 
+/* ---- Filters region: inline on desktop, bottom sheet on mobile ---- */
+.filters-region {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filters-region-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filters-region-header,
+.filters-region-footer,
+.filters-toggle-btn {
+  display: none;
+}
+
+/* ---- Toolbar actions ---- */
 .toolbar-actions {
   display: flex;
   align-items: center;
@@ -386,6 +476,7 @@ onBeforeUnmount(() => {
 .btn-toolbar {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 8px 12px;
   background: var(--bg-surface, #FFFFFF);
@@ -397,6 +488,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: all 0.15s ease;
   box-shadow: var(--shadow-xs);
+  font-family: var(--font-family);
 }
 
 .btn-toolbar:hover {
@@ -454,6 +546,7 @@ onBeforeUnmount(() => {
   left: 0;
   z-index: 1000;
   width: 200px;
+  max-width: calc(100vw - 24px);
   background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-md, 8px);
@@ -500,6 +593,7 @@ onBeforeUnmount(() => {
   right: 0;
   z-index: 1000;
   width: 180px;
+  max-width: calc(100vw - 24px);
   background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border, #E2E8F0);
   border-radius: var(--radius-md, 8px);
@@ -539,6 +633,8 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-md, 10px);
   box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.05));
   overflow: hidden;
+  width: 100%;
+  min-width: 0;
 }
 
 /* Skeleton Loading */
@@ -616,6 +712,8 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: var(--text-secondary, #64748B);
   margin: 0;
+  text-align: center;
+  max-width: 420px;
 }
 
 .dropdown-fade-enter-active,
@@ -627,5 +725,225 @@ onBeforeUnmount(() => {
 .dropdown-fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+/* ==================================================================
+   RESPONSIVE TABLE LAYER
+   Desktop:   normal DataTable
+   Tablet:    reduced spacing + low-priority columns collapse
+   Mobile:    rows transform into premium cards (no horizontal scroll)
+   ================================================================== */
+
+@media (max-width: 992px) {
+  .search-input { width: 220px !important; }
+  .table-surface-card { border-radius: var(--radius-sm, 8px); }
+}
+
+@media (max-width: 768px) {
+  .table-toolbar { gap: 10px; }
+
+  .toolbar-search-filters {
+    width: 100%;
+  }
+
+  .search-box { width: 100%; }
+  .search-input { width: 100% !important; }
+
+  /* Filters: docked bottom sheet, opened via toggle button */
+  .filters-toggle-btn { display: inline-flex; }
+
+  .filters-region {
+    display: none;
+    position: fixed;
+    inset-inline: 12px;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    z-index: 1200;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-xl);
+    padding: 16px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filters-region.mobile-open { display: flex; }
+
+  .filters-region-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .filters-region-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .filters-sheet-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .filters-sheet-title i { color: var(--accent); }
+  .filters-sheet-close {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .filters-region-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .filters-region-body :deep(.filter-select),
+  .filters-region-body :deep(.p-select),
+  .filters-region-body :deep(.p-datepicker) {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .filters-region-footer { display: block; }
+  .filters-sheet-apply { width: 100%; justify-content: center; }
+
+  .toolbar-actions { width: 100%; }
+  .toolbar-actions > .btn-toolbar { flex: 1 1 auto; }
+  .toolbar-actions > .btn-primary { flex: 1 1 auto; justify-content: center; }
+
+  .bulk-actions-pill {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .columns-menu, .export-menu {
+    position: fixed;
+    top: auto;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+  }
+}
+
+/* ---- Mobile: DataTable rows → cards ---- */
+@media (max-width: 768px) {
+  .responsive-table :deep(.p-datatable-wrapper) {
+    overflow: visible !important;
+  }
+
+  .responsive-table :deep(.p-datatable-table) {
+    display: block;
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+
+  .responsive-table :deep(.p-datatable-thead) { display: none; }
+  .responsive-table :deep(.p-datatable-tfoot) { display: none; }
+
+  .responsive-table :deep(.p-datatable-tbody) { display: block; }
+
+  .responsive-table :deep(.p-datatable-tbody > tr) {
+    display: block;
+    width: 100%;
+    margin: 0 0 12px 0;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .responsive-table :deep(.p-datatable-tbody > tr:hover) {
+    background: var(--bg-surface);
+  }
+
+  .responsive-table :deep(.p-datatable-tbody > tr.p-highlight) {
+    background: var(--accent-light) !important;
+    border-color: var(--accent);
+  }
+
+  .responsive-table :deep(.p-datatable-tbody > tr > td) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100% !important;
+    padding: 10px 14px;
+    border: none;
+    border-bottom: 1px solid var(--border-light);
+    text-align: right;
+    position: static !important;
+    inset-inline-end: auto !important;
+    overflow-wrap: anywhere;
+  }
+
+  .responsive-table :deep(.p-datatable-tbody > tr > td:last-child) {
+    border-bottom: none;
+  }
+
+  .responsive-table :deep(.p-datatable-tbody > tr > td > *) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Field label on the right (RTL) */
+  .responsive-table :deep(.p-datatable-tbody > tr > td[data-label]::before) {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    min-width: 88px;
+  }
+
+  /* Selection checkbox → card header strip */
+  .responsive-table :deep(.p-datatable-tbody > tr > td[data-p-selection-column="true"]) {
+    justify-content: flex-start;
+    background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border-light);
+    padding: 8px 14px;
+  }
+  .responsive-table :deep(.p-datatable-tbody > tr > td[data-p-selection-column="true"]::before) { display: none; }
+
+  /* Frozen actions column → full-width card footer */
+  .responsive-table :deep(.p-datatable-tbody > tr > td[data-p-frozen-column="true"]) {
+    justify-content: space-between;
+    background: var(--bg-subtle);
+    border-top: 1px solid var(--border-light);
+    border-bottom: none;
+  }
+  .responsive-table :deep(.p-datatable-tbody > tr > td[data-p-frozen-column="true"]::before) {
+    color: var(--text-secondary);
+  }
+
+  /* Open action menus upward so they never overflow the viewport */
+  .responsive-table :deep(.table-action-menu-wrapper .action-dropdown-menu) {
+    top: auto;
+    bottom: calc(100% + 4px);
+  }
+
+  /* Small phones: keep labels compact */
+  @media (max-width: 400px) {
+    .responsive-table :deep(.p-datatable-tbody > tr > td) {
+      gap: 10px;
+      padding: 9px 12px;
+    }
+    .responsive-table :deep(.p-datatable-tbody > tr > td[data-label]::before) {
+      min-width: 76px;
+      font-size: 10.5px;
+    }
+  }
 }
 </style>

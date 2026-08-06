@@ -10,7 +10,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name' => 'أكرم بركات',
+            'name' => 'سوبر ادمن',
             'email' => 'admin@emaarplus.com',
             'password' => 'password',
             'phone' => '0599000000',

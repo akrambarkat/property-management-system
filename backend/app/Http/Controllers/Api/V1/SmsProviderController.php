@@ -28,6 +28,7 @@ class SmsProviderController extends Controller
             'class' => $p->class,
             'api_url' => $p->api_url,
             'username' => $p->username,
+            'sender_name' => $p->sender_name,
             'sender_id' => $p->sender_id,
             'timeout' => $p->timeout,
             'retries' => $p->retries,
@@ -47,8 +48,8 @@ class SmsProviderController extends Controller
     public function show(SmsProvider $provider): JsonResponse
     {
         $data = $provider->only([
-            'id', 'key', 'name', 'class', 'api_url', 'username', 'sender_id',
-            'timeout', 'retries', 'http_method', 'content_type',
+            'id', 'key', 'name', 'class', 'api_url', 'username', 'sender_name',
+            'sender_id', 'timeout', 'retries', 'http_method', 'content_type',
             'authorization_type', 'custom_headers', 'is_active', 'is_default',
             'last_connected_at',
         ]);

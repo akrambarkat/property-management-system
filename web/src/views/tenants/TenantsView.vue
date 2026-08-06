@@ -295,7 +295,7 @@ const idPhotoPreview = ref(null)
 const tableColumns = [
   { field: 'first_name', header: 'اسم المستأجر' },
   { field: 'phone', header: 'رقم الهاتف' },
-  { field: 'email', header: 'البريد الإلكتروني' },
+  { field: 'email', header: 'البريد الإلكتروني', tabletHidden: true },
   { field: 'current_unit', header: 'الوحدة المأجورة' },
   { field: 'is_active', header: 'الحالة' }
 ]

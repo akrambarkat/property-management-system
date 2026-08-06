@@ -9,9 +9,11 @@
         <p v-if="subtitle">{{ subtitle }}</p>
       </div>
     </div>
+
     <div class="settings-card-body">
       <slot />
     </div>
+
     <div v-if="showFooter !== false" class="settings-card-footer">
       <div class="save-state" :class="saveStateClass">
         <i v-if="saving" class="pi pi-spin pi-spinner"></i>
@@ -19,11 +21,12 @@
         <i v-else-if="dirty" class="pi pi-exclamation-circle"></i>
         <span>{{ statusText }}</span>
       </div>
+
       <slot name="footer-actions">
         <button class="btn-primary" @click="$emit('save')" :disabled="saving || !dirty">
           <i v-if="saving" class="pi pi-spin pi-spinner"></i>
           <i v-else class="pi pi-save"></i>
-          <span>{{ saving ? 'جاري الحفظ...' : 'حفظ التغييرات' }}</span>
+          <span>{{ saving ? 'جارٍ الحفظ...' : 'حفظ التغييرات' }}</span>
         </button>
       </slot>
     </div>
@@ -47,9 +50,9 @@ const props = defineProps({
 defineEmits(['save'])
 
 const statusText = computed(() => {
-  if (props.saving) return 'جاري الحفظ...'
+  if (props.saving) return 'جارٍ الحفظ...'
   if (props.saved) return 'تم الحفظ بنجاح'
-  if (props.dirty) return 'تغييرات غير محفوظة'
+  if (props.dirty) return 'توجد تغييرات غير محفوظة'
   return 'لا توجد تغييرات'
 })
 
@@ -70,9 +73,11 @@ const saveStateClass = computed(() => {
   overflow: hidden;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+
 .settings-card.is-dirty {
   border-color: var(--warning-border);
 }
+
 .settings-card-header {
   display: flex;
   align-items: center;
@@ -80,6 +85,7 @@ const saveStateClass = computed(() => {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-light);
 }
+
 .settings-card-icon {
   width: 42px;
   height: 42px;
@@ -90,20 +96,27 @@ const saveStateClass = computed(() => {
   font-size: 1.2rem;
   flex-shrink: 0;
 }
+
 .settings-card-heading h3 {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
 }
+
 .settings-card-heading p {
   margin: 3px 0 0;
   font-size: 12.5px;
   color: var(--text-secondary);
 }
+
 .settings-card-body {
   padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
+
 .settings-card-footer {
   display: flex;
   align-items: center;
@@ -113,6 +126,7 @@ const saveStateClass = computed(() => {
   border-top: 1px solid var(--border-light);
   background: var(--bg-subtle);
 }
+
 .save-state {
   display: flex;
   align-items: center;
@@ -120,9 +134,11 @@ const saveStateClass = computed(() => {
   font-size: 12.5px;
   font-weight: 600;
 }
+
 .save-state i {
   font-size: 0.95rem;
 }
+
 .state-saving { color: var(--text-secondary); }
 .state-saved { color: var(--success-contrast); }
 .state-dirty { color: var(--warning-contrast); }
@@ -136,7 +152,13 @@ const saveStateClass = computed(() => {
 .icon-purple { background: rgba(139, 92, 246, 0.12); color: #7C3AED; }
 
 @media (max-width: 640px) {
-  .settings-card-footer { flex-direction: column; align-items: stretch; }
-  .settings-card-footer .btn-primary { width: 100%; }
+  .settings-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-card-footer .btn-primary {
+    width: 100%;
+  }
 }
 </style>

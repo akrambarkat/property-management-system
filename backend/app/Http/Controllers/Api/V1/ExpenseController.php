@@ -11,8 +11,9 @@ class ExpenseController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Expense::with(['building', 'createdBy']);
+        $query = Expense::with(['building', 'unit', 'createdBy']);
         if ($request->building_id) $query->where('building_id', $request->building_id);
+        if ($request->unit_id) $query->where('unit_id', $request->unit_id);
         if ($request->category) $query->where('category', $request->category);
         if ($request->from) $query->where('expense_date', '>=', $request->from);
         if ($request->to) $query->where('expense_date', '<=', $request->to);
@@ -24,6 +25,7 @@ class ExpenseController extends Controller
     {
         $validated = $request->validate([
             'building_id' => 'required|exists:buildings,id',
+            'unit_id' => 'nullable|exists:units,id',
             'category' => 'required|in:maintenance,plumbing,electrical,cleaning,security,general',
             'amount' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
@@ -31,13 +33,13 @@ class ExpenseController extends Controller
         ]);
         $validated['created_by'] = auth()->id();
         $expense = Expense::create($validated);
-        $expense->load('building');
+        $expense->load(['building', 'unit']);
         return response()->json(['success' => true, 'message' => 'تم إضافة المصروف', 'data' => $expense], 201);
     }
 
     public function show(Expense $expense): JsonResponse
     {
-        $expense->load(['building', 'createdBy']);
+        $expense->load(['building', 'unit', 'createdBy']);
         return response()->json(['success' => true, 'data' => $expense]);
     }
 
@@ -45,12 +47,14 @@ class ExpenseController extends Controller
     {
         $validated = $request->validate([
             'building_id' => 'required|exists:buildings,id',
+            'unit_id' => 'nullable|exists:units,id',
             'category' => 'required|in:maintenance,plumbing,electrical,cleaning,security,general',
             'amount' => 'required|numeric|min:0',
             'expense_date' => 'required|date',
             'description' => 'nullable|string',
         ]);
         $expense->update($validated);
+        $expense->load(['building', 'unit']);
         return response()->json(['success' => true, 'message' => 'تم تحديث المصروف', 'data' => $expense]);
     }
 

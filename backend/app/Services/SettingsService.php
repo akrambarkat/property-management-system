@@ -77,6 +77,9 @@ class SettingsService
                 continue;
             }
             $existing = Setting::where('key', $key)->where('group', $group)->first();
+            // Preserve the declared column type for existing rows (e.g. JSON
+            // arrays) instead of overwriting it with the default string type.
+            $rowType = $existing ? $existing->type : $this->inferType($value, $type);
             $serialized = $this->serialize($value);
             if ($existing && (string) $existing->value === (string) $serialized) {
                 continue;
@@ -84,7 +87,7 @@ class SettingsService
             $changed[$key] = $value;
             Setting::updateOrCreate(
                 ['key' => $key],
-                ['value' => $serialized, 'group' => $group, 'type' => $type]
+                ['value' => $serialized, 'group' => $group, 'type' => $rowType]
             );
         }
         if ($changed) {
@@ -115,6 +118,17 @@ class SettingsService
             'float' => (float) $value,
             'json' => json_decode((string) $value, true),
             default => (string) $value,
+        };
+    }
+
+    private function inferType(mixed $value, string $default): string
+    {
+        return match (true) {
+            is_bool($value) => 'boolean',
+            is_int($value) => 'integer',
+            is_float($value) => 'float',
+            is_array($value), is_object($value) => 'json',
+            default => $default,
         };
     }
 

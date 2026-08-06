@@ -11,7 +11,7 @@ class SettingSeeder extends Seeder
     {
         $rows = [
             // General
-            ['app_name', 'EMAARPlus', 'general', 'string'],
+            ['app_name', 'AqarMaster', 'general', 'string'],
             ['default_currency', 'ILS', 'general', 'string'],
             ['electricity_unit_price', '0.50', 'general', 'float'],
             ['water_unit_price', '3.00', 'general', 'float'],
@@ -47,6 +47,7 @@ class SettingSeeder extends Seeder
             ['sms_username', '', 'sms', 'string'],
             ['sms_password', '', 'sms', 'string'],
             ['sms_sender_id', '', 'sms', 'string'],
+            ['sms_sender_name', '', 'sms', 'string'],
             ['sms_timeout', '15', 'sms', 'integer'],
             ['sms_retries', '3', 'sms', 'integer'],
             ['sms_http_method', 'POST', 'sms', 'string'],
@@ -63,6 +64,13 @@ class SettingSeeder extends Seeder
             ['notify_on_payment', '1', 'notifications', 'boolean'],
             ['notify_on_contract', '1', 'notifications', 'boolean'],
             ['notify_on_maintenance', '1', 'notifications', 'boolean'],
+
+            // Automated SMS reminders (rent collection automation)
+            ['sms_reminder_enabled', '0', 'notifications', 'boolean'],
+            ['sms_reminder_days_before', '[3,1]', 'notifications', 'json'],
+            ['sms_reminder_overdue_enabled', '0', 'notifications', 'boolean'],
+            ['sms_reminder_overdue_days', '1', 'notifications', 'integer'],
+            ['sms_reminder_template_id', '', 'notifications', 'integer'],
 
             // Invoices
             ['invoice_tax_number', '', 'invoices', 'string'],

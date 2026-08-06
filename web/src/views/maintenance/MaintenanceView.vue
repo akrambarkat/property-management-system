@@ -111,25 +111,69 @@
             <span>موقع الصيانة والمشكلة</span>
           </div>
 
-          <FormField
-            label="الوحدة العقارية"
-            required
-            forId="maint-unit"
-            :errorMessage="errors.unit_id"
-            helpText="اختر الوحدة المتأثرة بالمشكلة"
-          >
-            <Select
-              id="maint-unit"
-              v-model="form.unit_id"
-              :options="units"
-              optionLabel="label"
-              optionValue="id"
-              placeholder="اختر الوحدة المستهدفة"
-              class="w-full"
-              filter
-              @change="clearFieldError('unit_id')"
-            />
-          </FormField>
+          <div class="form-grid-3">
+            <FormField
+              label="الموقع العقاري"
+              required
+              forId="maint-location"
+              :errorMessage="errors.location_id"
+              helpText="اختيار الموقع يحدد البنايات المتاحة"
+            >
+              <Select
+                id="maint-location"
+                v-model="selectedLocation"
+                :options="locations"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر الموقع"
+                class="w-full"
+                filter
+                @change="onLocationChange"
+              />
+            </FormField>
+
+            <FormField
+              label="المبنى العقاري"
+              required
+              forId="maint-building"
+              :errorMessage="errors.building_id"
+              helpText="اختر المبنى المرتبط بالموقع"
+            >
+              <Select
+                id="maint-building"
+                v-model="selectedBuilding"
+                :options="availableBuildings"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر المبنى"
+                class="w-full"
+                filter
+                :disabled="!selectedLocation"
+                @change="onBuildingChange"
+              />
+            </FormField>
+
+            <FormField
+              label="الوحدة العقارية"
+              required
+              forId="maint-unit"
+              :errorMessage="errors.unit_id"
+              helpText="اختر الوحدة المتأثرة بالمشكلة"
+            >
+              <Select
+                id="maint-unit"
+                v-model="form.unit_id"
+                :options="availableUnits"
+                optionLabel="label"
+                optionValue="id"
+                placeholder="اختر الوحدة المستهدفة"
+                class="w-full"
+                filter
+                :disabled="!selectedBuilding"
+                @change="clearFieldError('unit_id')"
+              />
+            </FormField>
+          </div>
 
           <FormField
             label="وصف المشكلة / العطل"
@@ -202,7 +246,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
@@ -212,12 +256,16 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { useToastStore } from '@/stores/toast'
 
 const items = ref([])
+const locations = ref([])
+const buildings = ref([])
 const units = ref([])
 const loading = ref(false)
 const toast = useToastStore()
 const saving = ref(false)
 const showDialog = ref(false)
 const isEditing = ref(false)
+const selectedLocation = ref(null)
+const selectedBuilding = ref(null)
 const route = useRoute()
 const router = useRouter()
 
@@ -226,7 +274,7 @@ const filters = reactive({ status: null, priority: null })
 const form = reactive({ id: null, unit_id: null, description: '', priority: 'medium', status: 'pending' })
 
 const errors = reactive({
-  unit_id: '', description: ''
+  location_id: '', building_id: '', unit_id: '', description: ''
 })
 
 const initialFormState = JSON.stringify(form)
@@ -234,24 +282,26 @@ const initialFormState = JSON.stringify(form)
 const tableColumns = [
   { field: 'unit.unit_number', header: 'الوحدة والمبنى' },
   { field: 'description', header: 'وصف المشكلة' },
-  { field: 'priority', header: 'الأولوية' },
+  { field: 'priority', header: 'الأولوية', tabletHidden: true },
   { field: 'status', header: 'الحالة التشغيلية' },
-  { field: 'created_at', header: 'تاريخ الطلب' }
+  { field: 'created_at', header: 'تاريخ الطلب', tabletHidden: true }
 ]
 
-const priorityLabels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية (طوارئ)' }
+const priorityLabels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', urgent: 'طارئة' }
 const maintStatusLabels = { pending: 'قيد الانتظار', in_progress: 'قيد التنفيذ', completed: 'مكتملة', cancelled: 'ملغاة' }
 
 const priorityOptions = ref([
   { label: 'منخفضة', value: 'low' },
   { label: 'متوسطة', value: 'medium' },
-  { label: 'عالية (طوارئ)', value: 'high' }
+  { label: 'عالية', value: 'high' },
+  { label: 'طارئة', value: 'urgent' }
 ])
 
 const priorityFilterOptions = ref([
   { label: 'منخفضة', value: 'low' },
   { label: 'متوسطة', value: 'medium' },
-  { label: 'عالية (طوارئ)', value: 'high' }
+  { label: 'عالية', value: 'high' },
+  { label: 'طارئة', value: 'urgent' }
 ])
 
 const statusOptions = ref([
@@ -268,6 +318,16 @@ const statusFilterOptions = ref([
   { label: 'ملغاة', value: 'cancelled' }
 ])
 
+const availableBuildings = computed(() => {
+  if (!selectedLocation.value) return []
+  return buildings.value.filter(building => building.location_id === selectedLocation.value)
+})
+
+const availableUnits = computed(() => {
+  if (!selectedBuilding.value) return []
+  return units.value.filter(unit => unit.building_id === selectedBuilding.value)
+})
+
 function clearFieldError(field) {
   if (errors[field]) errors[field] = ''
 }
@@ -275,6 +335,16 @@ function clearFieldError(field) {
 function validateForm() {
   let isValid = true
   Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!selectedLocation.value) {
+    errors.location_id = 'يرجى اختيار الموقع العقاري'
+    isValid = false
+  }
+
+  if (!selectedBuilding.value) {
+    errors.building_id = 'يرجى اختيار المبنى العقاري'
+    isValid = false
+  }
 
   if (!form.unit_id) {
     errors.unit_id = 'يرجى اختيار الوحدة العقارية المتأثرة'
@@ -304,13 +374,31 @@ function getRowActions(row) {
 }
 
 onMounted(async () => {
-  fetchUnits(); fetchItems()
+  fetchLocations(); fetchBuildings(); fetchUnits(); fetchItems()
   if (route.query.new === '1') {
     await new Promise(resolve => setTimeout(resolve, 300))
     openCreateDialog()
     router.replace({ path: route.path, query: {} })
   }
 })
+
+async function fetchLocations() {
+  try {
+    const { data } = await api.get('/locations')
+    locations.value = data.data || []
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function fetchBuildings() {
+  try {
+    const { data } = await api.get('/buildings')
+    buildings.value = data.data || []
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 async function fetchUnits() {
   try {
@@ -326,7 +414,7 @@ async function fetchItems() {
     if (filters.status) params.status = filters.status
     if (filters.priority) params.priority = filters.priority
 
-    const { data } = await api.get('/maintenance-requests', { params })
+    const { data } = await api.get('/maintenance', { params })
     items.value = data.data
   } catch (err) {
     toast.error('خطأ في تحميل طلبات الصيانة: ' + (err.response?.data?.message || err.message))
@@ -345,12 +433,16 @@ function openCreateDialog() {
 function editItem(item) {
   resetForm()
   Object.assign(form, item)
+  selectedLocation.value = item.unit?.building?.location_id || item.unit?.building?.location?.id || null
+  selectedBuilding.value = item.unit?.building_id || item.unit?.building?.id || null
   isEditing.value = true
   showDialog.value = true
 }
 
 function resetForm() {
   isEditing.value = false
+  selectedLocation.value = null
+  selectedBuilding.value = null
   Object.assign(form, { id: null, unit_id: null, description: '', priority: 'medium', status: 'pending' })
   Object.keys(errors).forEach(key => errors[key] = '')
 }
@@ -367,18 +459,32 @@ function handleDialogHide() {
   resetForm()
 }
 
+function onLocationChange() {
+  selectedBuilding.value = null
+  form.unit_id = null
+  clearFieldError('location_id')
+  clearFieldError('building_id')
+  clearFieldError('unit_id')
+}
+
+function onBuildingChange() {
+  form.unit_id = null
+  clearFieldError('building_id')
+  clearFieldError('unit_id')
+}
+
 async function saveItem() {
   if (!validateForm()) return
 
   saving.value = true
   try {
     if (isEditing.value) {
-      const { data } = await api.put(`/maintenance-requests/${form.id}`, form)
+      const { data } = await api.put(`/maintenance/${form.id}`, form)
       const idx = items.value.findIndex(i => i.id === form.id)
       if (idx > -1) items.value[idx] = data.data
       toast.success('تم تعديل طلب الصيانة بنجاح')
     } else {
-      const { data } = await api.post('/maintenance-requests', form)
+      const { data } = await api.post('/maintenance', form)
       items.value.unshift(data.data)
       toast.success('تم إضافة طلب الصيانة بنجاح')
     }
@@ -440,6 +546,7 @@ async function saveItem() {
 .priority-low { background: var(--bg-subtle); color: var(--text-secondary); }
 .priority-medium { background: var(--warning-bg); color: var(--warning-contrast); }
 .priority-high { background: var(--danger-bg); color: var(--danger-contrast); }
+.priority-urgent { background: var(--danger); color: #fff; }
 
 .filter-select {
   width: 170px !important;

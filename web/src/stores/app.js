@@ -10,7 +10,7 @@ export const useAppStore = defineStore('app', () => {
     { code: 'USD', name: 'دولار أمريكي', symbol: '$', rate: 0.2800, is_default: false }
   ])
   const selectedCurrency = ref('ILS')
-  const appName = ref('EMAARPlus')
+  const appName = ref('AqarMaster')
 
   const defaultCurrency = computed(() => currencies.value.find(c => c.is_default))
   const currentCurrencySymbol = computed(() => {

@@ -184,7 +184,7 @@ const tableColumns = [
   { field: 'title', header: 'العنوان' },
   { field: 'subject', header: 'الموضوع' },
   { field: 'message', header: 'الرسالة' },
-  { field: 'variables', header: 'المتغيرات' }
+  { field: 'variables', header: 'المتغيرات', tabletHidden: true }
 ]
 
 const renderedPreview = computed(() => {

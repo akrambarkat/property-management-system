@@ -174,4 +174,17 @@ onBeforeUnmount(() => {
   opacity: 0;
   transform: translateY(-4px) scale(0.97);
 }
+
+@media (max-width: 768px) {
+  .action-trigger-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  .menu-item {
+    padding: 12px;
+    font-size: 13.5px;
+    min-height: 44px;
+  }
+}
 </style>

@@ -127,6 +127,26 @@
 
           <div class="form-grid-2">
             <FormField
+              label="الموقع العقاري"
+              required
+              forId="unit-location"
+              :errorMessage="errors.location_id"
+              helpText="اختيار الموقع يحدد البنايات المتاحة تحته"
+            >
+              <Select
+                id="unit-location"
+                v-model="selectedLocation"
+                :options="locations"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر الموقع"
+                class="w-full"
+                filter
+                @change="onLocationChange"
+              />
+            </FormField>
+
+            <FormField
               label="المبنى العقاري"
               required
               forId="unit-building"
@@ -136,7 +156,7 @@
               <Select
                 id="unit-building"
                 v-model="form.building_id"
-                :options="buildings"
+                :options="availableBuildings"
                 optionLabel="name"
                 optionValue="id"
                 placeholder="اختر المبنى"
@@ -325,6 +345,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
@@ -334,6 +355,7 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { useToastStore } from '@/stores/toast'
 
 const items = ref([])
+const locations = ref([])
 const buildings = ref([])
 const loading = ref(false)
 const toast = useToastStore()
@@ -344,6 +366,7 @@ const isEditing = ref(false)
 
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
+const selectedLocation = ref(null)
 
 const filters = reactive({ status: null, building_id: null })
 
@@ -355,7 +378,7 @@ const form = reactive({
 })
 
 const errors = reactive({
-  building_id: '', unit_number: '', unit_type: '', floor: '', area: '', rent_amount: ''
+  location_id: '', building_id: '', unit_number: '', unit_type: '', floor: '', area: '', rent_amount: ''
 })
 
 const initialFormState = JSON.stringify(form)
@@ -363,8 +386,8 @@ const initialFormState = JSON.stringify(form)
 const tableColumns = [
   { field: 'unit_number', header: 'رقم / اسم الوحدة' },
   { field: 'building.name', header: 'المبنى' },
-  { field: 'unit_type', header: 'نوع الوحدة' },
-  { field: 'area', header: 'المساحة (م²)' },
+  { field: 'unit_type', header: 'نوع الوحدة', tabletHidden: true },
+  { field: 'area', header: 'المساحة (م²)', tabletHidden: true },
   { field: 'rent_amount', header: 'قيمة الإيجار' },
   { field: 'status', header: 'الحالة التشغيلية' }
 ]
@@ -390,6 +413,11 @@ const statusOptions = ref([
   { label: 'تحت الصيانة', value: 'maintenance' }
 ])
 
+const availableBuildings = computed(() => {
+  if (!selectedLocation.value) return []
+  return buildings.value.filter(building => building.location_id === selectedLocation.value)
+})
+
 function clearFieldError(field) {
   if (errors[field]) errors[field] = ''
 }
@@ -397,6 +425,11 @@ function clearFieldError(field) {
 function validateForm() {
   let isValid = true
   Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!selectedLocation.value) {
+    errors.location_id = 'يرجى اختيار الموقع العقاري'
+    isValid = false
+  }
 
   if (!form.building_id) {
     errors.building_id = 'يرجى اختيار المبنى'
@@ -455,7 +488,16 @@ function formatCurrency(amount) {
   return `${Number(amount).toLocaleString('ar-EG')} ₪`
 }
 
-onMounted(() => { fetchBuildings(); fetchItems() })
+onMounted(() => { fetchLocations(); fetchBuildings(); fetchItems() })
+
+async function fetchLocations() {
+  try {
+    const { data } = await api.get('/locations')
+    locations.value = data.data || []
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 async function fetchBuildings() {
   try {
@@ -492,12 +534,14 @@ function openCreateDialog() {
 function editItem(item) {
   resetForm()
   Object.assign(form, { ...item, building_id: item.building_id || item.building?.id })
+  selectedLocation.value = item.building?.location_id || item.building?.location?.id || null
   isEditing.value = true
   showDialog.value = true
 }
 
 function resetForm() {
   isEditing.value = false
+  selectedLocation.value = null
   Object.assign(form, {
     id: null, building_id: null, unit_number: '', unit_type: 'apartment',
     floor: 0, area: null, rent_amount: null,
@@ -517,6 +561,12 @@ function closeDialog() {
 
 function handleDialogHide() {
   resetForm()
+}
+
+function onLocationChange() {
+  form.building_id = null
+  clearFieldError('location_id')
+  clearFieldError('building_id')
 }
 
 async function saveItem() {

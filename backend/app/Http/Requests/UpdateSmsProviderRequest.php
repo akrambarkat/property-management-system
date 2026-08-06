@@ -19,6 +19,7 @@ class UpdateSmsProviderRequest extends FormRequest
             'api_key' => 'nullable|string|max:500',
             'username' => 'nullable|string|max:191',
             'password' => 'nullable|string|max:500',
+            'sender_name' => 'nullable|string|max:191',
             'sender_id' => 'nullable|string|max:191',
             'timeout' => 'nullable|integer|min:1|max:120',
             'retries' => 'nullable|integer|min:0|max:10',

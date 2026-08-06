@@ -216,8 +216,8 @@ const tableColumns = [
   { field: 'recipient', header: 'المستلم' },
   { field: 'message', header: 'الرسالة' },
   { field: 'cost', header: 'التكلفة' },
-  { field: 'attempts', header: 'المحاولات' },
-  { field: 'created_at', header: 'وقت الإرسال' }
+  { field: 'attempts', header: 'المحاولات', tabletHidden: true },
+  { field: 'created_at', header: 'وقت الإرسال', tabletHidden: true }
 ]
 
 const statusLabels = {

@@ -1,189 +1,398 @@
 <template>
-  <div class="notifications-page page-view">
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">مركز الإشعارات والتنبيهات</h2>
-        <p class="page-subtitle">استعرض التنبيهات المتعلقة بالعقود، الفواتير المتأخرة، وطلبات الصيانة</p>
-      </div>
-      <button class="btn-secondary" @click="markAllAsRead">
-        <i class="pi pi-check-square"></i> تحديد الكل كتم قراءته
-      </button>
+  <div class="page-view">
+    <EnterpriseTable
+      :value="store.notifications"
+      entity="notifications"
+      :loading="store.loading"
+      searchPlaceholder="بحث في الإشعارات..."
+      emptyTitle="لا توجد إشعارات"
+      emptySubtitle="لم يتم العثور على إشعارات تطابق خيارات التصفية والبحث"
+      :columns="tableColumns"
+      :selectable="true"
+      @refresh="store.fetchNotifications()"
+    >
+      <template #filters>
+        <Select
+          v-model="store.filters.is_read"
+          :options="readFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="حالة القراءة"
+          showClear
+          @change="store.fetchNotifications()"
+          class="filter-select"
+        />
+        <Select
+          v-model="store.filters.type"
+          :options="typeFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="جميع الأنواع"
+          showClear
+          @change="store.fetchNotifications()"
+          class="filter-select"
+        />
+        <Select
+          v-model="store.filters.priority"
+          :options="priorityFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="جميع الأولويات"
+          showClear
+          @change="store.fetchNotifications()"
+          class="filter-select"
+        />
+      </template>
+
+      <template #actions>
+        <button class="btn-secondary" @click="store.markAllAsRead()" :disabled="!store.hasUnread">
+          <i class="pi pi-check-double"></i> تحديد الكل كمقروء
+        </button>
+      </template>
+
+      <template #bulk-actions>
+        <button class="btn-sm btn-secondary" @click="store.bulkAction('read')">
+          <i class="pi pi-check"></i> تحديد كمقروء
+        </button>
+        <button class="btn-sm btn-secondary" @click="store.bulkAction('archive')">
+          <i class="pi pi-archive"></i> أرشفة
+        </button>
+        <button class="btn-sm btn-danger" @click="confirmBulkDelete">
+          <i class="pi pi-trash"></i> حذف
+        </button>
+      </template>
+
+      <template #default="{ hiddenColumns }">
+        <Column selectionMode="multiple" style="width: 40px" />
+
+        <Column v-if="!hiddenColumns.includes('title')" field="title" header="الإشعار" sortable>
+          <template #body="slotProps">
+            <div class="notif-cell" :class="{ unread: !slotProps.data.is_read }">
+              <div class="notif-icon" :style="{ background: getPriorityBg(slotProps.data.priority) }">
+                <i :class="getTypeIcon(slotProps.data.type)" :style="{ color: getPriorityColor(slotProps.data.priority) }"></i>
+              </div>
+              <div class="notif-info">
+                <span class="notif-title">{{ slotProps.data.title }}</span>
+                <span class="notif-message">{{ slotProps.data.message }}</span>
+              </div>
+            </div>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('type')" field="type" header="النوع" sortable>
+          <template #body="slotProps">
+            <span class="type-badge" :class="'type-' + slotProps.data.type">
+              {{ typeLabels[slotProps.data.type] || slotProps.data.type }}
+            </span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('priority')" field="priority" header="الأولوية" sortable>
+          <template #body="slotProps">
+            <span class="priority-badge" :class="'priority-' + slotProps.data.priority">
+              {{ priorityLabels[slotProps.data.priority] || slotProps.data.priority }}
+            </span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('created_at')" field="created_at" header="التاريخ" sortable>
+          <template #body="slotProps">
+            <span class="date-text">{{ formatRelativeTime(slotProps.data.created_at) }}</span>
+          </template>
+        </Column>
+
+        <Column v-if="!hiddenColumns.includes('is_read')" field="is_read" header="الحالة">
+          <template #body="slotProps">
+            <span class="status-pill" :class="slotProps.data.is_read ? 'read' : 'unread'">
+              {{ slotProps.data.is_read ? 'مقروء' : 'غير مقروء' }}
+            </span>
+          </template>
+        </Column>
+
+        <Column header="الإجراءات" style="width: 80px; text-align: center;" frozen alignFrozen="right">
+          <template #body="slotProps">
+            <TableActionMenu :items="getRowActions(slotProps.data)" />
+          </template>
+        </Column>
+      </template>
+    </EnterpriseTable>
+
+    <!-- Pagination -->
+    <div v-if="store.pagination.last_page > 1" class="pagination-wrapper">
+      <Button
+        icon="pi pi-angle-right"
+        :disabled="store.pagination.current_page <= 1"
+        @click="store.fetchNotifications(store.pagination.current_page - 1)"
+        text
+        rounded
+      />
+      <span class="page-info">
+        صفحة {{ store.pagination.current_page }} من {{ store.pagination.last_page }}
+      </span>
+      <Button
+        icon="pi pi-angle-left"
+        :disabled="store.pagination.current_page >= store.pagination.last_page"
+        @click="store.fetchNotifications(store.pagination.current_page + 1)"
+        text
+        rounded
+      />
     </div>
 
-    <div class="notifications-list card">
-      <div
-        v-for="item in notifications"
-        :key="item.id"
-        class="notification-item"
-        :class="{ unread: !item.is_read }"
-      >
-        <div class="icon-box" :class="item.type">
-          <i :class="item.icon"></i>
-        </div>
-
-        <div class="content">
-          <div class="title-row">
-            <h4 class="item-title">{{ item.title }}</h4>
-            <span class="item-time">{{ item.time }}</span>
-          </div>
-          <p class="item-desc">{{ item.description }}</p>
-        </div>
-
-        <div class="actions">
-          <router-link :to="item.link" class="btn-primary-sm">عرض التفاصيل</router-link>
-        </div>
-      </div>
-    </div>
+    <ConfirmModal
+      v-model:visible="showDeleteModal"
+      title="تأكيد الحذف"
+      message="هل أنت متأكد من حذف الإشعارات المحددة؟"
+      variant="danger"
+      confirmText="تأكيد الحذف"
+      @confirm="executeBulkDelete"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useNotificationsStore } from '@/stores/notifications'
+import { useToastStore } from '@/stores/toast'
+import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
+import TableActionMenu from '@/components/common/TableActionMenu.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import Button from 'primevue/button'
 
-const notifications = ref([
-  {
-    id: 1,
-    type: 'danger',
-    icon: 'pi pi-exclamation-circle',
-    title: 'عقد ينتهي قريبًا',
-    description: 'العقد رقم #CNT-2024-089 للمستأجر محمد أحمد ينتهي خلال 7 أيام.',
-    time: 'منذ ساعتين',
-    is_read: false,
-    link: '/contracts'
-  },
-  {
-    id: 2,
-    type: 'warning',
-    icon: 'pi pi-clock',
-    title: 'فاتورة متأخرة الدفع',
-    description: 'الفاتورة رقم #INV-1094 بمبلغ 2,500 شيكل تجاوزت تاريخ الاستحقاق.',
-    time: 'منذ 5 ساعات',
-    is_read: false,
-    link: '/invoices'
-  },
-  {
-    id: 3,
-    type: 'info',
-    icon: 'pi pi-wrench',
-    title: 'طلب صيانة جديد',
-    description: 'تم تسجيل طلب صيانة جديد (إصلاح تكييف) في المبنى أ - شقة 104.',
-    time: 'منذ يوم واحد',
-    is_read: true,
-    link: '/maintenance'
-  }
-])
+const store = useNotificationsStore()
+const toast = useToastStore()
+const router = useRouter()
+const showDeleteModal = ref(false)
 
-function markAllAsRead() {
-  notifications.value.forEach(item => (item.is_read = true))
+const tableColumns = [
+  { field: 'title', header: 'الإشعار' },
+  { field: 'type', header: 'النوع', tabletHidden: true },
+  { field: 'priority', header: 'الأولوية', tabletHidden: true },
+  { field: 'created_at', header: 'التاريخ' },
+  { field: 'is_read', header: 'الحالة', tabletHidden: true },
+]
+
+const typeLabels = {
+  contract: 'عقود', invoice: 'فواتير', tenant: 'مستأجرين',
+  maintenance: 'صيانة', sms: 'رسائل', building: 'مباني', system: 'النظام',
 }
+
+const priorityLabels = { low: 'منخفضة', medium: 'متوسطة', high: 'عالية', critical: 'حرجة' }
+
+const readFilterOptions = [
+  { label: 'غير مقروءة', value: false },
+  { label: 'مقروءة', value: true },
+]
+
+const typeFilterOptions = [
+  { label: 'عقود', value: 'contract' },
+  { label: 'فواتير', value: 'invoice' },
+  { label: 'مستأجرين', value: 'tenant' },
+  { label: 'صيانة', value: 'maintenance' },
+  { label: 'رسائل', value: 'sms' },
+  { label: 'مباني', value: 'building' },
+  { label: 'النظام', value: 'system' },
+]
+
+const priorityFilterOptions = [
+  { label: 'منخفضة', value: 'low' },
+  { label: 'متوسطة', value: 'medium' },
+  { label: 'عالية', value: 'high' },
+  { label: 'حرجة', value: 'critical' },
+]
+
+function getPriorityColor(p) {
+  return { low: '#6b7280', medium: '#f59e0b', high: '#f97316', critical: '#ef4444' }[p] || '#6b7280'
+}
+
+function getPriorityBg(p) {
+  return { low: '#f3f4f6', medium: '#fef3c7', high: '#ffedd5', critical: '#fee2e2' }[p] || '#f3f4f6'
+}
+
+function getTypeIcon(t) {
+  return { contract: 'pi pi-file', invoice: 'pi pi-dollar', tenant: 'pi pi-user', maintenance: 'pi pi-wrench', sms: 'pi pi-comments', building: 'pi pi-building', system: 'pi pi-cog' }[t] || 'pi pi-bell'
+}
+
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diff = Math.floor((now - date) / 1000)
+  if (diff < 60) return 'الآن'
+  if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`
+  if (diff < 86400) return `منذ ${Math.floor(diff / 3600)} ساعة`
+  if (diff < 604800) return `منذ ${Math.floor(diff / 86400)} يوم`
+  return date.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function getRowActions(row) {
+  const actions = []
+  if (!row.is_read) {
+    actions.push({ label: 'تحديد كمقروء', icon: 'pi pi-check', command: () => store.markAsRead(row.id) })
+  } else {
+    actions.push({ label: 'تحديد كغير مقروء', icon: 'pi pi-eye-slash', command: () => markAsUnread(row.id) })
+  }
+  actions.push({ label: 'أرشفة', icon: 'pi pi-archive', command: () => store.archiveNotification(row.id) })
+  actions.push({ label: 'حذف', icon: 'pi pi-trash', danger: true, command: () => confirmDelete(row) })
+  if (row.action_url) {
+    actions.push({ label: 'عرض التفاصيل', icon: 'pi pi-arrow-left', command: () => router.push(row.action_url) })
+  }
+  return actions
+}
+
+async function markAsUnread(id) {
+  try {
+    const { default: api } = await import('@/services/api')
+    await api.patch(`/notifications/${id}/unread`)
+    store.fetchNotifications()
+    store.fetchUnreadCount()
+  } catch (err) {
+    toast.error('خطأ في التحديث')
+  }
+}
+
+function confirmDelete(item) {
+  if (confirm(`هل أنت متأكد من حذف الإشعار "${item.title}"؟`)) {
+    store.deleteNotification(item.id)
+    toast.success('تم حذف الإشعار')
+  }
+}
+
+function confirmBulkDelete() {
+  showDeleteModal.value = true
+}
+
+async function executeBulkDelete() {
+  await store.bulkAction('delete')
+  showDeleteModal.value = false
+  toast.success('تم حذف الإشعارات المحددة')
+}
+
+onMounted(() => {
+  store.fetchNotifications()
+  store.fetchUnreadCount()
+})
 </script>
 
 <style scoped>
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+.filter-select {
+  width: 160px !important;
 }
-.page-title {
-  font-size: 20px;
+
+.notif-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notif-cell.unread .notif-title {
   font-weight: 700;
-  color: var(--text-primary);
-}
-.page-subtitle {
-  font-size: 13.5px;
-  color: var(--text-secondary);
 }
 
-.notifications-list {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.notification-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border-light);
-  transition: background 0.15s ease;
-}
-.notification-item:last-child {
-  border-bottom: none;
-}
-.notification-item.unread {
-  background: var(--bg-subtle);
-}
-.notification-item:hover {
-  background: var(--bg-hover);
-}
-
-.icon-box {
-  width: 44px;
-  height: 44px;
+.notif-icon {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
   flex-shrink: 0;
-}
-.icon-box.danger {
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid var(--danger-border);
-}
-.icon-box.warning {
-  background: var(--warning-bg);
-  color: var(--warning);
-  border: 1px solid var(--warning-border);
-}
-.icon-box.info {
-  background: var(--info-bg);
-  color: var(--info);
-  border: 1px solid var(--info-border);
+  font-size: 0.9rem;
 }
 
-.content {
-  flex: 1;
+.notif-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  min-width: 0;
 }
 
-.title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.item-title {
-  font-size: 14.5px;
+.notif-title {
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
 }
-.item-time {
+
+.notif-message {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 350px;
 }
 
-.item-desc {
-  font-size: 13.5px;
+.type-badge {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.type-contract { background: var(--info-bg); color: var(--info-contrast); }
+.type-invoice { background: var(--success-bg, #d1fae5); color: #065f46; }
+.type-tenant { background: var(--accent-light); color: var(--accent-hover); }
+.type-maintenance { background: var(--warning-bg); color: var(--warning-contrast); }
+.type-sms { background: #ede9fe; color: #5b21b6; }
+.type-building { background: var(--bg-subtle); color: var(--text-secondary); }
+.type-system { background: #f3f4f6; color: #374151; }
+
+.priority-badge {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.priority-low { background: #f3f4f6; color: #6b7280; }
+.priority-medium { background: #fef3c7; color: #92400e; }
+.priority-high { background: #ffedd5; color: #9a3412; }
+.priority-critical { background: #fee2e2; color: #991b1b; }
+
+.status-pill {
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.status-pill.read { background: #f3f4f6; color: #6b7280; }
+.status-pill.unread { background: var(--accent-light); color: var(--accent-hover); }
+
+.date-text {
+  font-size: 12.5px;
   color: var(--text-secondary);
 }
 
-.btn-primary-sm {
-  font-size: 12.5px;
-  padding: 6px 14px;
-  background: var(--accent);
-  color: var(--text-on-accent);
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-  text-decoration: none;
+.pagination-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
 }
-.btn-primary-sm:hover {
-  background: var(--accent-hover);
+
+.page-info {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-danger:hover {
+  background: var(--danger-hover);
 }
 </style>

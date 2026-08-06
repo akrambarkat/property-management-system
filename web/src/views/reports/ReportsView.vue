@@ -120,11 +120,11 @@ const toast = useToastStore()
 const filters = reactive({ building_id: null, from: null, to: null })
 
 const tableColumns = [
-  { field: 'building', header: 'المبنى' },
-  { field: 'unit', header: 'الوحدة' },
+  { field: 'building', header: 'المبنى', tabletHidden: true },
+  { field: 'unit', header: 'الوحدة', tabletHidden: true },
   { field: 'tenant', header: 'المستأجر' },
   { field: 'rent', header: 'الإيجار' },
-  { field: 'utilities', header: 'المرافق' },
+  { field: 'utilities', header: 'المرافق', tabletHidden: true },
   { field: 'total', header: 'المجموع' }
 ]
 

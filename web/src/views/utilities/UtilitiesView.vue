@@ -233,10 +233,10 @@ const initialFormState = JSON.stringify(form)
 const tableColumns = [
   { field: 'utility_type', header: 'نوع الخدمة' },
   { field: 'unit.unit_number', header: 'الوحدة والمبنى' },
-  { field: 'reading_date', header: 'تاريخ القراءة' },
-  { field: 'previous_reading', header: 'القراءة السابقة' },
-  { field: 'current_reading', header: 'القراءة الحالية' },
-  { field: 'consumption', header: 'معدل الاستهلاك' },
+  { field: 'reading_date', header: 'تاريخ القراءة', tabletHidden: true },
+  { field: 'previous_reading', header: 'القراءة السابقة', tabletHidden: true },
+  { field: 'current_reading', header: 'القراءة الحالية', tabletHidden: true },
+  { field: 'consumption', header: 'معدل الاستهلاك', tabletHidden: true },
   { field: 'total', header: 'إجمالي التكلفة' }
 ]
 

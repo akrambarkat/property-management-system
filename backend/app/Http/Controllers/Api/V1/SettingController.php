@@ -152,6 +152,7 @@ class SettingController extends Controller
             ],
             'invoices' => [
                 'invoice_prefix' => 'nullable|string|max:20',
+                'receipt_prefix' => 'nullable|string|max:20',
                 'invoice_tax_number' => 'nullable|string|max:191',
                 'invoice_due_days' => 'nullable|integer|min:0|max:365',
                 'invoice_late_fee' => 'nullable|numeric|min:0',
@@ -171,6 +172,12 @@ class SettingController extends Controller
                 'notify_on_payment' => 'nullable|boolean',
                 'notify_on_contract' => 'nullable|boolean',
                 'notify_on_maintenance' => 'nullable|boolean',
+                'sms_reminder_enabled' => 'nullable|boolean',
+                'sms_reminder_days_before' => 'nullable|array',
+                'sms_reminder_days_before.*' => 'nullable|integer|min:0|max:365',
+                'sms_reminder_overdue_enabled' => 'nullable|boolean',
+                'sms_reminder_overdue_days' => 'nullable|integer|min:0|max:365',
+                'sms_reminder_template_id' => 'nullable|integer|min:0',
             ],
             'appearance' => [
                 'theme' => ['nullable', Rule::in(['light', 'dark', 'system'])],
@@ -210,6 +217,7 @@ class SettingController extends Controller
             'sms_username' => 'nullable|string|max:191',
             'sms_password' => 'nullable|string|max:500',
             'sms_sender_id' => 'nullable|string|max:191',
+            'sms_sender_name' => 'nullable|string|max:191',
             'sms_timeout' => 'nullable|integer|min:1|max:120',
             'sms_retries' => 'nullable|integer|min:0|max:10',
             'sms_http_method' => ['nullable', Rule::in(['GET', 'POST', 'PUT'])],

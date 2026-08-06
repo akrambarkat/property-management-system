@@ -70,6 +70,7 @@ class SmsService
             'api_key' => $provider->api_key,
             'username' => $provider->username,
             'password' => $provider->password,
+            'sender_name' => $provider->sender_name,
             'sender_id' => $provider->sender_id,
             'timeout' => $provider->timeout,
             'retries' => $provider->retries,
@@ -239,7 +240,7 @@ class SmsService
      */
     public function sendTestSms(string $recipient, ?SmsProvider $provider = null): SmsLog
     {
-        $message = 'رسالة اختبار من نظام ' . $this->settings->get('app_name', 'EMAARPlus');
+        $message = 'رسالة اختبار من نظام ' . $this->settings->get('app_name', 'AqarMaster');
         return $this->queue($recipient, $message, ['created_by' => auth()->id()]);
     }
 

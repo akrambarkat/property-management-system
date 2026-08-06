@@ -217,7 +217,7 @@ const tableColumns = [
   { field: 'receipt_number', header: 'رقم الإيصال' },
   { field: 'invoice.contract.tenant.first_name', header: 'المستأجر' },
   { field: 'amount', header: 'المبلغ المدفوع' },
-  { field: 'payment_date', header: 'تاريخ الدفع' },
+  { field: 'payment_date', header: 'تاريخ الدفع', tabletHidden: true },
   { field: 'payment_method', header: 'طريقة الدفع' }
 ]
 

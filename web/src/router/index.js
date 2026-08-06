@@ -80,6 +80,11 @@ const routes = [
         component: () => import('@/views/notifications/NotificationsView.vue')
       },
       {
+        path: 'notifications/settings',
+        name: 'NotificationSettings',
+        component: () => import('@/views/notifications/NotificationSettingsView.vue')
+      },
+      {
         path: 'sms',
         name: 'SmsOverview',
         component: () => import('@/views/sms/SmsOverviewView.vue')

@@ -13,6 +13,16 @@
         <i class="pi pi-bars"></i>
       </button>
 
+      <!-- Mobile: compact search button opens the command palette -->
+      <button
+        class="icon-btn mobile-search-btn"
+        @click="$emit('open-command-palette')"
+        aria-label="بحث"
+        title="بحث"
+      >
+        <i class="pi pi-search"></i>
+      </button>
+
       <!-- Global Command Search Input (Stripe / Linear / Vercel style) -->
       <div
         class="global-search-trigger"
@@ -42,6 +52,7 @@
 
         <transition name="fade">
           <div v-if="showQuickAddMenu" class="quick-add-dropdown">
+            <div class="dropdown-grabber"></div>
             <button class="dropdown-item" @click="handleQuickAdd('/contracts')">
               <i class="pi pi-file text-amber"></i>
               <span>عقد إيجار جديد</span>
@@ -86,69 +97,8 @@
         <i :class="appStore.isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
       </button>
 
-      <!-- Notifications Bell Icon with Dropdown Overlay -->
-      <div class="notification-wrapper">
-        <button
-          class="icon-btn notification-btn"
-          @click="toggleNotifications"
-          title="مركز الإشعارات والتنبيهات"
-          :aria-label="'مركز الإشعارات والتنبيهات'"
-          :aria-expanded="showNotificationsDropdown"
-        >
-          <i class="pi pi-bell"></i>
-          <span class="badge-dot">3</span>
-        </button>
-
-        <transition name="fade">
-          <div v-if="showNotificationsDropdown" class="notifications-dropdown">
-            <div class="notifications-dropdown-header">
-              <span class="dropdown-title">التنبيهات الفورية</span>
-              <span class="unread-count">3 غير مقروءة</span>
-            </div>
-
-            <div class="notifications-dropdown-list">
-              <div class="notif-item unread">
-                <div class="notif-icon danger">
-                  <i class="pi pi-exclamation-circle"></i>
-                </div>
-                <div class="notif-text">
-                  <span class="notif-title">عقد ينتهي قريبًا</span>
-                  <span class="notif-desc">شقة 401 للمستأجر خالد العلي تنتهي في 7 أيام</span>
-                  <span class="notif-time">منذ ساعتين</span>
-                </div>
-              </div>
-
-              <div class="notif-item unread">
-                <div class="notif-icon warning">
-                  <i class="pi pi-clock"></i>
-                </div>
-                <div class="notif-text">
-                  <span class="notif-title">فاتورة متأخرة</span>
-                  <span class="notif-desc">فاتورة بمبلغ 2,500 ₪ تجاوزت الاستحقاق</span>
-                  <span class="notif-time">منذ 5 ساعات</span>
-                </div>
-              </div>
-
-              <div class="notif-item">
-                <div class="notif-icon info">
-                  <i class="pi pi-wrench"></i>
-                </div>
-                <div class="notif-text">
-                  <span class="notif-title">طلب صيانة جديد</span>
-                  <span class="notif-desc">صيانة تكييف في برج الأمل شقة 203</span>
-                  <span class="notif-time">منذ يوم واحد</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="notifications-dropdown-footer">
-              <router-link to="/notifications" class="view-all-link" @click="showNotificationsDropdown = false">
-                عرض جميع الإشعارات
-              </router-link>
-            </div>
-          </div>
-        </transition>
-      </div>
+      <!-- Notifications Bell -->
+      <NotificationCenter />
 
       <!-- User Profile Dropdown (fixed) -->
       <div class="profile-wrapper">
@@ -166,6 +116,7 @@
 
         <transition name="fade">
           <div v-if="showProfileMenu" class="profile-dropdown">
+            <div class="dropdown-grabber"></div>
             <div class="profile-dropdown-header">
               <span class="avatar-circle">{{ userInitial }}</span>
               <div class="profile-dropdown-user">
@@ -199,6 +150,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import NotificationCenter from '@/components/notifications/NotificationCenter.vue'
 
 defineEmits(['open-command-palette'])
 
@@ -207,7 +159,6 @@ const authStore = useAuthStore()
 const appStore = useAppStore()
 
 const showQuickAddMenu = ref(false)
-const showNotificationsDropdown = ref(false)
 const showProfileMenu = ref(false)
 
 const userName = computed(() => authStore.currentUser?.name || 'مدير النظام')
@@ -224,7 +175,6 @@ const roleTitle = computed(() => {
 
 function toggleQuickAdd() {
   showQuickAddMenu.value = !showQuickAddMenu.value
-  showNotificationsDropdown.value = false
   showProfileMenu.value = false
 }
 
@@ -233,21 +183,13 @@ function handleQuickAdd(path) {
   router.push({ path, query: { new: '1' } })
 }
 
-function toggleNotifications() {
-  showNotificationsDropdown.value = !showNotificationsDropdown.value
-  showQuickAddMenu.value = false
-  showProfileMenu.value = false
-}
-
 function toggleProfileMenu() {
   showProfileMenu.value = !showProfileMenu.value
   showQuickAddMenu.value = false
-  showNotificationsDropdown.value = false
 }
 
 function closeAllMenus() {
   showQuickAddMenu.value = false
-  showNotificationsDropdown.value = false
   showProfileMenu.value = false
 }
 
@@ -698,9 +640,21 @@ function handleLogout() {
   }
 }
 
+.mobile-search-btn {
+  display: none;
+}
+
+.dropdown-grabber {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .app-header {
-    padding: 0 14px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .mobile-search-btn {
+    display: flex;
   }
   .global-search-trigger {
     display: none;
@@ -713,7 +667,7 @@ function handleLogout() {
     display: none;
   }
   .quick-add-btn {
-    width: 38px !important;
+    width: 40px !important;
     padding: 0 !important;
     justify-content: center;
   }
@@ -722,6 +676,51 @@ function handleLogout() {
   }
   .profile-trigger {
     padding: 4px;
+  }
+  .profile-trigger .avatar-circle {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* 44px touch targets */
+  .sidebar-toggle-btn,
+  .icon-btn,
+  .quick-add-btn {
+    width: 44px !important;
+    height: 44px;
+  }
+
+  /* Convert header dropdowns into bottom sheets */
+  .quick-add-dropdown,
+  .profile-dropdown {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 18px 18px 0 0;
+    padding: 8px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    max-height: 66vh;
+    overflow-y: auto;
+    z-index: 1060;
+    box-shadow: var(--shadow-lg);
+  }
+  .dropdown-grabber {
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--border, #E2E8F0);
+    margin: 4px auto 10px;
+    flex-shrink: 0;
+  }
+  .quick-add-dropdown .dropdown-item,
+  .profile-dropdown .dropdown-item {
+    min-height: 46px;
+    font-size: 14px;
   }
 }
 </style>

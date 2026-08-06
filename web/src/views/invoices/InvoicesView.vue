@@ -98,11 +98,53 @@
       :onHide="handleDialogHide"
     >
       <div class="dialog-body">
-        <!-- Section 1: Contract & Dates -->
+        <!-- Section 1: Filters & Contract Selection -->
         <div class="form-section">
           <div class="form-section-title">
             <i class="pi pi-file"></i>
-            <span>العقد وتواريخ الفاتورة</span>
+            <span>اختيار العقد</span>
+          </div>
+
+          <!-- Optional Location / Building Filters -->
+          <div class="form-grid-2">
+            <FormField
+              label="تصفية بالموقع"
+              forId="inv-location"
+              helpText="اختياري - تضييق نطاق البحث"
+            >
+              <Select
+                id="inv-location"
+                v-model="selectedLocation"
+                :options="locations"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر الموقع للتصفية"
+                class="w-full"
+                filter
+                showClear
+                @change="onLocationChange"
+              />
+            </FormField>
+
+            <FormField
+              label="تصفية بالعمارة"
+              forId="inv-building"
+              helpText="اختياري - تضييق نطاق البحث"
+            >
+              <Select
+                id="inv-building"
+                v-model="selectedBuilding"
+                :options="buildings"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر العمارة للتصفية"
+                class="w-full"
+                :disabled="!selectedLocation"
+                filter
+                showClear
+                @change="onBuildingChange"
+              />
+            </FormField>
           </div>
 
           <FormField
@@ -110,7 +152,7 @@
             required
             forId="inv-contract"
             :errorMessage="errors.contract_id"
-            helpText="اختر العقد مباشرة، أو استخدم الفلاتر أدناه لتضييق النتائج"
+            helpText="اختر العقد المرتبط بالفاتورة"
           >
             <Select
               id="inv-contract"
@@ -143,44 +185,6 @@
               <span class="cd-label">المستأجر</span>
               <span class="cd-value">{{ selectedContractInfo.tenant }}</span>
             </div>
-          </div>
-
-          <!-- Optional Location / Building Filters -->
-          <div class="form-grid-3 mt-3">
-            <FormField
-              label="تصفية بالموقع"
-              forId="inv-location"
-            >
-              <Select
-                id="inv-location"
-                v-model="selectedLocation"
-                :options="locations"
-                optionLabel="name"
-                optionValue="id"
-                placeholder="اختر الموقع للتصفية"
-                class="w-full"
-                filter
-                @change="onLocationChange"
-              />
-            </FormField>
-
-            <FormField
-              label="تصفية بالعمارة"
-              forId="inv-building"
-            >
-              <Select
-                id="inv-building"
-                v-model="selectedBuilding"
-                :options="buildings"
-                optionLabel="name"
-                optionValue="id"
-                placeholder="اختر العمارة للتصفية"
-                class="w-full"
-                :disabled="!selectedLocation"
-                filter
-                @change="onBuildingChange"
-              />
-            </FormField>
           </div>
 
           <div class="form-grid-2">
@@ -344,7 +348,7 @@ const calculatedTotal = computed(() => {
 const tableColumns = [
   { field: 'id', header: 'رقم الفاتورة' },
   { field: 'contract.tenant.first_name', header: 'المستأجر والوحدة' },
-  { field: 'issue_date', header: 'التواريخ' },
+  { field: 'issue_date', header: 'التواريخ', tabletHidden: true },
   { field: 'total_amount', header: 'المبلغ الإجمالي' },
   { field: 'status', header: 'حالة السداد' }
 ]

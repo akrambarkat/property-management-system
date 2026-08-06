@@ -1,4 +1,4 @@
-# 🗃️ هيكل قاعدة البيانات — Database Schema
+﻿# 🗃️ هيكل قاعدة البيانات — Database Schema
 
 ## قواعد التسمية
 - أسماء الجداول: `snake_case` جمع (مثال: `locations`, `buildings`, `units`)
@@ -229,7 +229,7 @@
 ### settings
 | key | value |
 |-----|-------|
-| app_name | EMAARPlus |
+| app_name | AqarMaster |
 | default_currency | ILS |
 | electricity_unit_price | 0.50 |
 | water_unit_price | 3.00 |

@@ -1,10 +1,10 @@
-# Database Agent — تعليمات قاعدة البيانات
+﻿# Database Agent — تعليمات قاعدة البيانات
 
 ## المهمة
 بناء قاعدة بيانات MySQL كاملة مع Migrations و Seeders.
 
 ## قاعدة البيانات
-- **الاسم:** `emaarplus`
+- **الاسم:** `AqarMaster`
 - **Collation:** `utf8mb4_unicode_ci`
 - **المحرك:** InnoDB
 
@@ -37,7 +37,7 @@
 
 ## Seeders
 ### UserSeeder
-- Super Admin: `admin@emaarplus.com` / `password`
+- Super Admin: `admin@AqarMaster.com` / `password`
 
 ### CurrencySeeder
 ```php
@@ -51,7 +51,7 @@
 ### SettingSeeder
 ```php
 [
-    ['app_name', 'EMAARPlus'],
+    ['app_name', 'AqarMaster'],
     ['default_currency', 'ILS'],
     ['electricity_unit_price', '0.50'],
     ['water_unit_price', '3.00'],

@@ -186,6 +186,21 @@ const doughnutOptions = {
   gap: 16px;
 }
 
+@media (max-width: 768px) {
+  .profile-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 .time-horizon-selector {
   display: flex;
   gap: 4px;

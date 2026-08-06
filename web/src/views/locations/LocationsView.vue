@@ -191,7 +191,7 @@ const initialFormState = JSON.stringify(form)
 const tableColumns = [
   { field: 'name', header: 'اسم الموقع العقاري' },
   { field: 'address', header: 'العنوان' },
-  { field: 'buildings_count', header: 'عدد المباني' },
+  { field: 'buildings_count', header: 'عدد المباني', tabletHidden: true },
   { field: 'is_active', header: 'الحالة' }
 ]
 

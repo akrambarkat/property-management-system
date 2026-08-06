@@ -1,7 +1,7 @@
-# Deployment Agent — تعليمات الرفع
+﻿# Deployment Agent — تعليمات الرفع
 
 ## المهمة
-رفع مشروع EMAARPlus إلى هوست (Shared Hosting مع cPanel أو VPS).
+رفع مشروع AqarMaster إلى هوست (Shared Hosting مع cPanel أو VPS).
 
 ## المتطلبات
 - PHP 8.3+
@@ -21,14 +21,14 @@
 
 ### ملف .env
 ```env
-APP_NAME=EMAARPlus
+APP_NAME=AqarMaster
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://yourdomain.com
 
 DB_CONNECTION=mysql
 DB_HOST=localhost
-DB_DATABASE=emaarplus_db
+DB_DATABASE=AqarMaster_db
 DB_USERNAME=your_user
 DB_PASSWORD=your_password
 
@@ -104,11 +104,11 @@ php artisan optimize
 sudo apt install nginx mysql-server php8.3-fpm
 
 # إعداد Nginx
-sudo nano /etc/nginx/sites-available/emaarplus
+sudo nano /etc/nginx/sites-available/AqarMaster
 
 # إعداد SSL مع Certbot
 sudo certbot --nginx -d yourdomain.com
 
 # إعداد Cron للنسخ الاحتياطي
-0 3 * * * /usr/bin/php /var/www/emaarplus/artisan backup:run
+0 3 * * * /usr/bin/php /var/www/AqarMaster/artisan backup:run
 ```

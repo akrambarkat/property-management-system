@@ -715,4 +715,68 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  .executive-hero-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 18px 16px;
+  }
+  .smart-insights-pills {
+    max-width: none;
+  }
+  .command-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+    gap: 16px;
+  }
+  .analytics-grid {
+    gap: 16px;
+  }
+  .chart-card {
+    padding: 16px;
+  }
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .chart-body {
+    height: 240px;
+  }
+  .occupancy-stats-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .btn-xs-primary,
+  .btn-xs-secondary {
+    min-height: 40px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .horizon-btn {
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .timeline-item {
+    flex-wrap: wrap;
+  }
+  .item-value-action {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sms-widget-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .sms-widget-actions a {
+    flex: 1;
+  }
+}
 </style>

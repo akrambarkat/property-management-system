@@ -157,4 +157,21 @@ function onCancel() {
   background: var(--danger-hover) !important;
   border-color: var(--danger-hover) !important;
 }
+
+@media (max-width: 480px) {
+  .confirm-actions {
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .confirm-actions button {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    justify-content: center;
+  }
+  .confirm-message {
+    font-size: 13.5px;
+  }
+}
 </style>

@@ -260,7 +260,7 @@ const initialFormState = JSON.stringify(form)
 
 const tableColumns = [
   { field: 'name', header: 'اسم المستخدم' },
-  { field: 'phone', header: 'رقم الهاتف' },
+  { field: 'phone', header: 'رقم الهاتف', tabletHidden: true },
   { field: 'role', header: 'الدور / الصلاحية' },
   { field: 'is_active', header: 'الحالة' }
 ]

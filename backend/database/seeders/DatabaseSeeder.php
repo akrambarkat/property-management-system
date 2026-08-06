@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             SmsProviderSeeder::class,
             SmsTemplateSeeder::class,
             UserSeeder::class,
+            DummyDataSeeder::class,
         ]);
     }
 }

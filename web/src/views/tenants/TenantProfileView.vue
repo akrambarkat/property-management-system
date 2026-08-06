@@ -144,10 +144,10 @@
                   <td colspan="4" class="text-muted text-center">لا توجد دفعات مسجلة</td>
                 </tr>
                 <tr v-for="p in recentPayments" :key="p.id">
-                  <td>{{ p.receipt_number || '—' }}</td>
-                  <td>{{ p.payment_date }}</td>
-                  <td class="font-bold">{{ format(p.amount) }}</td>
-                  <td>{{ paymentMethodLabel(p.payment_method) }}</td>
+                  <td data-label="رقم الإيصال">{{ p.receipt_number || '—' }}</td>
+                  <td data-label="التاريخ">{{ p.payment_date }}</td>
+                  <td data-label="المبلغ" class="font-bold">{{ format(p.amount) }}</td>
+                  <td data-label="طريقة الدفع">{{ paymentMethodLabel(p.payment_method) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -172,11 +172,11 @@
                   <td colspan="5" class="text-muted text-center">لا توجد فواتير</td>
                 </tr>
                 <tr v-for="inv in recentInvoices" :key="inv.id">
-                  <td>{{ inv.invoice_number }}</td>
-                  <td>{{ inv.issue_date }}</td>
-                  <td>{{ format(inv.total_amount) }}</td>
-                  <td class="font-bold" :class="inv.balance > 0 ? 'text-danger' : 'text-success'">{{ format(inv.balance) }}</td>
-                  <td><span class="status-badge" :class="inv.status === 'paid' ? 'status-active' : 'status-expired'">{{ inv.status === 'paid' ? 'مدفوع' : inv.status === 'partial' ? 'جزئي' : 'غير مدفوع' }}</span></td>
+                  <td data-label="رقم الفاتورة">{{ inv.invoice_number }}</td>
+                  <td data-label="التاريخ">{{ inv.issue_date }}</td>
+                  <td data-label="المبلغ">{{ format(inv.total_amount) }}</td>
+                  <td data-label="المتبقي" class="font-bold" :class="inv.balance > 0 ? 'text-danger' : 'text-success'">{{ format(inv.balance) }}</td>
+                  <td data-label="الحالة"><span class="status-badge" :class="inv.status === 'paid' ? 'status-active' : 'status-expired'">{{ inv.status === 'paid' ? 'مدفوع' : inv.status === 'partial' ? 'جزئي' : 'غير مدفوع' }}</span></td>
                 </tr>
               </tbody>
             </table>
@@ -832,6 +832,25 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
 }
+
+@media (max-width: 768px) {
+  .profile-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header-left {
+    flex-wrap: wrap;
+  }
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 .profile-body-grid {
   display: grid;
   grid-template-columns: 1fr 2.2fr;
@@ -955,6 +974,51 @@ onMounted(async () => {
 }
 .status-active { background: var(--success-bg); color: var(--success-contrast); }
 .status-expired { background: var(--danger-bg); color: var(--danger-contrast); }
+
+@media (max-width: 640px) {
+  .simple-table thead {
+    display: none;
+  }
+  .simple-table,
+  .simple-table tbody,
+  .simple-table tr,
+  .simple-table td {
+    display: block;
+    width: 100%;
+  }
+  .simple-table tr {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    margin: 8px 0;
+  }
+  .simple-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-light);
+    padding: 10px 4px;
+    text-align: right;
+  }
+  .simple-table td:last-child {
+    border-bottom: none;
+  }
+  .simple-table td::before {
+    content: attr(data-label);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .simple-table td[colspan]::before {
+    display: none;
+  }
+  .simple-table td[colspan] {
+    justify-content: center;
+  }
+}
 .text-center { text-align: center; }
 .text-muted { color: var(--text-secondary); }
 .text-xs { font-size: 12px; }

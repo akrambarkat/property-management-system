@@ -395,4 +395,24 @@ function onClose() {
   font-weight: 700;
   font-size: 14px;
 }
+
+@media (max-width: 768px) {
+  .drawer-tabs {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .tab-btn {
+    padding: 12px 12px;
+    font-size: 12.5px;
+    flex: 1;
+    justify-content: center;
+  }
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 10px 0;
+  }
+  .info-section {
+    padding: 14px;
+  }
+}
 </style>

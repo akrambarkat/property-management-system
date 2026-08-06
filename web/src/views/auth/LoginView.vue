@@ -13,6 +13,10 @@
         </header>
 
         <form class="login-form" @submit.prevent="handleLogin" novalidate>
+          <p v-if="error" class="error-message" role="alert">
+            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+            <span>{{ error }}</span>
+          </p>
           <div class="field">
             <label for="identifier">رقم الهاتف أو البريد الإلكتروني</label>
             <div class="input-shell" :class="{ 'input-error-border': errors.identifier }">
@@ -72,11 +76,6 @@
             <i v-if="loading" class="pi pi-spin pi-spinner" aria-hidden="true"></i>
             <span>{{ loading ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول' }}</span>
           </button>
-
-          <p v-if="error" class="error-message" role="alert">
-            <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
-            <span>{{ error }}</span>
-          </p>
         </form>
       </div>
     </main>
@@ -205,9 +204,9 @@ function handleForgotPassword() {
 }
 
 .form-card {
-  width: min(100%, 460px);
-  padding: clamp(24px, 4vw, 40px);
-  border-radius: 24px;
+  width: min(100%, 420px);
+  padding: clamp(18px, 3vw, 26px);
+  border-radius: 20px;
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-lg);
@@ -223,16 +222,16 @@ function handleForgotPassword() {
 
 .form-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 18px;
 }
 
 .logo-mark {
-  width: 72px;
-  height: 72px;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
-  margin: 0 auto 16px;
-  border-radius: 20px;
+  margin: 0 auto 12px;
+  border-radius: 16px;
   background: linear-gradient(135deg, #1B2A4A 0%, #243b63 100%);
   color: #C9A84C;
   box-shadow: 0 12px 24px rgba(27, 42, 74, 0.15);
@@ -240,7 +239,7 @@ function handleForgotPassword() {
 }
 
 .logo-mark i {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
 }
 
 .system-name {
@@ -253,29 +252,29 @@ function handleForgotPassword() {
 }
 
 .form-header h2 {
-  margin: 0 0 8px;
+  margin: 0 0 4px;
   color: var(--text-primary);
-  font-size: clamp(1.4rem, 2vw, 1.75rem);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
   font-weight: 700;
   line-height: 1.25;
 }
 
 .tagline {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   direction: rtl;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .field label {
@@ -289,10 +288,10 @@ function handleForgotPassword() {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
+  min-height: 46px;
   padding: 0 16px;
   border: 1px solid var(--input-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--input-bg);
   transition: all 0.25s ease;
 }
@@ -388,15 +387,15 @@ function handleForgotPassword() {
 }
 
 .submit-button {
-  margin-top: 6px;
-  min-height: 52px;
+  margin-top: 2px;
+  min-height: 46px;
   width: 100%;
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #1B2A4A 0%, #243b63 100%);
   color: #ffffff;
   font: inherit;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 10px 20px rgba(27, 42, 74, 0.18);
@@ -418,11 +417,11 @@ function handleForgotPassword() {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
+  margin-bottom: 16px;
   color: var(--danger-contrast);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   background: var(--danger-bg);
-  padding: 10px 14px;
+  padding: 9px 14px;
   border-radius: 10px;
   border: 1px solid var(--danger-border);
 }

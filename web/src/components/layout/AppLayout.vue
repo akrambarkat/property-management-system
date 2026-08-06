@@ -298,6 +298,13 @@ onMounted(() => {
   window.addEventListener('keydown', handleGlobalKeydown)
 })
 
+/* Close the mobile sidebar whenever the user navigates */
+watch(() => route.fullPath, () => {
+  if (isMobile.value) {
+    appStore.sidebarCollapsed = true
+  }
+})
+
 onUnmounted(() => {
   clearInterval(timer)
   window.removeEventListener('resize', updateIsMobile)
@@ -551,13 +558,65 @@ onUnmounted(() => {
   transform: translateY(-6px);
 }
 
+.page-title-group h1 {
+  font-size: 1.15rem;
+}
+
 @media (max-width: 768px) {
   .layout-main,
   .sidebar-collapsed .layout-main {
     margin-right: 0;
   }
   .layout-content {
-    padding: 16px;
+    padding: 14px;
+  }
+}
+
+/* ================= Responsive layout layer ================= */
+@media (max-width: 1200px) {
+  .sub-navbar-breadcrumb {
+    padding: 8px 20px;
+  }
+  .layout-content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sub-navbar-breadcrumb {
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .system-time { display: none; }
+  .breadcrumb-item:nth-of-type(2) .breadcrumb-separator { display: none; }
+  .layout-content {
+    padding: 14px;
+  }
+  .content-container {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .sub-navbar-breadcrumb {
+    padding: 8px 12px;
+  }
+  .breadcrumb-list {
+    gap: 6px;
+  }
+  .breadcrumb-link span,
+  .breadcrumb-current {
+    font-size: 12.5px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .breadcrumb-link {
+    max-width: 140px;
+  }
+  .breadcrumb-item:first-child .breadcrumb-link span {
+    max-width: none;
   }
 }
 </style>

@@ -53,6 +53,16 @@
           </template>
         </Column>
 
+        <Column v-if="!hiddenColumns.includes('unit.unit_number')" field="unit.unit_number" header="الوحدة" sortable>
+          <template #body="slotProps">
+            <span v-if="slotProps.data.unit" class="unit-pill">
+              <i class="pi pi-home text-blue"></i>
+              وحدة #{{ slotProps.data.unit.unit_number }}
+            </span>
+            <span v-else class="text-muted">—</span>
+          </template>
+        </Column>
+
         <Column v-if="!hiddenColumns.includes('category')" field="category" header="تصنيف المصروف" sortable>
           <template #body="slotProps">
             <span class="category-badge">
@@ -107,6 +117,26 @@
 
           <div class="form-grid-2">
             <FormField
+              label="الموقع العقاري"
+              required
+              forId="exp-location"
+              :errorMessage="errors.location_id"
+              helpText="اختيار الموقع يفلتر البنايات التابعة له"
+            >
+              <Select
+                id="exp-location"
+                v-model="selectedLocation"
+                :options="locations"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="اختر الموقع"
+                class="w-full"
+                filter
+                @change="onLocationChange"
+              />
+            </FormField>
+
+            <FormField
               label="المبنى العقاري"
               required
               forId="exp-building"
@@ -116,13 +146,33 @@
               <Select
                 id="exp-building"
                 v-model="form.building_id"
-                :options="buildings"
+                :options="availableBuildings"
                 optionLabel="name"
                 optionValue="id"
                 placeholder="اختر المبنى"
                 class="w-full"
                 filter
-                @change="clearFieldError('building_id')"
+                :disabled="!selectedLocation"
+                @change="onBuildingChange"
+              />
+            </FormField>
+
+            <FormField
+              label="الوحدة العقارية"
+              forId="exp-unit"
+              helpText="اختياري - ربط المصروف بوحدة محددة"
+            >
+              <Select
+                id="exp-unit"
+                v-model="form.unit_id"
+                :options="availableUnits"
+                optionLabel="unit_number"
+                optionValue="id"
+                placeholder="اختر الوحدة (اختياري)"
+                class="w-full"
+                filter
+                showClear
+                :disabled="!selectedBuilding"
               />
             </FormField>
 
@@ -218,7 +268,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import EnterpriseTable from '@/components/common/EnterpriseTable.vue'
 import TableActionMenu from '@/components/common/TableActionMenu.vue'
@@ -227,7 +277,9 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import { useToastStore } from '@/stores/toast'
 
 const items = ref([])
+const locations = ref([])
 const buildings = ref([])
+const units = ref([])
 const loading = ref(false)
 const toast = useToastStore()
 const saving = ref(false)
@@ -236,47 +288,58 @@ const isEditing = ref(false)
 
 const showDeleteModal = ref(false)
 const itemToDelete = ref(null)
+const selectedLocation = ref(null)
+const selectedBuilding = ref(null)
 
 const filters = reactive({ building_id: null, category: null })
 
 const form = reactive({
-  id: null, building_id: null, category: 'maintenance', amount: null,
+  id: null, building_id: null, unit_id: null, category: 'general', amount: null,
   expense_date: null, description: ''
 })
 
 const errors = reactive({
-  building_id: '', amount: ''
+  location_id: '', building_id: '', amount: ''
 })
 
 const initialFormState = JSON.stringify(form)
 
 const tableColumns = [
   { field: 'building.name', header: 'المبنى العقاري' },
+  { field: 'unit.unit_number', header: 'الوحدة', tabletHidden: true },
   { field: 'category', header: 'تصنيف المصروف' },
   { field: 'amount', header: 'المبلغ' },
-  { field: 'expense_date', header: 'التاريخ' },
+  { field: 'expense_date', header: 'التاريخ', tabletHidden: true },
   { field: 'description', header: 'البيان / التفاصيل' }
 ]
 
 const categoryLabels = {
   maintenance: 'صيانة وتصليحات',
-  electricity: 'كهرباء خدمات',
-  water: 'مياه خدمات',
+  plumbing: 'سباكة',
+  electrical: 'كهرباء',
   cleaning: 'نظافة وتدبير',
   security: 'حراسة وأمن',
-  admin: 'إدارية وعمومية',
-  other: 'أخرى'
+  general: 'مصروف عام'
 }
 
 const categoryOptions = ref([
   { label: 'صيانة وتصليحات', value: 'maintenance' },
-  { label: 'كهرباء خدمات', value: 'electricity' },
-  { label: 'مياه خدمات', value: 'water' },
+  { label: 'سباكة', value: 'plumbing' },
+  { label: 'كهرباء', value: 'electrical' },
   { label: 'نظافة وتدبير', value: 'cleaning' },
   { label: 'حراسة وأمن', value: 'security' },
-  { label: 'إدارية وعمومية', value: 'admin' },
-  { label: 'أخرى', value: 'other' }
+  { label: 'مصروف عام', value: 'general' }
 ])
+
+const availableBuildings = computed(() => {
+  if (!selectedLocation.value) return []
+  return buildings.value.filter(building => building.location_id === selectedLocation.value)
+})
+
+const availableUnits = computed(() => {
+  if (!selectedBuilding.value) return []
+  return units.value.filter(unit => unit.building_id === selectedBuilding.value)
+})
 
 function clearFieldError(field) {
   if (errors[field]) errors[field] = ''
@@ -285,6 +348,11 @@ function clearFieldError(field) {
 function validateForm() {
   let isValid = true
   Object.keys(errors).forEach(key => errors[key] = '')
+
+  if (!selectedLocation.value) {
+    errors.location_id = 'يرجى اختيار الموقع العقاري'
+    isValid = false
+  }
 
   if (!form.building_id) {
     errors.building_id = 'يرجى اختيار المبنى العقاري'
@@ -324,12 +392,26 @@ function formatCurrency(amount) {
   return `${Number(amount).toLocaleString('ar-EG')} ₪`
 }
 
-onMounted(() => { fetchBuildings(); fetchItems() })
+onMounted(() => { fetchLocations(); fetchBuildings(); fetchUnits(); fetchItems() })
+
+async function fetchLocations() {
+  try {
+    const { data } = await api.get('/locations')
+    locations.value = data.data || []
+  } catch (err) { console.error(err) }
+}
 
 async function fetchBuildings() {
   try {
     const { data } = await api.get('/buildings')
     buildings.value = data.data
+  } catch (err) { console.error(err) }
+}
+
+async function fetchUnits() {
+  try {
+    const { data } = await api.get('/units')
+    units.value = data.data
   } catch (err) { console.error(err) }
 }
 
@@ -359,14 +441,18 @@ function openCreateDialog() {
 function editItem(item) {
   resetForm()
   Object.assign(form, item)
+  selectedLocation.value = item.building?.location_id || item.building?.location?.id || null
+  selectedBuilding.value = item.building_id || item.building?.id || null
   isEditing.value = true
   showDialog.value = true
 }
 
 function resetForm() {
   isEditing.value = false
+  selectedLocation.value = null
+  selectedBuilding.value = null
   Object.assign(form, {
-    id: null, building_id: null, category: 'maintenance', amount: null,
+    id: null, building_id: null, unit_id: null, category: 'general', amount: null,
     expense_date: null, description: ''
   })
   Object.keys(errors).forEach(key => errors[key] = '')
@@ -382,6 +468,19 @@ function closeDialog() {
 
 function handleDialogHide() {
   resetForm()
+}
+
+function onLocationChange() {
+  selectedBuilding.value = null
+  form.building_id = null
+  form.unit_id = null
+  clearFieldError('location_id')
+  clearFieldError('building_id')
+}
+
+function onBuildingChange() {
+  form.unit_id = null
+  clearFieldError('building_id')
 }
 
 async function saveItem() {
@@ -433,6 +532,21 @@ async function deleteItemConfirmed() {
   align-items: center;
   gap: 6px;
   font-size: 13.5px;
+}
+
+.unit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-subtle);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.text-blue {
+  color: var(--info-contrast);
 }
 
 .category-badge {

@@ -235,6 +235,21 @@ const chartOptions = {
   gap: 12px;
 }
 
+@media (max-width: 768px) {
+  .profile-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 .profile-kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

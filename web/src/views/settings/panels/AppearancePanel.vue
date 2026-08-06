@@ -2,7 +2,7 @@
   <div class="panels-stack">
     <SettingsCard
       title="المظهر"
-      subtitle="المظهر العام للنظام ولغة العرض"
+      subtitle="اللغة، تنسيق التاريخ، وطريقة العرض"
       icon="pi pi-palette"
       icon-tone="indigo"
       :dirty="dirty"
@@ -10,23 +10,30 @@
       :saved="savedFlash"
       @save="handleSave"
     >
-      <div class="form-grid-2">
-        <FormField label="المظهر الافتراضي" forId="app-theme" helpText="اختيار وضع العرض للنظام">
-          <div class="theme-options">
-            <button
-              v-for="t in themeOptions"
-              :key="t.value"
-              class="theme-option"
-              :class="{ selected: form.theme === t.value }"
-              @click="form.theme = t.value"
-            >
-              <i :class="t.icon"></i>
-              <span>{{ t.label }}</span>
-            </button>
-          </div>
-        </FormField>
+      <div class="section-note">
+        <i class="pi pi-palette"></i>
+        <p>هذه الخيارات تغير شكل المنصة وطريقة قراءتها، لذلك رتبتها بشكل مختصر وواضح حتى لا تبقى أي خانة بدون معنى.</p>
+      </div>
 
-        <FormField label="لغة العرض" forId="app-lang">
+      <div class="theme-options-grid">
+        <button
+          v-for="t in themeOptions"
+          :key="t.value"
+          class="theme-option"
+          :class="{ selected: form.theme === t.value }"
+          @click="form.theme = t.value"
+        >
+          <i :class="t.icon"></i>
+          <span>{{ t.label }}</span>
+          <small>{{ t.description }}</small>
+        </button>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="field-card">
+          <div class="field-title">لغة الواجهة</div>
+          <div class="field-subtitle">اللغة الظاهرة في القوائم والتنبيهات والتقارير</div>
+          <FormField label="لغة الواجهة" forId="app-lang">
           <Select
             id="app-lang"
             v-model="form.language"
@@ -35,9 +42,13 @@
             optionValue="value"
             class="w-full"
           />
-        </FormField>
+          </FormField>
+        </div>
 
-        <FormField label="صيغة التاريخ" forId="app-datefmt">
+        <div class="field-card">
+          <div class="field-title">تنسيق التاريخ</div>
+          <div class="field-subtitle">صيغة عرض التاريخ في المستندات والتقارير</div>
+          <FormField label="تنسيق التاريخ" forId="app-datefmt">
           <Select
             id="app-datefmt"
             v-model="form.date_format"
@@ -46,9 +57,13 @@
             optionValue="value"
             class="w-full"
           />
-        </FormField>
+          </FormField>
+        </div>
 
-        <FormField label="الوضع المضغوط" forId="app-compact" helpText="تقليل المسافات لعرض بيانات أكثر">
+        <div class="field-card">
+          <div class="field-title">الوضع المضغوط</div>
+          <div class="field-subtitle">تقليل الهوامش لعرض مزيد من البيانات</div>
+          <FormField label="الوضع المضغوط" forId="app-compact">
           <Select
             id="app-compact"
             :model-value="form.compact_mode ? 'yes' : 'no'"
@@ -58,7 +73,8 @@
             class="w-full"
             @change="form.compact_mode = $event.value === 'yes'"
           />
-        </FormField>
+          </FormField>
+        </div>
       </div>
     </SettingsCard>
   </div>
@@ -81,9 +97,9 @@ const savedFlash = ref(false)
 const form = reactive({})
 
 const themeOptions = [
-  { value: 'light', label: 'فاتح', icon: 'pi pi-sun' },
-  { value: 'dark', label: 'داكن', icon: 'pi pi-moon' },
-  { value: 'system', label: 'النظام', icon: 'pi pi-desktop' }
+  { value: 'light', label: 'فاتح', description: 'خلفية فاتحة', icon: 'pi pi-sun' },
+  { value: 'dark', label: 'داكن', description: 'خلفية داكنة', icon: 'pi pi-moon' },
+  { value: 'system', label: 'النظام', description: 'حسب الجهاز', icon: 'pi pi-desktop' }
 ]
 
 const dateFormats = [
@@ -95,6 +111,20 @@ const dateFormats = [
 watch(() => props.settings, (val) => {
   Object.keys(val || {}).forEach(k => { form[k] = val[k] })
 }, { immediate: true, deep: true })
+
+watch(() => form.theme, (val) => {
+  if (!val) return
+  const dark = val === 'dark' || (val === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  if (dark) {
+    document.documentElement.classList.add('p-dark')
+    document.documentElement.setAttribute('data-theme', 'dark')
+    localStorage.setItem('theme', 'dark')
+  } else {
+    document.documentElement.classList.remove('p-dark')
+    document.documentElement.removeAttribute('data-theme')
+    localStorage.setItem('theme', 'light')
+  }
+})
 
 watch(() => form, (val) => {
   Object.keys(val).forEach(k => {
@@ -111,21 +141,29 @@ function handleSave() {
 
 <style scoped>
 .panels-stack { display: flex; flex-direction: column; gap: 20px; }
-.theme-options { display: flex; gap: 10px; }
-.theme-option {
-  flex: 1;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 16px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  cursor: pointer;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  transition: all 0.15s ease;
+.section-note {
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--radius-md);
+  background: var(--bg-subtle); border: 1px solid var(--border);
 }
-.theme-option i { font-size: 1.3rem; }
-.theme-option:hover { border-color: var(--border-hover); }
-.theme-option.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.section-note i { color: var(--accent); font-size: 1rem; margin-top: 2px; }
+.section-note p { margin: 0; font-size: 12.5px; line-height: 1.8; color: var(--text-secondary); }
+.theme-options-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.theme-option {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  padding: 16px 14px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--bg-surface); cursor: pointer; text-align: right;
+  color: var(--text-secondary); transition: all 0.15s ease;
+}
+.theme-option i { font-size: 1.3rem; color: var(--accent); }
+.theme-option span { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.theme-option small { font-size: 11.5px; color: var(--text-secondary); }
+.theme-option.selected { border-color: var(--accent); background: var(--accent-light); }
+.form-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.field-card{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--border-light);border-radius:var(--radius-md);background:var(--bg-surface);}
+.field-title{font-size:14px;font-weight:800;color:var(--text-primary);}
+.field-subtitle{font-size:12px;line-height:1.7;color:var(--text-secondary);}
+@media (max-width: 800px) {
+  .theme-options-grid,
+  .form-grid-2 { grid-template-columns: 1fr; }
+}
 </style>
