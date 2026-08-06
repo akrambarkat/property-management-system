@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://localhost:3001', 'http://localhost'],
+    'allowed_origins' => ['http://localhost:3000', 'http://localhost:3001', 'http://localhost', 'https://property-management-system.dofaa.online', 'http://property-management-system.dofaa.online'],
 
     'allowed_origins_patterns' => [],
 
