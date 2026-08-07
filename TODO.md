@@ -1,12 +1,12 @@
 # خطة إصلاح خطأ الباك اند على الاستضافة
 
 ## الملفات المراد تعديلها
-- [ ] `web/.env.production` — تصحيح اسم المتغير إلى VITE_API_URL مع المسار /api/v1
-- [ ] `web/src/services/api.js` — تحديث القيمة الافتراضية الاحتياطية
-- [ ] `backend/config/cors.php` — إضافة الدومين الإنتاجي إلى allowed_origins
+- [x] `web/.env.production` — تصحيح اسم المتغير إلى VITE_API_URL مع المسار /api/v1
+- [x] `web/src/services/api.js` — تحديث القيمة الافتراضية الاحتياطية
+- [x] `backend/config/cors.php` — إضافة الدومين الإنتاجي إلى allowed_origins
 
 ## خطوات المتابعة
-- [ ] إعادة بناء الواجهة (npm run build)
+- [x] إعادة بناء الواجهة (npm run build) — اكتمل بنجاح، الرابط الصحيح مضمّن في index-fBFK3Wij.js
 - [ ] رفع ملفات dist الجديدة إلى الاستضافة
 - [ ] رفع ملف cors.php المعدّل إلى الاستضافة
 - [ ] اختبار تسجيل الدخول بعد الرفع
